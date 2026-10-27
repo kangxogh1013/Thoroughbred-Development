@@ -53,6 +53,8 @@ namespace HorseRanch.EditorTools
             art = sprites;
             DefaultFont = font;
             RoundSprite = sprites.round;
+            var sounds = HorseRanchSoundBuilder.Load();
+            var titleBg = HorseRanchTitleArt.Load();
             if (db == null) { Debug.LogError("[HorseRanch] GameDatabase 에셋이 없습니다. Tools > HorseRanch > 1. 데이터 에셋 생성을 먼저 실행하세요."); return; }
 
             // ===== EventSystem / 게임 러너 =====
@@ -78,11 +80,24 @@ namespace HorseRanch.EditorTools
             cam.backgroundColor = new Color(0.08f, 0.07f, 0.09f);
             var spawn = GridMover.CellToWorld(world.spawn);
             cam.transform.position = new Vector3(spawn.x, spawn.y, -10f);
+            cam.gameObject.AddComponent<AudioListener>();
             var follow = cam.gameObject.AddComponent<CameraFollow>();
             Set(follow, "target", world.player.transform);
             Set(follow, "map", world.map);
             Set(follow, "cam", cam);
             AddGlobalLight2D();
+
+            // ===== 사운드: 배경음 + 효과음 소스 =====
+            var audioGo = new GameObject("Audio");
+            var audioManager = audioGo.AddComponent<AudioManager>();
+            var bgmSrc = new GameObject("BGM").AddComponent<AudioSource>(); bgmSrc.transform.SetParent(audioGo.transform, false);
+            var sfxSrc = new GameObject("SFX").AddComponent<AudioSource>(); sfxSrc.transform.SetParent(audioGo.transform, false);
+            bgmSrc.playOnAwake = false; bgmSrc.loop = true; sfxSrc.playOnAwake = false;
+            Set(audioManager, "bgmSource", bgmSrc);
+            Set(audioManager, "sfxSource", sfxSrc);
+            SetArr(audioManager, "bgmClips", new UnityEngine.Object[] { sounds.bgmTitle, sounds.bgmTown, sounds.bgmRace });
+            SetArr(audioManager, "sfxClips", new UnityEngine.Object[] { sounds.click, sounds.coin, sounds.door, sounds.search, sounds.fanfare, sounds.gate, sounds.trash });
+            if (sounds.bgmTown == null) Debug.LogWarning("[HorseRanch] 사운드가 없습니다. Tools > HorseRanch > 전체 자동 생성을 다시 실행하세요.");
 
             // ===== Canvas (해상도 대응: Scale With Screen Size 1920×1080, Match 0.5) =====
             var canvasGo = new GameObject("RanchCanvas", typeof(RectTransform));
@@ -119,6 +134,8 @@ namespace HorseRanch.EditorTools
             var dialogue = BuildDialogue(root);
             BuildRaceOverlay(root, world.race);
             var toast = BuildToast(root);
+            var title = BuildTitle(root, titleBg);
+            var settings = BuildSettings(root);
             var modal = BuildModal(root);
             var fade = BuildFade(root);
 
@@ -130,6 +147,15 @@ namespace HorseRanch.EditorTools
             Set(rootUI, "dialogue", dialogue);
             Set(rootUI, "race", world.race);
             Set(rootUI, "search", search);
+            Set(rootUI, "title", title);
+            Set(rootUI, "settings", settings);
+            Set(rootUI, "audioManager", audioManager);
+            Set(search, "audioManager", audioManager);
+            Set(settings, "audioManager", audioManager);
+            Set(title, "runner", runner);
+            Set(title, "ui", rootUI);
+            Set(title, "settings", settings);
+            Set(title, "audioManager", audioManager);
             Set(rootUI, "fade", fade);
             SetArr(rootUI, "windows", windows);
             SetV2I(rootUI, "spawnCell", world.spawn);
@@ -1065,6 +1091,147 @@ namespace HorseRanch.EditorTools
             Set(view, "hintText", hint);
             Set(view, "shakeTarget", (RectTransform)bar.transform); // 레이아웃 밖(늘림)이라 흔들어도 위치가 유지됨
             box.gameObject.SetActive(false);
+            return view;
+        }
+
+        // =====================================================================
+        // 타이틀 화면 / 설정 창
+        // =====================================================================
+        private static TitleView BuildTitle(RectTransform root, Sprite background)
+        {
+            var host = Stretch(NewRect("Title", root));
+            var view = host.gameObject.AddComponent<TitleView>();
+            var screen = Img(Stretch(NewRect("Screen", host)), new Color(0.1f, 0.08f, 0.14f), false, true);  // 뒤 클릭 차단
+            var bg = Img(Stretch(NewRect("Background", screen.transform)), Color.white);
+            bg.sprite = background;
+            bg.raycastTarget = false;
+
+            // 로고 (위아래로 살짝 흔들림)
+            var logo = NewRect("Logo", screen.transform);
+            Place(logo, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -150f), new Vector2(1100f, 230f));
+            var t = NewText("Title", logo, "질주마 목장", 128f, UITheme.BoardFg, TextAlignmentOptions.Center, true);
+            Place(t.rectTransform, new Vector2(0f, 1f), Vector2.one, new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 150f));
+            t.outlineWidth = 0.22f;
+            t.outlineColor = new Color32(60, 30, 20, 255);
+            t.characterSpacing = 6f;
+            var sub = NewText("Sub", logo, "HORSE RANCH  ·  육성 · 경주 · 마권", 30f, UITheme.White, TextAlignmentOptions.Center, true);
+            Place(sub.rectTransform, Vector2.zero, new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 20f), new Vector2(0f, 46f));
+            sub.outlineWidth = 0.2f;
+            sub.outlineColor = new Color32(40, 30, 50, 255);
+
+            // 메뉴
+            var menu = NewRect("Menu", screen.transform);
+            Place(menu, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 1f), new Vector2(0f, 40f), new Vector2(460f, 360f));
+            V(menu, 14f, 0, 0, 0, 0, TextAnchor.UpperCenter);
+            var buttons = new Button[4];
+            var images = new Image[4];
+            var labels = new TMP_Text[4];
+            string[] names = { "이어하기", "새 게임", "설정", "게임 종료" };
+            for (int i = 0; i < 4; i++)
+            {
+                TextMeshProUGUI l;
+                buttons[i] = Btn("Menu_" + i, menu, names[i], new Color(0.08f, 0.1f, 0.08f, 0.78f), UITheme.White, 30f, out l);
+                LE(buttons[i], -1f, 70f);
+                images[i] = (Image)buttons[i].targetGraphic;
+                labels[i] = l;
+            }
+            var info = NewText("ContinueInfo", screen.transform, "", 20f, UITheme.White, TextAlignmentOptions.Center);
+            Place(info.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 1f), new Vector2(0f, -335f), new Vector2(600f, 32f));
+            info.outlineWidth = 0.2f;
+            info.outlineColor = new Color32(20, 20, 20, 255);
+
+            // 경주로를 달리는 말 (배경 아래쪽 흙길 위)
+            var horse = Img(NewRect("RunningHorse", screen.transform), new Color(0.55f, 0.34f, 0.2f));
+            Place(horse.rectTransform, Vector2.zero, Vector2.zero, new Vector2(0.5f, 0f), new Vector2(-200f, 70f), new Vector2(150f, 112f));
+            horse.sprite = art.gallopA;
+            horse.preserveAspect = true;
+            horse.raycastTarget = false;
+            var silk = Img(NewRect("Silk", horse.transform), UITheme.Silk[0]);
+            Stretch(silk.rectTransform);
+            silk.sprite = art.silk;
+            silk.preserveAspect = true;
+            silk.raycastTarget = false;
+
+            var hint = NewText("Hint", screen.transform, "↑↓ 선택 · E / Enter 결정 · 마우스 클릭", 18f, UITheme.White, TextAlignmentOptions.Center);
+            Place(hint.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 14f), new Vector2(700f, 28f));
+            hint.outlineWidth = 0.2f;
+            hint.outlineColor = new Color32(20, 20, 20, 255);
+            var ver = NewText("Version", screen.transform, "v0.6 · 사운드·그림 모두 코드로 생성", 15f, new Color(1f, 1f, 1f, 0.6f), TextAlignmentOptions.MidlineRight);
+            Place(ver.rectTransform, Vector2.right, Vector2.right, Vector2.right, new Vector2(-20f, 14f), new Vector2(500f, 26f));
+
+            Set(view, "root", screen.gameObject);
+            SetArr(view, "buttons", buttons);
+            SetArr(view, "buttonImages", images);
+            SetArr(view, "buttonLabels", labels);
+            Set(view, "continueInfo", info);
+            Set(view, "runnerHorse", horse.rectTransform);
+            Set(view, "runnerImage", horse);
+            SetArr(view, "gallopFrames", new UnityEngine.Object[] { art.gallopA, art.gallopB });
+            Set(view, "logo", logo);
+            return view;
+        }
+
+        /// <summary>설정 창: 행마다 [이름 | ◀ 값 ▶]</summary>
+        private static SettingsView BuildSettings(RectTransform root)
+        {
+            var host = Stretch(NewRect("Settings", root));
+            var view = host.gameObject.AddComponent<SettingsView>();
+            var dim = Img(Stretch(NewRect("Dim", host)), new Color(0f, 0f, 0f, 0.55f), false, true);
+            var frame = Panel("Frame", dim.transform, UITheme.Background).rectTransform;
+            Place(frame, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1000f, 640f));
+            V(frame, 12f, 36, 36, 26, 26);
+            var head = NewText("Title", frame, "설정", 34f, Ink, TextAlignmentOptions.MidlineLeft, true); LE(head, -1f, 50f);
+
+            var rowBgs = new Image[4];
+            var arrows = new Button[8];
+            string[] names = { "배경음", "효과음", "창 크기", "화면 모드" };
+            UIBar bgmBar = null, sfxBar = null;
+            TMP_Text bgmText = null, sfxText = null, resText = null, modeText = null;
+            for (int r = 0; r < 4; r++)
+            {
+                var row = Panel("Row_" + r, frame, UITheme.Panel);
+                LE(row, -1f, 78f);
+                H(row, 14f, 24, 20, 10, 10);
+                rowBgs[r] = row;
+                var n = NewText("Name", row.transform, names[r], 24f, Ink, TextAlignmentOptions.MidlineLeft, true); LE(n, 170f);
+                arrows[r * 2] = Btn("Left", row.transform, "◀", UITheme.Panel2, Ink, 22f); LE(arrows[r * 2], 60f, 54f);
+                var mid = NewRect("Value", row.transform);
+                LE(mid, -1f, -1f, 1f);
+                if (r < 2)
+                {
+                    H(mid, 12f, 0, 0, 18, 18);
+                    var bar = Bar("Bar", mid, UITheme.Panel2, UITheme.Turf); LE(bar, -1f, 20f, 1f);
+                    var v = NewText("Percent", mid, "60%", 22f, Ink, TextAlignmentOptions.MidlineRight, true); LE(v, 80f);
+                    if (r == 0) { bgmBar = bar; bgmText = v; } else { sfxBar = bar; sfxText = v; }
+                }
+                else
+                {
+                    var v = NewText("Text", mid, "", 22f, Ink, TextAlignmentOptions.Center, true);
+                    Stretch(v.rectTransform);
+                    if (r == 2) resText = v; else modeText = v;
+                }
+                arrows[r * 2 + 1] = Btn("Right", row.transform, "▶", UITheme.Panel2, Ink, 22f); LE(arrows[r * 2 + 1], 60f, 54f);
+            }
+            var note = NewText("Note", frame, "", 17f, Mute, TextAlignmentOptions.TopLeft); LE(note, -1f, 54f);
+            var bottom = NewRect("Bottom", frame);
+            LE(bottom, -1f, 62f);
+            H(bottom, 12f, 0, 0, 0, 0, TextAnchor.MiddleRight);
+            var keys = NewText("Keys", bottom, "↑↓ 항목 · ←→ 변경 · E 적용 · Esc 닫기", 16f, Mute); LE(keys, -1f, -1f, 1f);
+            var apply = Btn("Apply", bottom, "적용", UITheme.Turf, White, 22f); LE(apply, 180f);
+            var close = Btn("Close", bottom, "닫기", UITheme.Panel2, Ink, 22f); LE(close, 150f);
+
+            Set(view, "root", dim.gameObject);
+            SetArr(view, "rowBackgrounds", rowBgs);
+            SetArr(view, "arrowButtons", arrows);
+            Set(view, "bgmBar", bgmBar);
+            Set(view, "bgmText", bgmText);
+            Set(view, "sfxBar", sfxBar);
+            Set(view, "sfxText", sfxText);
+            Set(view, "resolutionText", resText);
+            Set(view, "modeText", modeText);
+            Set(view, "applyButton", apply);
+            Set(view, "closeButton", close);
+            Set(view, "noteText", note);
             return view;
         }
 

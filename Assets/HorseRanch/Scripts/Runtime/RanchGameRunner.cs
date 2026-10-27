@@ -20,6 +20,11 @@ namespace HorseRanch
         [SerializeField] private bool autoSave = true;
 
         private RanchGame game;
+        private bool hasSave;
+
+        /// <summary>이어할 수 있는 진행 기록이 있는지 (시작 시 세이브 파일이 있었거나, 이번 실행에서 플레이를 시작함)</summary>
+        public bool HasSave { get { return hasSave; } }
+        public void MarkPlayed() { hasSave = true; }
 
         public GameDatabaseSO Database { get { return database; } }
         public string SavePath { get { return Path.Combine(Application.persistentDataPath, saveFileName); } }
@@ -58,6 +63,7 @@ namespace HorseRanch
             game.Changed += HandleChanged;
 
             GameState loaded = TryLoad();
+            hasSave = loaded != null;
             if (loaded != null) game.LoadState(loaded);
             else game.NewGame();
             Debug.Log("[HorseRanch] 게임 시작 · " + game.Summary() + " · 저장 위치: " + SavePath);

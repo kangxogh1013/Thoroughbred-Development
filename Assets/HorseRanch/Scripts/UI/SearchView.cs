@@ -10,6 +10,7 @@ namespace HorseRanch
     public class SearchView : MonoBehaviour
     {
         [SerializeField] private RanchGameRunner runner;
+        [SerializeField] private AudioManager audioManager;
         [SerializeField] private GameObject root;
         [SerializeField] private TMP_Text titleText;
         [SerializeField] private UIBar gauge;
@@ -70,6 +71,7 @@ namespace HorseRanch
             {
                 progress += g.SearchPerPress;
                 shake = 0.12f;
+                if (audioManager != null) audioManager.PlaySfx(SfxId.Search);
             }
             progress = Mathf.Max(0f, progress - g.Data.balance.searchDecay * Time.deltaTime);
             if (progress >= 1f)
@@ -78,6 +80,7 @@ namespace HorseRanch
                 int money;
                 var r = g.SearchTrash(bin, out money);
                 ShowResult(r, money);
+                if (audioManager != null) audioManager.PlaySfx(r == TrashResult.Money ? SfxId.Coin : SfxId.Trash);
                 RefreshStatus();
                 CheckStop();
             }

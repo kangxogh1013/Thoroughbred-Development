@@ -31,6 +31,8 @@ namespace HorseRanch.EditorTools
             var db = HorseRanchDataBuilder.Build(false);
             var art = HorseRanchArtBuilder.BuildSprites();
             var font = HorseRanchArtBuilder.EnsureKoreanFont(true);
+            HorseRanchSoundBuilder.Build();   // 배경음 3곡 + 효과음 7종 (WAV)
+            HorseRanchTitleArt.Build();       // 타이틀 배경 그림
             HorseRanchSceneBuilder.Build(db, art, font);
 
             EditorUtility.DisplayDialog("질주마 목장",
@@ -38,7 +40,7 @@ namespace HorseRanch.EditorTools
                 "· 씬: " + HorseRanchPaths.ScenePath + "\n" +
                 "· 데이터: " + HorseRanchPaths.Data + "\n" +
                 (font == null ? "\n※ 한글 폰트가 없어 글자가 □로 보일 수 있습니다.\n  Tools > HorseRanch > 3. 한글 폰트 설정 후 다시 생성하세요.\n" : "") +
-                "\n▶ Play 후 WASD/방향키 이동, E 상호작용, Tab 인벤토리, J 업적.", "확인");
+                "\n▶ Play → 타이틀 화면에서 새 게임/이어하기. 게임 중 Esc = 메뉴(설정·타이틀로).", "확인");
         }
 
         [MenuItem(Menu + "1. 데이터 에셋 생성 (ScriptableObject)", false, 20)]
@@ -57,6 +59,16 @@ namespace HorseRanch.EditorTools
             if (!NotPlaying()) return;
             HorseRanchPaths.EnsureFolders();
             HorseRanchArtBuilder.BuildSprites();
+        }
+
+        [MenuItem(Menu + "2-1. 사운드 · 타이틀 그림 생성", false, 23)]
+        public static void BuildSoundAndTitle()
+        {
+            if (!NotPlaying()) return;
+            HorseRanchPaths.EnsureFolders();
+            HorseRanchSoundBuilder.Build();
+            var t = HorseRanchTitleArt.Build();
+            if (t != null) { Selection.activeObject = t; EditorGUIUtility.PingObject(t); }
         }
 
         [MenuItem(Menu + "3. 한글 폰트 설정", false, 22)]
@@ -157,6 +169,7 @@ namespace HorseRanch.EditorTools
             Ensure(Root, "Art");
             Ensure(Root, "Fonts");
             Ensure(Root, "Scenes");
+            Ensure(Root, "Audio");
         }
 
         private static void Ensure(string parent, string name)
