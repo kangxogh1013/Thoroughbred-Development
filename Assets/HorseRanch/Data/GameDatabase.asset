@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a5c021a726fe6d46bd3791188da23ad, type: 3}
+  m_Name: GameDatabase
+  m_EditorClassIdentifier: Assembly-CSharp::HorseRanch.GameDatabaseSO
+  balance: {fileID: 11400000, guid: 271c293c94435144fbea3e4b9c55bfea, type: 2}
+  statTable: {fileID: 11400000, guid: e3ddfd43c1873f542949c9aaad32c691, type: 2}
+  content: {fileID: 11400000, guid: 9890fc8914b78034f87364e2ac809b29, type: 2}
+  races:
+  - {fileID: 11400000, guid: 99d1025ca3b4b784180b365c5e733c89, type: 2}
+  - {fileID: 11400000, guid: daf22ceefba558146b44ec9d86d693d2, type: 2}
+  items:
+  - {fileID: 11400000, guid: 30e36b11ffaf43d4f9f5dea290372fd5, type: 2}
+  - {fileID: 11400000, guid: 853a93ed83f0d824fbbe6f2662cb2568, type: 2}
+  - {fileID: 11400000, guid: 3d66ec3c64a895e4c85492a48be02b12, type: 2}
+  achievements:
+  - {fileID: 11400000, guid: f425f6b7216a3b4479f08a2296bca4f8, type: 2}
+  - {fileID: 11400000, guid: b1f4f002e8632844287107e2bffbcafe, type: 2}
+  - {fileID: 11400000, guid: 9dc1212f5a95ed34980c8b6513181fc8, type: 2}
+  - {fileID: 11400000, guid: 6aef8352bbb7fa3458e5a9c4c2f11055, type: 2}
+  - {fileID: 11400000, guid: 5c323ef8cd84ac442b4f89984fbf3b4a, type: 2}
+  - {fileID: 11400000, guid: 4505bddc60794c14a809facba1ad563a, type: 2}
+  - {fileID: 11400000, guid: 56d8a728b76f2b54e957e16803192160, type: 2}
+  - {fileID: 11400000, guid: a75501837c4432642940ce04901cce1b, type: 2}

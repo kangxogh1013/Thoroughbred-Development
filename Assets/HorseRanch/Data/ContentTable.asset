@@ -1,0 +1,79 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ec4284e4b77d3e4ab0cd375a8f787c0, type: 3}
+  m_Name: ContentTable
+  m_EditorClassIdentifier: Assembly-CSharp::HorseRanch.ContentTableSO
+  namePrefixes:
+  - "\uBC88\uAC1C"
+  - "\uCC9C\uB465"
+  - "\uBC14\uB78C"
+  - "\uC740\uBE5B"
+  - "\uD751\uC9C4\uC8FC"
+  - "\uD0DC\uC591"
+  - "\uB2EC\uBE5B"
+  - "\uD3ED\uD48D"
+  - "\uCCAD\uB8E1"
+  - "\uD669\uAE08"
+  - "\uCD08\uC6D0"
+  - "\uC9C8\uD48D"
+  - "\uAC15\uCCA0"
+  - "\uC0C8\uBCBD"
+  - "\uBCC4\uBE5B"
+  - "\uD55C\uB77C"
+  - "\uBB34\uC9C0\uAC1C"
+  - "\uBD88\uAF43"
+  - "\uD30C\uB3C4"
+  - "\uC124\uC6D0"
+  nameSuffixes:
+  - "\uC9C8\uC8FC"
+  - "\uC655"
+  - "\uD638"
+  - "\uC2A4\uD0C0"
+  - "\uD0B9"
+  - "\uC758\uAFC8"
+  - "\uB300\uC7A5"
+  - "\uD55C\uBCC4"
+  - "\uC544\uB9AC"
+  - "\uB3CC\uD48D"
+  - "\uB9C8\uB8E8"
+  - "\uBCF4\uB77C"
+  - "\uB098\uB798"
+  - "\uAC00\uB78C"
+  - "\uBE5B"
+  coats:
+  - name: "\uBC24\uC0C9"
+    color: {r: 0.478, g: 0.29, b: 0.157, a: 1}
+  - name: "\uD751\uC0C9"
+    color: {r: 0.165, g: 0.129, b: 0.11, a: 1}
+  - name: "\uD68C\uC0C9"
+    color: {r: 0.561, g: 0.549, b: 0.525, a: 1}
+  - name: "\uC801\uAC08\uC0C9"
+    color: {r: 0.604, g: 0.29, b: 0.165, a: 1}
+  - name: "\uBC31\uC0C9"
+    color: {r: 0.867, g: 0.847, b: 0.8, a: 1}
+  - name: "\uC5BC\uB8E9"
+    color: {r: 0.42, g: 0.337, b: 0.267, a: 1}
+  trainingEvents:
+  - text: "\uB9D0\uC774 \uB2F9\uADFC\uC744 \uBCF4\uACE0 \uD765\uBD84\uD588\uC2B5\uB2C8\uB2E4!"
+    riskyChoice: "\uB2F9\uADFC\uC744 \uC900\uB2E4"
+    safeChoice: "\uC9C4\uC815\uC2DC\uD0A8\uB2E4"
+  - text: "\uD6C8\uB828\uC7A5\uC5D0 \uB0AF\uC120 \uC0C8\uAC00 \uB0A0\uC544\uB4E4\uC5B4
+      \uB9D0\uC774 \uB180\uB790\uC2B5\uB2C8\uB2E4."
+    riskyChoice: "\uADF8\uB300\uB85C \uD6C8\uB828\uD55C\uB2E4"
+    safeChoice: "\uC7A0\uC2DC \uC26C\uAC8C \uD55C\uB2E4"
+  - text: "\uC606 \uB9C8\uBC29\uC758 \uB9D0\uC5D0\uAC8C \uAC15\uD55C \uACBD\uC7C1\uC2EC\uC744
+      \uBCF4\uC785\uB2C8\uB2E4."
+    riskyChoice: "\uD568\uAED8 \uBCD1\uC8FC\uC2DC\uD0A8\uB2E4"
+    safeChoice: "\uB5BC\uC5B4\uB193\uB294\uB2E4"
+  - text: "\uAC11\uC790\uAE30 \uC18C\uB098\uAE30\uAC00 \uC3DF\uC544\uC9D1\uB2C8\uB2E4."
+    riskyChoice: "\uBE57\uC18D \uD6C8\uB828 \uAC15\uD589"
+    safeChoice: "\uC2E4\uB0B4 \uB9C8\uC7A5\uC73C\uB85C \uC774\uB3D9"

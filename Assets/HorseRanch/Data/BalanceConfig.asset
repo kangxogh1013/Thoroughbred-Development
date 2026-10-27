@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0af41cc8f776d0a4cafa8f655fbcb659, type: 3}
+  m_Name: BalanceConfig
+  m_EditorClassIdentifier: Assembly-CSharp::HorseRanch.BalanceConfigSO
+  config:
+    startGold: 20000
+    startStat: 5
+    statCap: 20
+    trainDays: 2
+    trainBaseGain: 1.6
+    fatigueOnTrain: 14
+    fatigueOnRace: 20
+    restRecovery: 20
+    trainingRecovery: 5
+    retiredRecovery: 30
+    trainingEventChance: 0.08
+    overworkInjuryChance: 0.25
+    minorHealDays: 4
+    majorImproveDays: 7
+    forcedTrainDeathMinor: 0.2
+    forcedTrainDeathMajor: 0.45
+    forcedRaceDeathMinor: 0.25
+    forcedRaceDeathMajor: 0.5
+    maxStable: 8
+    horsePrice: 5000
+    refreshPrice: 500
+    lotCount: 3
+    blindStatMin: 25
+    blindStatMax: 35
+    blindStatEach: 12
+    hunterDiscount: 0.8
+    sellBase: 2000
+    sellPerStat: 150
+    sellPerWin: 5000
+    takeRate: 0.25
+    minBet: 100
+    maxBetPerTicket: 50000
+    marketSimulations: 200
+    npcPool:
+    - 120000
+    - 80000
+    - 90000
+    - 90000
+    - 100000
+    - 140000
+    npcBaseTotal: 26
+    npcGrowthPerDay: 0.4
+    npcMaxTotal: 56
+    npcSpread: 8
+    raceStatGrowth: 0.25
+    retireAt: 15
+    grandPrixInterval: 7
+    grandPrixPrizeMultiplier: 3
+    grandPrixFeeMultiplier: 2
+    grandPrixNpcBonus: 3
+    breedFee: 3000
+    breedCooldown: 5
+    foalInherit: 0.6
+    foalRandomMax: 3
+    foalStatCap: 15
