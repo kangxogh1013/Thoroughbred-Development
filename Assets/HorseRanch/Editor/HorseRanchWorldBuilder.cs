@@ -15,14 +15,16 @@ namespace HorseRanch.EditorTools
     }
 
     /// <summary>
-    /// 쯔꾸르식 맵 6구역: 마을(96×66), 마권 도박장, 경기장(100×32, 8레인 트랙), 상점, 집, 마구간.
+    /// 쯔꾸르식 맵 11구역: 마을(96×66), 마권 도박장, 경기장(100×32, 8레인 트랙), 상점, 집, 마구간, 주민 집 4채, 시장.
     /// 모든 구역은 전역 타일 좌표 하나를 공유하고 x로 100칸 이상 떨어져 있다 (문을 밟으면 순간이동).
     /// </summary>
     public static class HorseRanchWorldBuilder
     {
         // 구역 원점 (전역 타일)
         static readonly Vector2Int TownO = new Vector2Int(0, 0), HallO = new Vector2Int(200, 0), StadiumO = new Vector2Int(300, 0),
-            ShopO = new Vector2Int(500, 0), HomeO = new Vector2Int(600, 0), BarnO = new Vector2Int(700, 0);
+            ShopO = new Vector2Int(500, 0), HomeO = new Vector2Int(600, 0), BarnO = new Vector2Int(700, 0),
+            HouseAO = new Vector2Int(800, 0), HouseBO = new Vector2Int(820, 0), HouseCO = new Vector2Int(840, 0), HouseDO = new Vector2Int(860, 0),
+            MarketO = new Vector2Int(900, 0);
 
         static WorldMap map;
         static Transform worldRoot;
@@ -32,6 +34,8 @@ namespace HorseRanch.EditorTools
         static readonly List<WorldArea> areas = new List<WorldArea>();
         static readonly Dictionary<string, Sprite> props = new Dictionary<string, Sprite>();
         static int npcCount;
+        // 막힌 칸(연못·건물)에 놓인 NPC를 Finish에서 옮기기 위한 목록
+        static readonly List<KeyValuePair<Area, GridMover>> placedNpcs = new List<KeyValuePair<Area, GridMover>>();
 
         class Area
         {
@@ -49,7 +53,7 @@ namespace HorseRanch.EditorTools
         public static WorldBuildResult Build(RanchGameRunner gameRunner, HorseRanchArt art, TMP_FontAsset tmpFont)
         {
             runner = gameRunner; horseArt = art; font = tmpFont;
-            areas.Clear(); props.Clear(); npcCount = 0;
+            areas.Clear(); props.Clear(); placedNpcs.Clear(); npcCount = 0;
             worldRoot = new GameObject("World").transform;
             map = worldRoot.gameObject.AddComponent<WorldMap>();
 
@@ -66,6 +70,7 @@ namespace HorseRanch.EditorTools
             props["plate"] = SignPlate("prop_signplate");
             props["bed"] = Bed("prop_bed");
             props["post"] = StallPost("prop_stallpost");
+            props["trash"] = TrashBin("prop_trashbin");
 
             var result = new WorldBuildResult();
             BuildTown(result);
@@ -74,6 +79,8 @@ namespace HorseRanch.EditorTools
             BuildShop();
             BuildHome();
             BuildBarn();
+            BuildResidences();
+            BuildMarket();
 
             UIFactory.SetArr(map, "areas", areas.ToArray());
 
@@ -120,7 +127,7 @@ namespace HorseRanch.EditorTools
             {
                 { 14, 50 }, { 16, 56 }, { 24, 54 }, { 50, 52 }, { 52, 58 }, { 70, 54 }, { 76, 58 }, { 84, 56 }, { 60, 58 }, { 10, 58 },
                 { 4, 48 }, { 26, 60 }, { 36, 48 }, { 24, 8 }, { 24, 14 }, { 44, 10 }, { 44, 20 }, { 50, 6 }, { 64, 22 }, { 64, 6 },
-                { 4, 26 }, { 18, 24 }, { 38, 22 }, { 54, 22 }, { 92, 36 }, { 70, 36 }, { 36, 40 }, { 15, 48 },
+                { 4, 26 }, { 18, 24 }, { 38, 22 }, { 54, 22 }, { 92, 36 }, { 70, 36 }, { 15, 48 },
             };
             for (int i = 0; i < trees.GetLength(0); i++) Prop(a, "Tree", props["tree"], trees[i, 0] + 0.5f, trees[i, 1], true);
 
@@ -135,17 +142,26 @@ namespace HorseRanch.EditorTools
             Door(a, "Door_Shop", shopDoor, ShopO + new Vector2Int(9, 1), Vector2Int.up);
             Door(a, "Door_Hall", hallDoor, HallO + new Vector2Int(18, 1), Vector2Int.up);
             Door(a, "Door_Stadium", stadiumDoor, StadiumO + new Vector2Int(50, 1), Vector2Int.up);
-            foreach (var d in new[] { houseA, houseB })
-            {
-                a.block[d.x - a.o.x, d.y - a.o.y] = true;
-                Interact(a, "LockedDoor", InteractKind.Talk, "잠긴 문", new[] { "문이 잠겨 있다. 주인은 경마장에 간 것 같다.", "똑똑… 대답이 없다." }, new[] { d }, false, Vector2Int.zero, Vector2Int.zero);
-            }
+            // 주민 집 (모두 들어갈 수 있음)
+            var houseC = BuildingAt(a, "bld_houseC", "주민 집", 6, 52, 6, 5, 2, C(110, 150, 90), C(238, 230, 210), C(100, 90, 70));
+            var houseD = BuildingAt(a, "bld_houseD", "주민 집", 64, 50, 6, 5, 2, C(190, 110, 130), C(240, 232, 226), C(110, 80, 90));
+            Door(a, "Door_HouseA", houseA, HouseAO + new Vector2Int(7, 1), Vector2Int.up);
+            Door(a, "Door_HouseB", houseB, HouseBO + new Vector2Int(7, 1), Vector2Int.up);
+            Door(a, "Door_HouseC", houseC, HouseCO + new Vector2Int(7, 1), Vector2Int.up);
+            Door(a, "Door_HouseD", houseD, HouseDO + new Vector2Int(7, 1), Vector2Int.up);
+            Fill(a, 8, 49, 45, 49, 'r'); Fill(a, 8, 50, 8, 51, 'r');      // 북쪽 골목
+            Fill(a, 48, 49, 66, 49, 'r');
+            // 시장 (광장 북쪽)
+            var marketDoor = BuildingAt(a, "bld_market", "시장", 36, 40, 9, 6, 6, C(220, 140, 50), C(244, 232, 206), C(140, 90, 50));
+            Door(a, "Door_Market", marketDoor, MarketO + new Vector2Int(11, 1), Vector2Int.up);
+            Fill(a, 42, 37, 42, 39, 'r');
 
             // 연못 (북쪽)
             Fill(a, 33, 51, 45, 59, 'k');
             Fill(a, 34, 52, 44, 58, 'v');
             BlockRect(a, 34, 52, 44, 58);
-            Prop(a, "Bench", props["bench"], 39.5f, 50, true); Prop(a, "Bench", props["bench"], 46.5f, 55, true);
+            Pond(a, 34, 52, 44, 58, new Vector2Int(44, 52));                // 오른쪽 아래 구석 물속에 금화 주머니
+            BenchAt(a, 39, 50); BenchAt(a, 46, 55);
 
             // ===== 남쪽: 목장 + 마구간 =====
             FenceRect(a, 4, 4, 22, 18);
@@ -172,7 +188,8 @@ namespace HorseRanch.EditorTools
             // 동쪽 공원 + 연못
             Fill(a, 69, 9, 77, 15, 'k'); Fill(a, 70, 10, 76, 14, 'v'); BlockRect(a, 70, 10, 76, 14);
             Fill(a, 66, 18, 68, 20, 'k'); Fill(a, 79, 5, 81, 7, 'k');
-            foreach (var b in new[] { new Vector2(68.5f, 8), new Vector2(78.5f, 16), new Vector2(72.5f, 18) }) Prop(a, "Bench", props["bench"], b.x, b.y, true);
+            Pond(a, 70, 10, 76, 14, new Vector2Int(-1, -1));
+            BenchAt(a, 68, 8); BenchAt(a, 78, 16); BenchAt(a, 72, 18);
             Prop(a, "Lamp", props["lamp"], 80.5f, 12, true); Prop(a, "Lamp", props["lamp"], 66.5f, 14, true);
 
             // 숨은 공터: 나무 울타리로 막혀 있고, 나무 하나가 통과되는 비밀 길
@@ -181,7 +198,7 @@ namespace HorseRanch.EditorTools
             a.block[84, 7] = false;                       // 비밀 통로 (나무처럼 보이지만 지나갈 수 있음)
             Fill(a, 86, 4, 92, 9, 'k');
             Npc(a, "GambleMaster", Looks.Master, 90, 7, Vector2Int.left, null, InteractKind.GambleMaster, "도박 고수 아저씨");
-            Prop(a, "Bench", props["bench"], 91.5f, 5, true);
+            BenchAt(a, 91, 5);
 
             // ===== 광장 =====
             Prop(a, "Fountain", props["fountain"], 46f, 33f, false, 2, 2);
@@ -192,7 +209,11 @@ namespace HorseRanch.EditorTools
             Sign(a.root, "게시판", new Vector3(42.5f, 36.75f, 0f), 1.6f, board.sortingOrder + 2, 4.2f);
             foreach (var p in new[] { new Vector2Int(40, 25), new Vector2Int(53, 25), new Vector2Int(40, 36), new Vector2Int(53, 36) })
                 Prop(a, "Lamp", props["lamp"], p.x + 0.5f, p.y, true);
-            Prop(a, "Bench", props["bench"], 43.5f, 26, true); Prop(a, "Bench", props["bench"], 50.5f, 26, true);
+            BenchAt(a, 43, 26); BenchAt(a, 50, 26);
+
+            // ===== 쓰레기통 8개 (번호 = BalanceConfig.trashBinValues 인덱스) =====
+            int[,] bins = { { 44, 38 }, { 26, 33 }, { 55, 33 }, { 72, 33 }, { 80, 18 }, { 16, 22 }, { 49, 50 }, { 35, 21 } };
+            for (int i = 0; i < bins.GetLength(0); i++) TrashBinAt(a, i, bins[i, 0], bins[i, 1]);
 
             // ===== 주민 =====
             string[] chatter =
@@ -209,6 +230,10 @@ namespace HorseRanch.EditorTools
                 "동쪽 공원 끝 숲속에 도박 고수가 산다더라. 나무 사이로 길이 있대.",
                 "Shift 누르면 뛸 수 있어. 마을이 넓으니까 M 키로 지도를 봐.",
                 "업적은 J 키, 인벤토리는 Tab 키로 볼 수 있대.",
+                "시장 고급 사료는 먹이면 스탯이 영구히 오른대. 하루에 살 수 있는 개수는 정해져 있지만.",
+                "쓰레기통 뒤지는 사람 봤어? E를 엄청 빨리 누르더라. 가끔 돈도 나온다나?",
+                "벤치에 앉아 있으면 별별 소문이 다 들려.",
+                "주운 쓰레기는 아무 데나 버리면 안 돼! 쓰레기통에만 버려.",
             };
             for (int i = 0; i < 8; i++) Npc(a, "Walker", Looks.Town(i), 6 + i * 11, 30 + (i % 2), Vector2Int.left, new RectInt(3, 29, 90, 4), InteractKind.Talk, Looks.TownName(i), chatter);
             for (int i = 0; i < 3; i++) Npc(a, "PlazaWalker", Looks.Town(8 + i), 42 + i * 4, 28 + i, Vector2Int.down, new RectInt(40, 25, 14, 12), InteractKind.Talk, Looks.TownName(8 + i), chatter);
@@ -218,7 +243,7 @@ namespace HorseRanch.EditorTools
 
             Label(a, "집", 9, 46); Label(a, "상점", 21.5f, 46); Label(a, "도박장", 62.5f, 49); Label(a, "경기장", 79.5f, 48);
             Label(a, "목장", 13, 11); Label(a, "마구간", 9.5f, 27); Label(a, "훈련장", 33.5f, 11); Label(a, "교배소", 58.5f, 13);
-            Label(a, "광장", 46.5f, 30); Label(a, "공원", 73, 20); Label(a, "연못", 39, 55);
+            Label(a, "광장", 46.5f, 30); Label(a, "공원", 73, 20); Label(a, "연못", 39, 55); Label(a, "시장", 40.5f, 47);
 
             result.spawn = G(a, 8, 39);
             Finish(a);
@@ -316,8 +341,8 @@ namespace HorseRanch.EditorTools
             var bb = Prop(a, "Bulletin", props["board"], 62.5f, 7, true);
             Interact(a, "Bulletin", InteractKind.Bulletin, "경기 게시판", null, new[] { G(a, 62, 7) }, false, Vector2Int.zero, Vector2Int.zero);
             Sign(a.root, "게시판", new Vector3(a.o.x + 62.5f, 8.75f, 0f), 1.6f, bb.sortingOrder + 2, 4.2f);
-            for (int x = 68; x <= 92; x += 3) { Prop(a, "Bench", props["bench"], x + 0.5f, 3, true); Prop(a, "Bench", props["bench"], x + 0.5f, 6, true); }
-            for (int x = 18; x <= 40; x += 4) Prop(a, "Bench", props["bench"], x + 0.5f, 3, true);
+            for (int x = 68; x <= 92; x += 3) { BenchAt(a, x, 3); BenchAt(a, x, 6); }
+            for (int x = 18; x <= 40; x += 4) BenchAt(a, x, 3);
 
             string[] fans =
             {
@@ -352,8 +377,7 @@ namespace HorseRanch.EditorTools
             Interact(a, "ShopCounter", InteractKind.Shop, "상점 카운터", null, Cells(a, 5, 7, 12, 7), false, Vector2Int.zero, Vector2Int.zero);
             Npc(a, "Shopkeeper", Looks.Shopkeeper, 8, 8, Vector2Int.down, null, InteractKind.Shop, "상점 주인",
                 "어서 오세요! 치료약, 영양제, 에너지 드링크 있어요. 마시장 말도 소개해 드리죠.");
-            for (int i = 0; i < 3; i++) { Prop(a, "Shelf", props["shelf"], 1 + i, 9, false); Prop(a, "Shelf", props["shelf"], 14 + i, 9, false); }
-            BlockRect(a, 1, 9, 3, 9); BlockRect(a, 14, 9, 16, 9);
+            for (int i = 0; i < 3; i++) { ShelfAt(a, 1 + i, 9, -1, ShopShelfLines); ShelfAt(a, 14 + i, 9, -1, ShopShelfLines); }
             Prop(a, "Plant", props["plant"], 1.5f, 1, true); Prop(a, "Plant", props["plant"], 16.5f, 1, true);
             Npc(a, "HorseDealer", Looks.Dealer, 15, 4, Vector2Int.left, null, InteractKind.Shop, "마시장 상인",
                 "블라인드 마시장이오. 능력치는 사 봐야 알지. 그게 묘미 아니겠소?", "한 능력치만 10 넘는 특화마를 모으는 사람도 있다더군.");
@@ -377,7 +401,7 @@ namespace HorseRanch.EditorTools
             BlockRect(a, 2, 6, 2, 7);
             Interact(a, "Bed", InteractKind.Sleep, "침대 (잠자기)", null, Cells(a, 2, 6, 2, 7), false, G(a, 3, 6), Vector2Int.down);
             Prop(a, "Table", props["table"], 7f, 5f, false, 2, 1); BlockRect(a, 7, 5, 8, 5);
-            Prop(a, "Shelf", props["shelf"], 12, 8, false); Prop(a, "Shelf", props["shelf"], 13, 8, false); BlockRect(a, 12, 8, 13, 8);
+            ShelfAt(a, 12, 8, (int)SecretId.HomeShelf, BookLines); ShelfAt(a, 13, 8, -1, BookLines);
             Prop(a, "Plant", props["plant"], 14.5f, 1, true);
             Npc(a, "Mom", Looks.Mom, 12, 4, Vector2Int.left, new RectInt(HomeO.x + 10, 2, 4, 4), InteractKind.Talk, "엄마",
                 "일찍 자야 내일 경주를 보지!", "돈은 아껴 쓰렴. 마권은 적당히!", "침대에서 자면 하루가 지나간단다.");
@@ -412,11 +436,75 @@ namespace HorseRanch.EditorTools
             }
             var stalls = a.root.gameObject.AddComponent<StallHorses>();
             stalls.EditorSetup(runner, horses, plates, new[] { horseArt.gallopA, horseArt.gallopB });
-            Prop(a, "Hay", props["hay"], 21.5f, 8, true); Prop(a, "Hay", props["hay"], 22.5f, 6, true); Prop(a, "Hay", props["hay"], 1.5f, 2, true);
+            HayAt(a, 21, 8, -1); HayAt(a, 22, 6, (int)SecretId.BarnHay); HayAt(a, 1, 2, -1); HayAt(a, 1, 4, -1); HayAt(a, 22, 2, -1);
             Npc(a, "StableKeeper", Looks.StableKeeper, 20, 4, Vector2Int.left, null, InteractKind.Stable, "마구간지기 박씨",
-                "말들은 내가 잘 돌보고 있지. 들여다볼 텐가?", "훈련 마친 말은 푹 쉬게 해. 피로가 쌓이면 경주에서 느려진다네.", "부상당한 말은 치료약부터 먹이게. 무리하면 큰일 나.");
+                "말들은 내가 잘 돌보고 있지. 들여다볼 텐가?", "훈련 마친 말은 푹 쉬게 해. 피로가 쌓이면 경주에서 느려진다네.", "부상당한 말은 치료약부터 먹이게. 무리하면 큰일 나.",
+                "볏짚은 매일 갈아 주지. 근데 구석 더미 하나는 몇 년째 안 건드렸구먼… 허허.");
             Door(a, "Exit", G(a, 12, 0), TownO + new Vector2Int(9, 20), Vector2Int.down);
             Label(a, "말 칸", 10, 7.5f); Label(a, "마구간지기", 20, 3); Label(a, "출구", 12, 1.5f);
+            Finish(a);
+        }
+
+        // =====================================================================
+        // 주민 집 4채 (14 × 10): 책장·침대·주민. A 집 책장엔 넝마주이 수첩
+        // =====================================================================
+        static void BuildResidences()
+        {
+            BuildResidence(HouseAO, "넝마주이 할아버지 집", TownO + new Vector2Int(30, 43), Looks.Ragpicker, "넝마주이 할아버지", (int)SecretId.Notebook,
+                "젊은이, 남의 집 책장은 함부로 뒤지는 게 아니야… 흠흠.", "버려진 것들 속에 보물이 있는 법이지.", "요즘 쓰레기통도 경쟁이 치열해. 손이 빨라야 해.");
+            BuildResidence(HouseBO, "은퇴한 기수의 집", TownO + new Vector2Int(89, 47), Looks.Jockey, "은퇴한 기수",
+                -1, "현역 땐 장거리 전문이었지. 체력 없으면 마지막 코너에서 다 퍼져.", "근성 높은 말은 몸싸움에서 안 밀려.", "출발 게이트에서 반응속도 좋은 말이 한 발 먼저 나가지.");
+            BuildResidence(HouseCO, "낚시꾼의 집", TownO + new Vector2Int(8, 51), Looks.Fisher, "낚시꾼",
+                -1, "북쪽 연못엔 물고기 말고 다른 것도 있어. 오른쪽 아래 구석에서 뭔가 반짝이는 걸 봤거든.", "동쪽 공원 연못은 그냥 개구리 천국이야.", "오늘은 입질이 없네…");
+            BuildResidence(HouseDO, "화가의 집", TownO + new Vector2Int(66, 49), Looks.Painter, "화가",
+                -1, "마구간 구석 볏짚 더미… 그림 그리다 보니 거기만 몇 년째 그대로더라.", "광장 분수에 비친 노을이 참 예뻐.", "말 그림을 그려 줄까? 다음에.");
+        }
+
+        static void BuildResidence(Vector2Int o, string name, Vector2Int townExit, CharacterLook look, string npcName, int shelfSecret, params string[] talk)
+        {
+            var a = NewArea(name, o, 14, 10, 'w');
+            Walls(a);
+            Opening(a, 7, 0);
+            Fill(a, 4, 3, 9, 5, 'u');
+            PlaceSprite(a.root, "Bed", props["bed"], new Vector3(a.o.x + 1f, 6f, 0f), 6f);
+            BlockRect(a, 1, 6, 1, 7);
+            Interact(a, "Bed", InteractKind.Talk, "남의 침대", new[] { "남의 침대에서 잘 수는 없지.", "푹신해 보인다… 하지만 참자." }, Cells(a, 1, 6, 1, 7), false, Vector2Int.zero, Vector2Int.zero);
+            Prop(a, "Table", props["table"], 6f, 5f, false, 2, 1); BlockRect(a, 6, 5, 7, 5);
+            ShelfAt(a, 10, 7, shelfSecret, BookLines); ShelfAt(a, 11, 7, -1, BookLines);
+            Prop(a, "Plant", props["plant"], 12.5f, 1, true);
+            Npc(a, "Resident", look, 9, 3, Vector2Int.down, new RectInt(o.x + 8, 2, 4, 3), InteractKind.Talk, npcName, talk);
+            Door(a, "Exit", G(a, 7, 0), townExit, Vector2Int.down);
+            Label(a, "책장", 11, 8.5f); Label(a, "출구", 7, 1.5f);
+            Finish(a);
+        }
+
+        // =====================================================================
+        // 시장 (22 × 13): 분식 노점(사람 음식) + 사료 가게(말 음식)
+        // =====================================================================
+        static void BuildMarket()
+        {
+            var a = NewArea("시장", MarketO, 22, 13, 'p');
+            Walls(a);
+            Opening(a, 11, 0);
+            var food = Stall("prop_stall_food", 6, C(200, 60, 60), new[] { C(240, 200, 80), C(250, 250, 240), C(200, 120, 60) });
+            var feed = Stall("prop_stall_feed", 6, C(60, 130, 80), new[] { C(240, 130, 40), C(230, 220, 160), C(200, 170, 60) });
+            PlaceSprite(a.root, "Stall_Food", food, new Vector3(a.o.x + 3f, 7f, 0f), 7f);
+            PlaceSprite(a.root, "Stall_Feed", feed, new Vector3(a.o.x + 13f, 7f, 0f), 7f);
+            BlockRect(a, 3, 7, 8, 9); BlockRect(a, 13, 7, 18, 9);
+            Npc(a, "Snack", Looks.Auntie, 5, 8, Vector2Int.down, null, InteractKind.Market, "분식집 아주머니",
+                "김밥 한 줄 먹고 가! 든든해야 쓰레기통도 잘 뒤지지. 호호.", "커피 마시면 하루 종일 발이 가벼워.");
+            Npc(a, "Feed", Looks.FeedSeller, 15, 8, Vector2Int.down, null, InteractKind.Market, "사료 가게 아저씨",
+                "고급 사료는 하루 두 포대, 황금 귀리는 하루 하나만 팔아. 귀한 거라.", "당근은 컨디션, 각설탕은 피로에 그만이지.");
+            Interact(a, "FoodStall", InteractKind.Market, "분식 노점", new[] { "어서 와요! 뭐 먹을래요?" }, Cells(a, 3, 7, 8, 7), false, Vector2Int.zero, Vector2Int.zero);
+            Interact(a, "FeedStall", InteractKind.Market, "사료 가게", new[] { "말 먹이 사러 왔소?" }, Cells(a, 13, 7, 18, 7), false, Vector2Int.zero, Vector2Int.zero);
+            Sign(a.root, "분식", new Vector3(a.o.x + 6f, 10.6f, 0f), 1.6f, YSort.Order(6f), 4.2f);
+            Sign(a.root, "말 사료", new Vector3(a.o.x + 16f, 10.6f, 0f), 2.2f, YSort.Order(6f), 4.2f);
+            foreach (int x in new[] { 3, 16 }) { Prop(a, "Table", props["table"], x, 3f, false, 2, 1); BlockRect(a, x, 3, x + 1, 3); }
+            Prop(a, "Plant", props["plant"], 1.5f, 1, true); Prop(a, "Plant", props["plant"], 20.5f, 1, true);
+            Npc(a, "Shopper", Looks.Town(36), 8, 4, Vector2Int.right, new RectInt(MarketO.x + 2, 1, 18, 5), InteractKind.Talk, "장보는 주민",
+                "황금 귀리 먹인 말이 G1 우승했대!", "여기 김밥 진짜 맛있어.");
+            Door(a, "Exit", G(a, 11, 0), TownO + new Vector2Int(42, 39), Vector2Int.down);
+            Label(a, "분식 노점", 6, 6); Label(a, "사료 가게", 16, 6); Label(a, "출구", 11, 1.5f);
             Finish(a);
         }
 
@@ -430,6 +518,70 @@ namespace HorseRanch.EditorTools
             a.root = new GameObject("Area_" + name).transform;
             a.root.SetParent(worldRoot, false);
             return a;
+        }
+
+        // ===== 상호작용 소품 =====
+        static readonly string[] BookLines =
+        {
+            "책이 빽빽하게 꽂힌 책장이다. 살펴볼까?",
+            "『경마 입문 — 파리뮤추얼의 모든 것』. 어렵다…", "『말과 함께한 30년』. 먼지가 수북하다.", "요리책 사이에 마권 한 장… 7년 전 꽝 마권이다.",
+            "『초보 목장주를 위한 사료학』. 밑줄이 잔뜩 그어져 있다.", "아무것도 없다. 책 냄새만 난다.",
+        };
+        static readonly string[] ShopShelfLines =
+        {
+            "말 용품이 진열된 선반이다. 살펴볼까?",
+            "편자, 굴레, 안장… 반짝반짝하다.", "가격표가 붙은 빗자루. 말 털 빗는 용도라고 적혀 있다.", "아무것도 없다. 깔끔하게 정리되어 있다.",
+        };
+        static readonly string[] HayLines =
+        {
+            "말 냄새가 나는 볏짚 더미다. 뒤져 볼까?",
+            "볏짚만 한가득이다. 에취!", "생쥐가 후다닥 도망갔다.", "지푸라기가 옷에 잔뜩 붙었다.",
+        };
+        static readonly string[] PondLines =
+        {
+            "맑은 연못이다. 물속을 들여다볼까?",
+            "작은 물고기들이 헤엄친다.", "개구리가 퐁당 뛰어들었다.", "물에 비친 내 얼굴이 보인다.", "수초만 흔들린다.",
+        };
+
+        /// <summary>책장 (살펴보기). secret >= 0이면 그 책장에만 숨겨진 것</summary>
+        static void ShelfAt(Area a, int x, int y, int secret, string[] lines)
+        {
+            Prop(a, "Shelf", props["shelf"], x, y, true);
+            var it = Interact(a, "Shelf", InteractKind.Search, "책장", lines, new[] { G(a, x, y) }, false, Vector2Int.zero, Vector2Int.zero);
+            it.EditorSetParam(secret);
+        }
+
+        static void HayAt(Area a, int x, int y, int secret)
+        {
+            Prop(a, "Hay", props["hay"], x + 0.5f, y, true);
+            var it = Interact(a, "Hay", InteractKind.Search, "볏짚 더미", HayLines, new[] { G(a, x, y) }, false, Vector2Int.zero, Vector2Int.zero);
+            it.EditorSetParam(secret);
+        }
+
+        /// <summary>연못 물 칸 전체를 살펴볼 수 있게. secret 칸에만 금화 주머니 (x &lt; 0이면 없음)</summary>
+        static void Pond(Area a, int x0, int y0, int x1, int y1, Vector2Int secret)
+        {
+            var water = new List<Vector2Int>();
+            for (int x = x0; x <= x1; x++) for (int y = y0; y <= y1; y++) if (new Vector2Int(x, y) != secret) water.Add(G(a, x, y));
+            Interact(a, "Pond", InteractKind.Search, "연못", PondLines, water.ToArray(), false, Vector2Int.zero, Vector2Int.zero);
+            if (secret.x < 0) return;
+            var it = Interact(a, "PondSecret", InteractKind.Search, "연못", PondLines, new[] { G(a, secret.x, secret.y) }, false, Vector2Int.zero, Vector2Int.zero);
+            it.EditorSetParam((int)SecretId.Pond);
+        }
+
+        /// <summary>앉을 수 있는 벤치</summary>
+        static void BenchAt(Area a, int x, int y)
+        {
+            Prop(a, "Bench", props["bench"], x + 0.5f, y, true);
+            Interact(a, "Bench", InteractKind.Bench, "벤치 (앉기)", null, new[] { G(a, x, y) }, false, Vector2Int.zero, Vector2Int.zero);
+        }
+
+        /// <summary>쓰레기통: 연타로 뒤지기 + 쓰레기 버리기</summary>
+        static void TrashBinAt(Area a, int index, int x, int y)
+        {
+            Prop(a, "TrashBin", props["trash"], x + 0.5f, y, true);
+            var it = Interact(a, "TrashBin_" + index, InteractKind.TrashBin, "쓰레기통", null, new[] { G(a, x, y) }, false, Vector2Int.zero, Vector2Int.zero);
+            it.EditorSetParam(index);
         }
 
         static Vector2Int G(Area a, int x, int y) { return a.o + new Vector2Int(x, y); }
@@ -481,8 +633,52 @@ namespace HorseRanch.EditorTools
             BlockRect(a, x0, y0, x1, y1); // 울타리 안은 말 전용
         }
 
+        /// <summary>
+        /// NPC가 물·건물 같은 막힌 칸이나 다른 NPC와 같은 칸에서 시작하지 않도록, 가장 가까운 빈 칸으로 옮긴다.
+        /// (예전: 북쪽 주민이 연못 한가운데 서 있던 문제)
+        /// </summary>
+        static void FixNpcStarts(Area a)
+        {
+            var used = new HashSet<Vector2Int>();
+            foreach (var kv in placedNpcs)
+            {
+                if (kv.Key != a) continue;
+                var m = kv.Value;
+                var start = m.EditorStartCell;
+                if (Free(a, start, used)) { used.Add(start); continue; }
+                var q = new Queue<Vector2Int>();
+                var seen = new HashSet<Vector2Int> { start };
+                q.Enqueue(start);
+                Vector2Int found = start;
+                bool ok = false;
+                while (q.Count > 0 && !ok)
+                {
+                    var c = q.Dequeue();
+                    foreach (var d in new[] { Vector2Int.down, Vector2Int.up, Vector2Int.left, Vector2Int.right })
+                    {
+                        var n = c + d;
+                        if (seen.Contains(n) || n.x < a.o.x || n.y < a.o.y || n.x >= a.o.x + a.w || n.y >= a.o.y + a.h) continue;
+                        seen.Add(n);
+                        if (Free(a, n, used)) { found = n; ok = true; break; }
+                        q.Enqueue(n);
+                    }
+                }
+                if (!ok) { Debug.LogWarning("[HorseRanch] NPC 빈 칸을 못 찾음: " + m.name); continue; }
+                Debug.Log("[HorseRanch] " + m.name + " 시작 칸 " + start + " 이(가) 막혀 있어 " + found + " (으)로 옮김");
+                m.EditorMoveStart(found);
+                used.Add(found);
+            }
+        }
+
+        static bool Free(Area a, Vector2Int g, HashSet<Vector2Int> used)
+        {
+            int x = g.x - a.o.x, y = g.y - a.o.y;
+            return x >= 0 && y >= 0 && x < a.w && y < a.h && !a.block[x, y] && !used.Contains(g);
+        }
+
         static void Finish(Area a)
         {
+            FixNpcStarts(a);
             var sprite = BakeGround("ground_" + areas.Count, a.tiles);
             var sr = PlaceSprite(a.root, "Ground", sprite, new Vector3(a.o.x, a.o.y, 0f), 0f);
             sr.sortingOrder = YSort.GroundOrder;
@@ -600,6 +796,8 @@ namespace HorseRanch.EditorTools
             npc.EditorSetup(mover, rect, !wander.HasValue);
             var it = mover.gameObject.AddComponent<Interactable>();
             it.EditorSetup(map, kind, display, lines ?? new string[0], new Vector2Int[0], false, warp, warpFace);
+            // 카운터 뒤 직원처럼 일부러 막힌 칸에 세운 고정 NPC는 제외하고, 돌아다니는 NPC만 검사
+            if (wander.HasValue) placedNpcs.Add(new KeyValuePair<Area, GridMover>(a, mover));
             return npc;
         }
 
@@ -714,6 +912,12 @@ namespace HorseRanch.EditorTools
             public static CharacterLook Dealer { get { return new CharacterLook(Skin3, Hex(0x2A1C14), Hex(0x7A3B2E), Hex(0x2E2A26), Hex(0x5A4030), 0); } }
             public static CharacterLook Vendor { get { return new CharacterLook(Skin1, Hex(0xC07030), Hex(0xE8C040), Hex(0x3A4A6A), Hex(0xF2F2F2), 0); } }
             public static CharacterLook Mom { get { return new CharacterLook(Skin1, Hex(0x5A3A26), Hex(0xE0A0B0), Hex(0x6A5A8A), NoHat, 1); } }
+            public static CharacterLook Ragpicker { get { return new CharacterLook(Skin3, Hex(0xBDBDBD), Hex(0x6A6A4A), Hex(0x4A4036), Hex(0x8A7A5A), 0); } }
+            public static CharacterLook Jockey { get { return new CharacterLook(Skin1, Hex(0x3A2418), Hex(0xE8E8E8), Hex(0xF0F0F0), Hex(0xC23B33), 0); } }
+            public static CharacterLook Fisher { get { return new CharacterLook(Skin2, Hex(0x2A2A3A), Hex(0x4A7A5A), Hex(0x3A4A6A), Hex(0xD8C070), 0); } }
+            public static CharacterLook Painter { get { return new CharacterLook(Skin1, Hex(0xC07030), Hex(0xF0E6D2), Hex(0x5A4A8A), Hex(0x8A3A5A), 1); } }
+            public static CharacterLook Auntie { get { return new CharacterLook(Skin1, Hex(0x2A1C14), Hex(0xE07070), Hex(0xF4F0E4), Hex(0xF4F0E4), 1); } }
+            public static CharacterLook FeedSeller { get { return new CharacterLook(Skin3, Hex(0x1E1A1A), Hex(0x5A8A4A), Hex(0x4A3A2E), Hex(0x3A6A3A), 0); } }
             public static CharacterLook Master { get { return new CharacterLook(Skin2, Hex(0xD8D8D8), Hex(0x3A2A50), Hex(0x2A2030), Hex(0xB8860B), 0); } }
 
             static readonly int[] Shirts = { 0x7A9E3A, 0xD08A2E, 0x8A4FB0, 0x3A8EA8, 0xC0506A, 0x5A6E8A, 0xB8A040, 0x6A4A3A, 0x3A9A6A };

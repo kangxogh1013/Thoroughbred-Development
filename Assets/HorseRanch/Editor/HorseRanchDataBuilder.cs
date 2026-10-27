@@ -33,7 +33,7 @@ namespace HorseRanch.EditorTools
                 MakeItem("Item_EnergyDrink", overwrite, ItemType.EnergyDrink, "에너지 드링크", 2000, "진행 중인 훈련 게이지 50% 단축"),
             };
 
-            // 업적 8종
+            // 업적 11종
             var achievements = new[]
             {
                 MakeAch(AchievementId.SilverHorse, overwrite, "콩의 말", "한 마리 말이 1위 없이 단거리·장거리에서 모두 2위 기록", "칭호 「만년 2등」 + 5,000G", 5000, "만년 2등"),
@@ -44,6 +44,8 @@ namespace HorseRanch.EditorTools
                 MakeAch(AchievementId.Longshot, overwrite, "고배당 적중", "배당 50배 이상 마권 적중", "칭호 「복권 당첨자」", 0, "복권 당첨자"),
                 MakeAch(AchievementId.MasterTrainer, overwrite, "명마 육성", "스탯 합계 90 이상 말 보유", "5,000G", 5000, ""),
                 MakeAch(AchievementId.HiddenMaster, overwrite, "숨은 고수", "마을 어딘가에 숨어 있는 도박 고수 아저씨 찾기", "5,000G", 5000, ""),
+                MakeAch(AchievementId.TreasureHunter, overwrite, "보물 사냥꾼", "마을에 숨겨진 것 4가지를 모두 찾기 (책장·볏짚·연못…)", "10,000G", 10000, ""),
+                MakeAch(AchievementId.CleanTown, overwrite, "청소왕", "주운 쓰레기 50개를 쓰레기통에 버리기", "칭호 「마을 청소부」 + 3,000G", 3000, "마을 청소부"),
                 MakeAch(AchievementId.GrandSlam, overwrite, "그랑프리 제패", "단거리·장거리 대상경주(G1)를 모두 우승 (게임 목표)", "칭호 「명예 목장주」 + 20,000G", 20000, "명예 목장주"),
             };
 

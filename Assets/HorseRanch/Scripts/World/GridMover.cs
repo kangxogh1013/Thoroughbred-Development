@@ -23,12 +23,14 @@ namespace HorseRanch
         private Vector3 from, to;
         private float t, speed;
         private bool moving, started, stepParity;
+        private bool seated;      // 벤치에 앉아 있는 중 (칸 점유는 그대로)
 
         public event Action<Vector2Int> Arrived;
 
         public Vector2Int Cell { get { return cell; } }
         public Vector2Int Facing { get { return facing; } }
         public bool IsMoving { get { return moving; } }
+        public bool IsSeated { get { return seated; } }
         public WorldMap Map { get { return map; } }
 
         public static Vector3 CellToWorld(Vector2Int c) { return new Vector3(c.x + 0.5f, c.y + 0.1f, 0f); }
@@ -38,6 +40,10 @@ namespace HorseRanch
         {
             map = m; body = sr; look = l; startCell = start; startFacing = face; walkSpeed = walk; runSpeed = Mathf.Max(runSpeed, walk * 1.6f);
         }
+
+        public Vector2Int EditorStartCell { get { return startCell; } }
+        /// <summary>빌더 검증: 막힌 칸(물·건물)에 놓인 NPC를 옮길 때</summary>
+        public void EditorMoveStart(Vector2Int c) { startCell = c; transform.position = CellToWorld(c); }
 #endif
 
         private void Awake()
@@ -61,8 +67,28 @@ namespace HorseRanch
             cell = prevCell = c;
             if (map != null) map.Occupy(c, this);
             moving = false;
+            seated = false;
             transform.position = CellToWorld(c);
             if (face != Vector2Int.zero) facing = face;
+            UpdateSprite(0);
+        }
+
+        /// <summary>벤치에 앉기: 몸만 자리로 옮기고 정면 앉은 프레임. 칸 점유는 바꾸지 않는다</summary>
+        public void Sit(Vector3 seat)
+        {
+            if (moving) return;
+            seated = true;
+            facing = Vector2Int.down;
+            transform.position = seat;
+            if (body != null && frames != null && frames.Length > CharacterSprites.SitFrame) body.sprite = frames[CharacterSprites.SitFrame];
+        }
+
+        /// <summary>일어나기: 원래 칸으로 돌아옴</summary>
+        public void Stand()
+        {
+            if (!seated) return;
+            seated = false;
+            transform.position = CellToWorld(cell);
             UpdateSprite(0);
         }
 
@@ -75,7 +101,7 @@ namespace HorseRanch
 
         public bool TryMove(Vector2Int dir, bool run)
         {
-            if (moving || dir == Vector2Int.zero) return false;
+            if (moving || seated || dir == Vector2Int.zero) return false;
             facing = dir;
             var next = cell + dir;
             if (map == null || !map.IsFree(next)) { UpdateSprite(0); return false; }
@@ -114,7 +140,8 @@ namespace HorseRanch
 
         private void LateUpdate()
         {
-            if (body != null) body.sortingOrder = YSort.Order(transform.position.y);
+            // 앉아 있으면 벤치보다 앞에 그린다
+            if (body != null) body.sortingOrder = YSort.Order(transform.position.y) + (seated ? 20 : 0);
         }
 
         private void UpdateSprite(int frame)

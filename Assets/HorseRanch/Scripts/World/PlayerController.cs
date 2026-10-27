@@ -10,8 +10,13 @@ namespace HorseRanch
         [SerializeField] private WorldMap map;
         [SerializeField] private GameUI ui;
 
+        [Header("벤치")]
+        [Tooltip("앉아 있으면 이 시간마다 주민 수다가 들린다 (초)")]
+        [SerializeField] [Range(1f, 10f)] private float gossipInterval = 3f;
+
         private WorldArea currentArea;
         private Interactable facingTarget;
+        private float sitTimer;
 
         public GridMover Mover { get { return mover; } }
 
@@ -27,9 +32,18 @@ namespace HorseRanch
             if (ui.IsBusy) { ui.SetPrompt(null); return; }
 
             var dir = GameInput.Move;
+            if (mover.IsSeated)
+            {
+                // 앉아 있는 동안: 방향키 / E로 일어나기, 일정 시간마다 수다
+                if (dir != Vector2Int.zero || GameInput.Interact) { mover.Stand(); mover.Face(dir != Vector2Int.zero ? dir : Vector2Int.down); return; }
+                ui.SetPrompt("일어나기 (방향키)");
+                sitTimer += Time.deltaTime;
+                if (sitTimer >= gossipInterval) { sitTimer = 0f; ui.BenchGossip(); }
+                return;
+            }
             if (dir != Vector2Int.zero && !mover.IsMoving)
             {
-                if (!mover.TryMove(dir, GameInput.Run)) mover.Face(dir);
+                if (!mover.TryMove(dir, Running)) mover.Face(dir);
             }
 
             // 바라보는 칸의 대상 → 하단 안내
@@ -47,7 +61,17 @@ namespace HorseRanch
             if (ui.IsBusy) return;
             // 키를 누르고 있으면 멈추지 않고 바로 다음 칸으로 (방향 전환도 즉시 반영)
             var dir = GameInput.Move;
-            if (dir != Vector2Int.zero && !mover.TryMove(dir, GameInput.Run)) mover.Face(dir);
+            if (dir != Vector2Int.zero && !mover.TryMove(dir, Running)) mover.Face(dir);
+        }
+
+        /// <summary>Shift 또는 커피 효과</summary>
+        private bool Running { get { return GameInput.Run || ui.FastWalk; } }
+
+        /// <summary>벤치에 앉기 (seat = 벤치 위치)</summary>
+        public void SitAt(Vector3 seat)
+        {
+            sitTimer = 0f;
+            mover.Sit(seat);
         }
 
         private void UpdateArea()

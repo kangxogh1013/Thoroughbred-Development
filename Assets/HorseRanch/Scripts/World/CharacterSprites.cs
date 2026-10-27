@@ -30,11 +30,12 @@ namespace HorseRanch
 
     /// <summary>
     /// 32×40 픽셀아트 캐릭터를 코드로 그려 4방향 × 3프레임 스프라이트를 만든다 (외부 이미지 불필요).
-    /// 순서: [아래 0~2, 왼쪽 3~5, 오른쪽 6~8, 위 9~11], 프레임 0 = 서 있기, 1·2 = 걷기
+    /// 순서: [아래 0~2, 왼쪽 3~5, 오른쪽 6~8, 위 9~11], 프레임 0 = 서 있기, 1·2 = 걷기, 12 = 앉기 (정면)
     /// </summary>
     public static class CharacterSprites
     {
         public const int W = 32, H = 40;
+        public const int SitFrame = 12;
         private static readonly Dictionary<string, Sprite[]> cache = new Dictionary<string, Sprite[]>();
         private static readonly Color32 Clear = new Color32(0, 0, 0, 0);
         private static readonly Color32 Outline = new Color32(34, 26, 30, 255);
@@ -44,10 +45,11 @@ namespace HorseRanch
             string key = look.Key();
             Sprite[] s;
             if (cache.TryGetValue(key, out s) && s[0] != null) return s;
-            s = new Sprite[12];
+            s = new Sprite[13];
             for (int dir = 0; dir < 4; dir++)
                 for (int f = 0; f < 3; f++)
                     s[dir * 3 + f] = MakeSprite(Draw(look, dir, f));
+            s[SitFrame] = MakeSprite(DrawSit(look));
             cache[key] = s;
             return s;
         }
@@ -124,6 +126,36 @@ namespace HorseRanch
                 if (hasHat) { R(c, 11, 1 + bob, 12, 5, hat); R(c, 7, 6 + bob, 13, 2, Darken(hat, 0.8f)); }
                 if (dir == 2) MirrorX(c);
             }
+            AddOutline(c);
+            FlipY(c);
+            return c;
+        }
+
+        /// <summary>정면으로 앉은 자세: 몸이 내려오고 무릎을 앞으로 굽힘 (짧은 다리 + 신발)</summary>
+        public static Color32[] DrawSit(CharacterLook l)
+        {
+            var c = new Color32[W * H];
+            Color32 skin = l.skin, hair = l.hair, shirt = l.shirt, pants = l.pants, hat = l.hat;
+            Color32 shoe = new Color32(52, 40, 36, 255), eye = new Color32(30, 24, 28, 255);
+            Color32 shade = Darken(shirt, 0.78f);
+            const int d = 6; // 몸이 내려간 정도
+            // 허벅지 (앞으로 굽힌 무릎) + 짧은 정강이
+            R(c, 10, 28 + d, 12, 3, Darken(pants, 0.9f));
+            R(c, 11, 31 + d, 4, 2, pants); R(c, 17, 31 + d, 4, 2, pants);
+            R(c, 11, 33 + d - 1, 4, 1, shoe); R(c, 17, 33 + d - 1, 4, 1, shoe);
+            // 몸통 + 무릎 위에 올린 손
+            R(c, 10, 17 + d, 12, 12, shirt);
+            R(c, 10, 26 + d, 12, 2, shade);
+            R(c, 7, 19 + d, 3, 7, shirt); R(c, 8, 26 + d, 3, 2, skin);
+            R(c, 22, 19 + d, 3, 7, shirt); R(c, 21, 26 + d, 3, 2, skin);
+            // 머리
+            R(c, 10, 5 + d, 12, 12, skin);
+            R(c, 9, 3 + d, 14, 5, hair);
+            R(c, 9, 8 + d, 2, 4, hair); R(c, 21, 8 + d, 2, 4, hair);
+            if (l.hairStyle == 1) { R(c, 8, 8 + d, 3, 11, hair); R(c, 21, 8 + d, 3, 11, hair); }
+            R(c, 13, 11 + d, 2, 2, eye); R(c, 18, 11 + d, 2, 2, eye);   // 편하게 반쯤 감은 눈
+            R(c, 15, 15 + d, 2, 1, Darken(skin, 0.8f));
+            if (l.hat.a > 0.1f) { R(c, 9, 1 + d, 14, 5, hat); R(c, 7, 6 + d, 18, 2, Darken(hat, 0.8f)); }
             AddOutline(c);
             FlipY(c);
             return c;

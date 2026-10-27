@@ -33,6 +33,8 @@ namespace HorseRanch
                 string progress = "";
                 if (a.id == AchievementId.HorseHunter) progress = " · " + s.deadCount + "/10";
                 else if (a.id == AchievementId.HorseCollector) progress = " · " + Game.SpecialistCount + "/6 " + SpecialistList();
+                else if (a.id == AchievementId.TreasureHunter) progress = " · " + Game.SecretsFound + "/" + RanchConst.SecretCount;
+                else if (a.id == AchievementId.CleanTown) progress = " · " + System.Math.Min(s.trashDisposed, Data.balance.cleanTownGoal) + "/" + Data.balance.cleanTownGoal;
                 else if (a.id == AchievementId.GrandSlam) progress = " · " + (s.grandPrixWon[0] ? "●" : "○") + (s.grandPrixWon[1] ? "●" : "○");
 
                 var c = cards[i];
@@ -43,7 +45,7 @@ namespace HorseRanch
                 c.SetBackground(day > 0 ? UITheme.Panel2 : UITheme.Panel);
                 c.SetSwatch(0, day > 0 ? UITheme.Accent : UITheme.Line);
             }
-            summaryText.text = "누적 사망 " + s.deadCount + "두 · 칭호 " + s.titles.Count + "개 · 플레이 " + s.day + "일차";
+            summaryText.text = "누적 사망 " + s.deadCount + "두 · 쓰레기통에서 주운 돈 " + s.trashMoneyFound + "번 · 칭호 " + s.titles.Count + "개 · 플레이 " + s.day + "일차";
         }
 
         private string SpecialistList()

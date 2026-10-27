@@ -28,6 +28,7 @@ namespace HorseRanch
                 namePrefixes = content != null ? content.NamePrefixes : new[] { "무명" },
                 nameSuffixes = content != null ? content.NameSuffixes : new[] { "마" },
                 coats = content != null ? content.Coats : new[] { new CoatDefinition("밤색", Color.white) },
+                foods = content != null && content.Foods != null ? content.Foods : new FoodDefinition[0],
             };
             var r = new List<RaceDefinition>();
             foreach (var x in races) if (x != null) r.Add(x.Race);

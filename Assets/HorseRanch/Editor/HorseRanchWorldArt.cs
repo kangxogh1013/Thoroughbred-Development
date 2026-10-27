@@ -333,6 +333,41 @@ namespace HorseRanch.EditorTools
             return Save(name, px, new Vector2(0.5f, 0f));
         }
 
+        /// <summary>초록 쓰레기통 (뚜껑 + 세로 홈 + 삐져나온 쓰레기)</summary>
+        public static Sprite TrashBin(string name)
+        {
+            var px = new Px(T, 36);
+            Color32 body = C(70, 128, 84), dark = C(48, 96, 60), lid = C(86, 150, 100);
+            px.Rect(6, 0, 20, 26, body);
+            for (int x = 9; x < 25; x += 5) px.Rect(x, 3, 2, 20, dark);
+            px.Rect(6, 0, 20, 3, dark);
+            px.Rect(4, 25, 24, 5, lid); px.Rect(4, 25, 24, 1, dark);
+            px.Rect(13, 30, 6, 3, dark);                         // 손잡이
+            px.Rect(20, 29, 6, 4, C(230, 226, 214)); px.Rect(8, 29, 4, 3, C(200, 90, 70)); // 삐져나온 종이·캔
+            px.Outline(Line);
+            return Save(name, px, new Vector2(0.5f, 0f));
+        }
+
+        /// <summary>시장 노점: 진열대(아래 0.75타일) + 기둥 + 높이 올린 줄무늬 차양 (상인이 그 사이에 선다)</summary>
+        public static Sprite Stall(string name, int w, Color32 stripe, Color32[] goods)
+        {
+            int W = w * T, H = 100;
+            var px = new Px(W, H);
+            Color32 wood = C(150, 104, 62), woodDark = C(110, 74, 44), cloth = C(246, 242, 228);
+            px.Rect(3, 0, 4, 92, woodDark); px.Rect(W - 7, 0, 4, 92, woodDark);  // 기둥
+            px.Rect(0, 0, W, 24, wood); px.Rect(0, 20, W, 4, woodDark);         // 진열대
+            for (int x = 0; x < W; x += 8) px.Rect(x, 2, 1, 18, woodDark);
+            for (int i = 0; i < (W - 12) / 10; i++) px.Ellipse(10 + i * 10, 28, 4.5f, 4f, goods[i % goods.Length]); // 물건
+            for (int x = 0; x < W; x++)                                          // 차양
+            {
+                bool on = (x / 12) % 2 == 0;
+                px.Rect(x, 78, 1, 18, on ? stripe : cloth);
+                if (x % 12 < 10) px.Rect(x, 73, 1, 5, on ? stripe : cloth);      // 물결 끝단
+            }
+            px.Outline(Line);
+            return Save(name, px, Vector2.zero);
+        }
+
         public static Sprite Hay(string name)
         {
             var px = new Px(T, 26);

@@ -27,7 +27,10 @@ namespace HorseRanch
                 sb.Append("<b>").Append(it.displayName).Append("</b> × ").Append(s.items[(int)it.type]).Append("    ");
             }
             if (s.goldenTack > 0) sb.Append("<color=#B8860B><b>황금 마구</b> × ").Append(s.goldenTack).Append("</color>");
-            sb.Append("\n<size=85%><color=#566458>소모품은 마구간·훈련장에서 말에게 사용합니다.</color></size>");
+            sb.Append("\n<b>쓰레기</b> × ").Append(s.trash).Append("/").Append(Data.balance.trashCarryMax)
+              .Append("    숨겨진 것 ").Append(g.SecretsFound).Append("/").Append(RanchConst.SecretCount);
+            if (g.KnowsBinSecret) sb.Append("    <color=#B8860B>넝마주이 수첩</color>");
+            sb.Append("\n<size=85%><color=#566458>소모품은 마구간·훈련장에서 말에게 사용합니다. 쓰레기는 쓰레기통에만 버릴 수 있어요.</color></size>");
             itemsText.text = sb.ToString();
 
             ticketList.SetCount(s.tickets.Count);

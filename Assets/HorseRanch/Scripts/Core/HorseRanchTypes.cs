@@ -8,18 +8,25 @@ namespace HorseRanch
     public enum StatType { Speed = 0, Stamina = 1, Durability = 2, Agility = 3, Grit = 4, Wisdom = 5 }
     public enum ItemType { Medicine = 0, Nutrient = 1, EnergyDrink = 2 }
     public enum BetType { Win = 0, Place = 1, Quinella = 2, Exacta = 3, Trio = 4, Trifecta = 5 }
-    public enum AchievementId { SilverHorse = 0, KingOfGamblers = 1, HorseHunter = 2, HorseCollector = 3, FirstWin = 4, Longshot = 5, MasterTrainer = 6, GrandSlam = 7, HiddenMaster = 8 }
+    public enum AchievementId { SilverHorse = 0, KingOfGamblers = 1, HorseHunter = 2, HorseCollector = 3, FirstWin = 4, Longshot = 5, MasterTrainer = 6, GrandSlam = 7, HiddenMaster = 8, TreasureHunter = 9, CleanTown = 10 }
     public enum TrainResult { Started, NotFound, Busy, Retired, NeedsConfirm, Died }
     public enum NoticeTone { Normal = 0, Good = 1, Bad = 2 }
     public enum TicketStatus { Pending = 0, Won = 1, Lost = 2 }
+    /// <summary>마을 곳곳의 숨겨진 요소 (한 번만 찾을 수 있음)</summary>
+    public enum SecretId { HomeShelf = 0, Notebook = 1, BarnHay = 2, Pond = 3 }
+    /// <summary>시장 음식 효과</summary>
+    public enum FoodEffect { Condition = 0, Fatigue = 1, PermanentStat = 2, PermanentAll = 3, SearchBoost = 4, Coffee = 5 }
+    /// <summary>쓰레기통 뒤지기 결과</summary>
+    public enum TrashResult { Trash = 0, Money = 1, Full = 2, Exhausted = 3 }
 
     public static class RanchConst
     {
         public const int StatCount = 6;
         public const int RunnerCount = 8;
         public const int BetTypeCount = 6;
-        public const int AchievementCount = 9;
+        public const int AchievementCount = 11;
         public const int ItemCount = 3;
+        public const int SecretCount = 4;
     }
 
     // ===== 밸런스 파라미터 (BalanceConfigSO가 보관) =====
@@ -98,6 +105,39 @@ namespace HorseRanch
         public float foalInherit = 0.6f;
         public float foalRandomMax = 3f;
         public float foalStatCap = 15f;
+
+        [Header("마을 생활 · 쓰레기통")]
+        [Tooltip("쓰레기통별로 나오는 돈 (인덱스 = 쓰레기통 번호). 100/500/1000/2000 중에서")]
+        public int[] trashBinValues = { 100, 500, 100, 1000, 500, 2000, 100, 1000 };
+        [Tooltip("뒤졌을 때 돈이 나올 확률 (나머지는 쓰레기)")] [Range(0f, 1f)] public float trashMoneyChance = 0.05f;
+        [Tooltip("들고 다닐 수 있는 쓰레기 최대 개수 (쓰레기통에만 버릴 수 있음)")] public int trashCarryMax = 10;
+        [Tooltip("쓰레기통 하나를 하루에 뒤질 수 있는 횟수")] public int trashSearchPerDay = 12;
+        [Tooltip("연타 1회당 게이지 증가량 (1 = 한 번에 완료)")] [Range(0.02f, 1f)] public float searchPerPress = 0.12f;
+        [Tooltip("초당 게이지 감소량 (느리게 누르면 손해)")] [Range(0f, 2f)] public float searchDecay = 0.25f;
+        [Tooltip("청소왕 업적: 버린 쓰레기 개수")] public int cleanTownGoal = 50;
+
+        [Header("숨겨진 요소 보상")]
+        public int secretShelfGold = 3000;
+        public int secretPondGold = 5000;
+    }
+
+    /// <summary>시장에서 파는 음식 1종. forHorse면 고른 말에게 바로 먹인다</summary>
+    [Serializable]
+    public class FoodDefinition
+    {
+        public string displayName;
+        public int price;
+        public bool forHorse;
+        public FoodEffect effect;
+        [Tooltip("효과 크기 (컨디션 +, 피로 -, 스탯 +, 배율 등)")] public float amount;
+        [Tooltip("하루 구매 제한 (0 = 무제한)")] public int dailyLimit;
+        [TextArea] public string description;
+
+        public FoodDefinition() { }
+        public FoodDefinition(string name, int price, bool horse, FoodEffect effect, float amount, int limit, string desc)
+        {
+            displayName = name; this.price = price; forHorse = horse; this.effect = effect; this.amount = amount; dailyLimit = limit; description = desc;
+        }
     }
 
     [Serializable]
@@ -180,6 +220,7 @@ namespace HorseRanch
         public string[] namePrefixes;
         public string[] nameSuffixes;
         public CoatDefinition[] coats;
+        public FoodDefinition[] foods = new FoodDefinition[0];
 
         public ItemDefinition GetItem(ItemType type)
         {
@@ -345,6 +386,16 @@ namespace HorseRanch
         [Tooltip("분수에 동전을 던진 날 (그날 하루 행운)")] public int luckDay = -1;
         [Tooltip("도박 고수에게 예언을 들은 날")] public int masterDay = -1;
         public List<string> masterTips = new List<string>();
+
+        [Header("마을 생활")]
+        [Tooltip("들고 있는 쓰레기")] public int trash;
+        public int trashDisposed;
+        public int trashMoneyFound;
+        [Tooltip("쓰레기통별 오늘 뒤진 횟수 (자고 나면 초기화)")] public int[] binUses = new int[0];
+        public bool[] secrets = new bool[RanchConst.SecretCount];
+        [Tooltip("시장 음식별 오늘 구매 수 (자고 나면 초기화)")] public int[] foodBought = new int[0];
+        public int searchBoostDay = -1;
+        public int coffeeDay = -1;
     }
 
     /// <summary>경주 재생용 데이터 (저장하지 않음)</summary>

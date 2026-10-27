@@ -7,7 +7,7 @@ using UnityEngine.UI;
 
 namespace HorseRanch
 {
-    public enum WindowId { Stable = 0, Shop = 1, Breed = 2, Achievements = 3, Inventory = 4, Bet = 5, Exchange = 6, Entry = 7, Bulletin = 8, Map = 9 }
+    public enum WindowId { Stable = 0, Shop = 1, Breed = 2, Achievements = 3, Inventory = 4, Bet = 5, Exchange = 6, Entry = 7, Bulletin = 8, Map = 9, Market = 10 }
 
     /// <summary>
     /// 마을 탐험형 UI 총괄: HUD, 상호작용 안내, 대화창, 기능 창, 경주 관람, 화면 전환(페이드), 게임 이벤트 연결.
@@ -24,6 +24,8 @@ namespace HorseRanch
         [SerializeField] private DialogueView dialogue;
         [Tooltip("경기장 트랙 위 실경주")]
         [SerializeField] private WorldRaceView race;
+        [Tooltip("쓰레기통 연타 뒤지기")]
+        [SerializeField] private SearchView search;
 
         [Header("HUD")]
         [SerializeField] private TMP_Text dayText;
@@ -35,7 +37,7 @@ namespace HorseRanch
         [SerializeField] private TMP_Text promptText;
         [SerializeField] private Image fade;
 
-        [Header("창 (WindowId 순서: 마구간, 상점, 교배, 업적, 인벤토리, 마권, 교환, 출전, 게시판, 지도)")]
+        [Header("창 (WindowId 순서: 마구간, 상점, 교배, 업적, 인벤토리, 마권, 교환, 출전, 게시판, 지도, 시장)")]
         [SerializeField] private WindowView[] windows;
 
         [Header("시작 위치 (집 앞)")]
@@ -52,8 +54,10 @@ namespace HorseRanch
         public bool IsFading { get { return fadeT >= 0f; } }
         public bool IsBusy
         {
-            get { return openWindow >= 0 || dialogue.IsOpen || modal.IsOpen || race.IsPlaying || IsFading; }
+            get { return openWindow >= 0 || dialogue.IsOpen || modal.IsOpen || race.IsPlaying || IsFading || search.IsOpen; }
         }
+        /// <summary>커피 효과: Shift 없이도 달리기 속도</summary>
+        public bool FastWalk { get { return Game != null && Game.HasCoffee; } }
         private RanchGame Game { get { return runner.Game; } }
 
         private void Awake()
@@ -110,7 +114,7 @@ namespace HorseRanch
         private void Update()
         {
             UpdateFade();
-            if (modal.IsOpen || race.IsPlaying || IsFading || dialogue.IsOpen) return;
+            if (modal.IsOpen || race.IsPlaying || IsFading || dialogue.IsOpen || search.IsOpen) return;
 
             if (openWindow >= 0)
             {
@@ -134,7 +138,10 @@ namespace HorseRanch
             goldText.text = s.gold.ToString("N0") + " G";
             int won = g.CountTickets(TicketStatus.Won), pending = g.CountTickets(TicketStatus.Pending);
             ticketText.text = "마권 " + s.tickets.Count + "장" + (won > 0 ? "  <color=#F2BF37>적중 " + won + "장 (" + g.PendingPayout.ToString("N0") + "G)</color>" : pending > 0 ? "  <color=#8B927F>대기 " + pending + "</color>" : "")
-                + (g.IsLucky ? "   <color=#7FD38A>★ 행운</color>" : "");
+                + (g.IsLucky ? "   <color=#7FD38A>★ 행운</color>" : "")
+                + (g.IsSearchBoosted ? "  <color=#E8C040>김밥</color>" : "")
+                + (g.HasCoffee ? "  <color=#C8A060>커피</color>" : "")
+                + (s.trash > 0 ? "  <color=#8B927F>쓰레기 " + s.trash + "</color>" : "");
             int d = g.DaysToGrandPrix;
             var sb = new StringBuilder(64);
             sb.Append(d == 0 ? "<color=#F2BF37>오늘 대상경주(G1)!</color>" : "G1까지 " + d + "일").Append("   목표 ");
@@ -233,10 +240,74 @@ namespace HorseRanch
                         new ModalAction("예언 듣기", () => dialogue.Show(it.DisplayName, g.AskMaster()), ModalStyle.Primary),
                         new ModalAction("됐어요", null));
                     break;
+                case InteractKind.Search:
+                    AskSearch(it);
+                    break;
+                case InteractKind.TrashBin:
+                    AskTrashBin(it);
+                    break;
+                case InteractKind.Bench:
+                    var c = it.FirstCell;
+                    p.SitAt(new Vector3(c.x + 0.5f, c.y + 0.12f, 0f));
+                    toast.Show("벤치에 앉았다. 주민들 수다가 들린다… (방향키로 일어나기)", false);
+                    break;
+                case InteractKind.Market:
+                    dialogue.Show(it.DisplayName, it.RandomLine(), new ModalAction("음식 보기", () => OpenWindow(WindowId.Market, "시장")), new ModalAction("나중에", null));
+                    break;
                 default:
                     dialogue.Show(it.DisplayName, it.RandomLine());
                     break;
             }
+        }
+
+        /// <summary>책장·볏짚·연못: 살펴보면 대부분 아무것도 없고, 정해진 한 곳에만 숨겨진 것이 있다</summary>
+        private void AskSearch(Interactable it)
+        {
+            var lines = it.Lines;
+            string intro = lines != null && lines.Length > 0 ? lines[0] : "무언가 있을 것 같다.";
+            dialogue.Show(it.DisplayName, intro, new ModalAction("살펴보기", () =>
+            {
+                string found = it.Param >= 0 ? Game.FindSecret((SecretId)it.Param) : null;
+                if (found != null) { dialogue.Show(it.DisplayName, found); toast.Show("숨겨진 것을 찾았다! (" + Game.SecretsFound + "/" + RanchConst.SecretCount + ")", true); return; }
+                string none = lines != null && lines.Length > 1 ? lines[UnityEngine.Random.Range(1, lines.Length)] : "아무것도 없다.";
+                if (it.Param >= 0) none = "여긴 이미 다 뒤졌다. 더는 아무것도 없다.";
+                dialogue.Show(it.DisplayName, none);
+            }, ModalStyle.Primary), new ModalAction("그만두기", null));
+        }
+
+        /// <summary>쓰레기통: 연타로 뒤지기 / 들고 있는 쓰레기 버리기</summary>
+        private void AskTrashBin(Interactable it)
+        {
+            var g = Game;
+            var b = g.Data.balance;
+            int bin = it.Param;
+            int left = g.BinUsesLeft(bin);
+            string body = "냄새나는 쓰레기통이다. 뒤져 보면 뭐가 나올지도…"
+                + (g.KnowsBinSecret ? "\n<color=#B8860B>수첩 메모: 이 통에선 가끔 <b>" + g.BinValue(bin).ToString("N0") + "G</b>가 나온다.</color>" : "")
+                + "\n<size=80%><color=#566458>오늘 남은 횟수 " + left + "/" + b.trashSearchPerDay + " · 들고 있는 쓰레기 " + g.State.trash + "/" + b.trashCarryMax + " (쓰레기는 쓰레기통에만 버릴 수 있어요)</color></size>";
+            dialogue.Show(it.DisplayName, body,
+                new ModalAction("뒤지기 (E 연타)", () => search.Open(bin), ModalStyle.Primary, left > 0 && !g.TrashFull),
+                new ModalAction("쓰레기 버리기 (" + g.State.trash + "개)", () => g.DisposeTrash(), ModalStyle.Normal, g.State.trash > 0),
+                new ModalAction("그만두기", null));
+        }
+
+        // 벤치에 앉아 있으면 들리는 수다 (힌트 포함)
+        private static readonly string[] Gossip =
+        {
+            "「넝마주이 할아버지네 책장엔 비밀 수첩이 있대. 쓰레기통 얘기가 적혀 있다나.」",
+            "「마구간 구석 볏짚 더미에서 뭔가 반짝였다는 사람이 있어.」",
+            "「북쪽 연못 오른쪽 아래 물속에 옛날 금화 주머니가 가라앉아 있다던데.」",
+            "「너네 집 책장 두꺼운 책 사이… 아니다, 내가 무슨 말을.」",
+            "「시장 황금 귀리 먹은 말은 다르더라. 하루에 하나밖에 안 팔지만.」",
+            "「쓰레기통 뒤질 땐 빨리빨리 뒤져야 해. 손이 느리면 하세월이야.」",
+            "「커피 한 잔 마시면 하루 종일 발걸음이 가볍다니까.」",
+            "「오늘 단거리 1번 말 컨디션 좋아 보이던데… 아닌가?」",
+            "「도박장 교환소 직원, 적중 마권 바꿔줄 때만 웃더라.」",
+        };
+
+        public void BenchGossip()
+        {
+            toast.Show(Gossip[UnityEngine.Random.Range(0, Gossip.Length)], false);
         }
 
         private void AskWatchRace(string staff)

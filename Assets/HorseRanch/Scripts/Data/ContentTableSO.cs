@@ -30,6 +30,18 @@ namespace HorseRanch
             new TrainingEventDefinition("갑자기 소나기가 쏟아집니다.", "빗속 훈련 강행", "실내 마장으로 이동"),
         };
 
+        [Header("시장 음식 (사람 음식은 오늘 하루 효과, 말 음식은 고른 말에게 바로 먹임)")]
+        [SerializeField] private FoodDefinition[] foods =
+        {
+            new FoodDefinition("김밥", 300, false, FoodEffect.SearchBoost, 1.5f, 0, "든든하게 먹고 힘내기. 오늘 하루 쓰레기통 뒤지기 1.5배 빠르게"),
+            new FoodDefinition("아이스 커피", 200, false, FoodEffect.Coffee, 1f, 0, "정신이 번쩍! 오늘 하루 Shift 없이도 달리는 속도로 걷기"),
+            new FoodDefinition("당근 한 다발", 300, true, FoodEffect.Condition, 15f, 0, "말이 제일 좋아하는 간식. 컨디션 +15"),
+            new FoodDefinition("각설탕", 500, true, FoodEffect.Fatigue, 25f, 0, "달콤한 휴식. 피로 -25"),
+            new FoodDefinition("고급 사료", 4000, true, FoodEffect.PermanentStat, 1f, 2, "고른 스탯 하나를 영구히 +1 (상한까지)"),
+            new FoodDefinition("황금 귀리", 12000, true, FoodEffect.PermanentAll, 0.5f, 1, "전설의 귀리. 6개 스탯 모두 영구히 +0.5"),
+        };
+
+        public FoodDefinition[] Foods { get { return foods; } }
         public string[] NamePrefixes { get { return namePrefixes; } }
         public string[] NameSuffixes { get { return nameSuffixes; } }
         public CoatDefinition[] Coats { get { return coats; } }

@@ -8,7 +8,7 @@ namespace HorseRanch
     /// 게임 규칙 전체 (UI·MonoBehaviour와 분리된 순수 C#).
     /// UI는 아래 이벤트를 구독해 갱신하고, 플레이어 입력은 public 메서드로 전달한다.
     /// </summary>
-    public sealed class RanchGame
+    public sealed partial class RanchGame
     {
         // ===== 이벤트 (느슨한 결합) =====
         public event Action Changed;                                        // 상태 변경 → UI 새로고침 + 저장
@@ -48,6 +48,7 @@ namespace HorseRanch
             State.horses.Add(h);
             markets.Clear();
             GenerateDay();
+            EnsureTownState();
             AddLog("목장을 열었습니다. 첫 말 「새싹」이 도착했습니다. (전 스탯 " + B.startStat + ")");
             RaiseChanged();
         }
@@ -69,6 +70,7 @@ namespace HorseRanch
             if (State.specialists == null || State.specialists.Length < RanchConst.StatCount) State.specialists = new bool[RanchConst.StatCount];
             if (State.grandPrixWon == null || State.grandPrixWon.Length < 2) State.grandPrixWon = new bool[2];
             if (State.races == null || State.races.Count != Data.races.Length) GenerateDay();
+            EnsureTownState();
             RaiseChanged();
         }
 
@@ -172,6 +174,7 @@ namespace HorseRanch
                 if (!State.races[i].done) RunRace(i, false);
 
             State.day++;
+            ResetDaily();
             int eventHorse = 0;
             for (int i = 0; i < State.horses.Count; i++)
             {

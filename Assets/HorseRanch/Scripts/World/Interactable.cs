@@ -20,6 +20,10 @@ namespace HorseRanch
         Tipster,     // 정보통 (유료 예상)
         Fountain,    // 분수: 동전 던지기 (하루 행운)
         GambleMaster,// 숨은 도박 고수 (3번 중 1번 정답)
+        Search,      // 책장·볏짚·연못 살펴보기 (param = SecretId, -1이면 아무것도 없음)
+        TrashBin,    // 쓰레기통: 연타로 뒤지기 / 쓰레기 버리기 (param = 쓰레기통 번호)
+        Bench,       // 벤치: 앉아서 쉬기 (주민들 수다가 들림)
+        Market,      // 시장 상인: 음식 창
     }
 
     /// <summary>
@@ -38,6 +42,8 @@ namespace HorseRanch
         [SerializeField] private Vector2Int warpCell;
         [SerializeField] private Vector2Int warpFacing = new Vector2Int(0, -1);
         [Header("기타")]
+        [Tooltip("종류별 번호 (Search = SecretId, TrashBin = 쓰레기통 번호, -1 = 없음)")]
+        [SerializeField] private int param = -1;
         [SerializeField] private WorldMap map;
 
         public InteractKind Kind { get { return kind; } }
@@ -46,6 +52,9 @@ namespace HorseRanch
         public bool TriggerOnStep { get { return triggerOnStep; } }
         public Vector2Int WarpCell { get { return warpCell; } }
         public Vector2Int WarpFacing { get { return warpFacing; } }
+        public int Param { get { return param; } }
+        /// <summary>고정 오브젝트의 첫 칸 (벤치 앉는 자리 등)</summary>
+        public Vector2Int FirstCell { get { return cells != null && cells.Length > 0 ? cells[0] : Vector2Int.zero; } }
 
         public string RandomLine()
         {
@@ -70,6 +79,8 @@ namespace HorseRanch
         {
             map = m; kind = k; displayName = name; lines = talk; cells = occupied; triggerOnStep = onStep; warpCell = warp; warpFacing = face;
         }
+
+        public void EditorSetParam(int p) { param = p; }
 #endif
 
         private void OnDrawGizmos()

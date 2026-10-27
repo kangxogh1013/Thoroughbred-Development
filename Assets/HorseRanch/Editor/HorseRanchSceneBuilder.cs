@@ -101,7 +101,7 @@ namespace HorseRanch.EditorTools
             BuildHud(root);
 
             // 기능 창 (WindowId 순서)
-            var windows = new WindowView[10];
+            var windows = new WindowView[11];
             RectTransform c;
             windows[(int)WindowId.Stable] = Window(root, "Stable", "마구간", new Vector2(1720f, 920f), out c); BuildStable(c);
             windows[(int)WindowId.Shop] = Window(root, "Shop", "상점", new Vector2(1720f, 640f), out c); BuildShop(c);
@@ -113,7 +113,9 @@ namespace HorseRanch.EditorTools
             windows[(int)WindowId.Entry] = Window(root, "Entry", "출전 접수", new Vector2(1240f, 560f), out c); BuildEntry(c);
             windows[(int)WindowId.Bulletin] = Window(root, "Bulletin", "게시판", new Vector2(1600f, 900f), out c); BuildBulletin(c);
             windows[(int)WindowId.Map] = Window(root, "Map", "지도", new Vector2(1600f, 920f), out c); BuildMap(c, world);
+            windows[(int)WindowId.Market] = Window(root, "Market", "시장", new Vector2(1500f, 900f), out c); BuildMarket(c);
 
+            var search = BuildSearch(root);
             var dialogue = BuildDialogue(root);
             BuildRaceOverlay(root, world.race);
             var toast = BuildToast(root);
@@ -127,6 +129,7 @@ namespace HorseRanch.EditorTools
             Set(rootUI, "toast", toast);
             Set(rootUI, "dialogue", dialogue);
             Set(rootUI, "race", world.race);
+            Set(rootUI, "search", search);
             Set(rootUI, "fade", fade);
             SetArr(rootUI, "windows", windows);
             SetV2I(rootUI, "spawnCell", world.spawn);
@@ -748,9 +751,9 @@ namespace HorseRanch.EditorTools
 
             var grid = NewRect("Grid", panel);
             LE(grid, -1f, -1f, -1f, 1f);
-            NewGrid(grid, new Vector2(360f, 200f), new Vector2(14f, 14f), 5);
-            var cards = new UIRow[10];
-            for (int i = 0; i < 10; i++)
+            NewGrid(grid, new Vector2(296f, 200f), new Vector2(12f, 14f), 6);
+            var cards = new UIRow[12];
+            for (int i = 0; i < 12; i++)
             {
                 var card = Panel("Ach_" + i, grid, UITheme.Panel);
                 V(card, 6f, 20, 20, 0, 16);
@@ -974,6 +977,97 @@ namespace HorseRanch.EditorTools
             return panel.gameObject;
         }
 
+        // =====================================================================
+        // 시장 (음식) / 쓰레기통 뒤지기
+        // =====================================================================
+        private static GameObject BuildMarket(RectTransform content)
+        {
+            var panel = Stretch(NewRect("Panel_Market", content));
+            V(panel, 12f);
+            var view = panel.gameObject.AddComponent<MarketView>();
+            WireView(view);
+
+            // 먹일 말 고르기
+            var pick = Panel("HorsePicker", panel, UITheme.Panel).rectTransform;
+            LE(pick, -1f, 64f);
+            H(pick, 12f, 16, 16, 8, 8);
+            var who = NewText("Label", pick, "먹일 말", 18f, Mute, TextAlignmentOptions.MidlineLeft, true); LE(who, 90f);
+            var prev = Btn("Prev", pick, "◀", UITheme.Panel2, Ink, 22f); LE(prev, 56f);
+            var horse = NewText("Horse", pick, "", 22f, Ink, TextAlignmentOptions.Center); LE(horse, -1f, -1f, 1f);
+            var next = Btn("Next", pick, "▶", UITheme.Panel2, Ink, 22f); LE(next, 56f);
+
+            // 고급 사료 스탯
+            var statRow = NewRect("Stats", panel);
+            LE(statRow, -1f, 48f);
+            H(statRow, 8f);
+            var sl = NewText("Label", statRow, "고급 사료 스탯", 16f, Mute, TextAlignmentOptions.MidlineLeft, true); LE(sl, 150f);
+            var statButtons = new Button[RanchConst.StatCount];
+            var statLabels = new TMP_Text[RanchConst.StatCount];
+            for (int i = 0; i < RanchConst.StatCount; i++)
+            {
+                TextMeshProUGUI l;
+                statButtons[i] = Btn("Stat_" + i, statRow, "스탯", UITheme.Panel2, Ink, 17f, out l);
+                LE(statButtons[i], -1f, -1f, 1f);
+                statLabels[i] = l;
+            }
+
+            // 음식 6종
+            var rows = new UIRow[6];
+            for (int i = 0; i < rows.Length; i++)
+            {
+                var row = Panel("Food_" + i, panel, UITheme.Panel);
+                LE(row, -1f, 88f);
+                H(row, 14f, 20, 18, 8, 8);
+                var col = NewRect("Col", row.transform);
+                LE(col, -1f, -1f, 1f);
+                V(col, 2f, 0, 0, 0, 0, TextAnchor.MiddleLeft);
+                var n = NewText("Name", col, "음식", 21f, Ink, TextAlignmentOptions.MidlineLeft, true); LE(n, -1f, 30f);
+                var d = NewText("Desc", col, "", 15f, Mute, TextAlignmentOptions.TopLeft); LE(d, -1f, 24f);
+                var p = NewText("Price", row.transform, "0G", 21f, UITheme.Accent, TextAlignmentOptions.MidlineRight, true); LE(p, 130f);
+                TextMeshProUGUI bl;
+                var b = Btn("Buy", row.transform, "사기", UITheme.Turf, White, 17f, out bl); LE(b, 200f, 52f);
+                rows[i] = Row(row.gameObject, row, b, new TMP_Text[] { n, p, d, bl });
+            }
+            var note = NewText("Note", panel, "", 15f, Mute, TextAlignmentOptions.TopLeft); LE(note, -1f, 44f);
+
+            Set(view, "prevHorse", prev);
+            Set(view, "nextHorse", next);
+            Set(view, "horseText", horse);
+            SetArr(view, "statButtons", statButtons);
+            SetArr(view, "statLabels", statLabels);
+            SetArr(view, "foodRows", rows);
+            Set(view, "noteText", note);
+            return panel.gameObject;
+        }
+
+        /// <summary>화면 가운데 아래: 연타 게이지 (대화창 자리)</summary>
+        private static SearchView BuildSearch(RectTransform root)
+        {
+            var host = Stretch(NewRect("TrashSearch", root));
+            var view = host.gameObject.AddComponent<SearchView>();
+            var box = Panel("Box", host, UITheme.Board).rectTransform;
+            Place(box, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 40f), new Vector2(1100f, 250f));
+            V(box, 10f, 36, 36, 22, 20);
+            var title = NewText("Title", box, "쓰레기통 뒤지는 중…", 26f, UITheme.BoardFg, TextAlignmentOptions.Center, true); LE(title, -1f, 36f);
+            var frame = NewRect("GaugeFrame", box);
+            LE(frame, -1f, 38f);
+            var bar = Bar("Gauge", frame, UITheme.Panel2, UITheme.Accent);
+            Stretch((RectTransform)bar.transform);
+            var result = NewText("Result", box, "", 24f, White, TextAlignmentOptions.Center, true); LE(result, -1f, 36f);
+            var status = NewText("Status", box, "", 17f, UITheme.BoardText, TextAlignmentOptions.Center); LE(status, -1f, 26f);
+            var hint = NewText("Hint", box, "", 16f, UITheme.BoardMute, TextAlignmentOptions.Center); LE(hint, -1f, 24f);
+            Set(view, "runner", runner);
+            Set(view, "root", box.gameObject);
+            Set(view, "titleText", title);
+            Set(view, "gauge", bar);
+            Set(view, "resultText", result);
+            Set(view, "statusText", status);
+            Set(view, "hintText", hint);
+            Set(view, "shakeTarget", (RectTransform)bar.transform); // 레이아웃 밖(늘림)이라 흔들어도 위치가 유지됨
+            box.gameObject.SetActive(false);
+            return view;
+        }
+
         private static Image BuildFade(RectTransform root)
         {
             var f = Img(Stretch(NewRect("Fade", root)), new Color(0f, 0f, 0f, 0f), false, true);
@@ -1028,7 +1122,7 @@ namespace HorseRanch.EditorTools
             WireView(view);
             var summary = NewText("Summary", panel, "", 20f, Ink, TextAlignmentOptions.TopLeft); LE(summary, -1f, 70f);
             var itemsBox = Panel("Items", panel, UITheme.Panel).rectTransform;
-            LE(itemsBox, -1f, 92f);
+            LE(itemsBox, -1f, 132f);
             var items = NewText("Text", itemsBox, "", 20f, Ink, TextAlignmentOptions.MidlineLeft);
             Stretch(items.rectTransform, 18f, 8f, 18f, 8f);
             Label(panel, "마권 (적중 마권은 도박장 교환소에서 교환)", 15f, 24f);
