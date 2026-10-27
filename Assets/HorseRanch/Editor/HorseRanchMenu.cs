@@ -29,7 +29,7 @@ namespace HorseRanch.EditorTools
                 "· 씬: " + HorseRanchPaths.ScenePath + "\n" +
                 "· 데이터: " + HorseRanchPaths.Data + "\n" +
                 (font == null ? "\n※ 한글 폰트가 없어 글자가 □로 보일 수 있습니다.\n  Tools > HorseRanch > 3. 한글 폰트 설정 후 다시 생성하세요.\n" : "") +
-                "\n상단 ▶ Play 버튼을 누르면 바로 플레이할 수 있습니다.", "확인");
+                "\n▶ Play 후 WASD/방향키 이동, E 상호작용, Tab 인벤토리, J 업적.", "확인");
         }
 
         [MenuItem(Menu + "1. 데이터 에셋 생성 (ScriptableObject)", false, 20)]
@@ -57,7 +57,30 @@ namespace HorseRanch.EditorTools
             if (f != null) { Selection.activeObject = f; EditorGUIUtility.PingObject(f); }
         }
 
-        [MenuItem(Menu + "4. 씬 다시 생성 (UI 포함)", false, 23)]
+        [MenuItem(Menu + "3-1. 한글 폰트 교체 (다시 만들기)", false, 24)]
+        public static void RebuildFont()
+        {
+            HorseRanchPaths.EnsureFolders();
+            if (!HorseRanchSceneBuilder.EnsureTmpEssentials()) return;
+            var f = HorseRanchArtBuilder.RebuildKoreanFont();
+            if (f == null) return;
+            int n = HorseRanchArtBuilder.ApplyFontToOpenScene(f);
+            if (n > 0) EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+            EditorUtility.DisplayDialog("한글 폰트", "폰트를 새로 만들고 열린 씬의 텍스트 " + n + "개에 적용했습니다.\n씬을 저장(Ctrl+S)하세요.", "확인");
+        }
+
+        [MenuItem(Menu + "3-2. 열린 씬에 한글 폰트 적용", false, 25)]
+        public static void ApplyFont()
+        {
+            if (!HorseRanchSceneBuilder.EnsureTmpEssentials()) return;
+            var f = HorseRanchArtBuilder.EnsureKoreanFont(true);
+            if (f == null) return;
+            int n = HorseRanchArtBuilder.ApplyFontToOpenScene(f);
+            if (n > 0) EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+            Debug.Log("[HorseRanch] 열린 씬의 TMP 텍스트 " + n + "개에 한글 폰트 적용");
+        }
+
+        [MenuItem(Menu + "4. 씬 다시 생성 (UI 포함)", false, 26)]
         public static void BuildScene()
         {
             HorseRanchPaths.EnsureFolders();

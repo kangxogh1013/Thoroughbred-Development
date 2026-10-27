@@ -200,62 +200,137 @@ namespace HorseRanch.EditorTools
         }
 
         // ===== 한글 폰트 (TMP 동적 폰트 에셋) =====
+        public const string BoldFontAssetPath = HorseRanchPaths.Fonts + "/HorseRanchKR Bold SDF.asset";
+
         /// <summary>
-        /// Assets/HorseRanch/Fonts 안의 ttf/otf로 TMP 폰트 에셋을 만든다.
+        /// Assets/HorseRanch/Fonts 안의 ttf/otf로 TMP 폰트 에셋(본문 + 굵게)을 만든다.
+        /// 굵은 폰트가 있으면 본문 에셋의 Font Weights(700)에 연결해 &lt;b&gt;/Bold 스타일이 진짜 굵은 글꼴로 나온다.
         /// 폰트가 없으면 파일 선택 창 또는 Windows 맑은 고딕 복사를 제안한다.
         /// </summary>
         public static TMP_FontAsset EnsureKoreanFont(bool interactive)
         {
-            var existing = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(HorseRanchPaths.FontAssetPath);
-            if (existing != null) return existing;
-
-            Font source = FindSourceFont();
-            if (source == null && interactive) source = AskForFont();
-            if (source == null)
+            var regular = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(HorseRanchPaths.FontAssetPath);
+            var fonts = FindSourceFonts();
+            if (regular == null)
             {
-                Debug.LogWarning("[HorseRanch] 한글 폰트가 없습니다. Noto Sans KR 같은 .ttf를 " + HorseRanchPaths.Fonts + " 폴더에 넣고 Tools > HorseRanch > 3. 한글 폰트 설정을 실행하세요.");
-                return null;
+                if (fonts.Count == 0 && interactive)
+                {
+                    var picked = AskForFont();
+                    if (picked != null) fonts.Add(picked);
+                }
+                if (fonts.Count == 0)
+                {
+                    Debug.LogWarning("[HorseRanch] 한글 폰트가 없습니다. .ttf/.otf를 " + HorseRanchPaths.Fonts + " 폴더에 넣고 Tools > HorseRanch > 3. 한글 폰트 설정을 실행하세요.");
+                    return null;
+                }
+                Font src = PickRegular(fonts);
+                regular = CreateFontAsset(src, HorseRanchPaths.FontAssetPath, "HorseRanchKR SDF");
+                if (regular == null) return null;
             }
 
+            // 굵은 글꼴 연결 (없으면 TMP가 가짜 굵게 처리)
+            var bold = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(BoldFontAssetPath);
+            Font boldSrc = PickBold(fonts);
+            if (bold == null && boldSrc != null) bold = CreateFontAsset(boldSrc, BoldFontAssetPath, "HorseRanchKR Bold SDF");
+            if (bold != null && regular.fontWeightTable != null && regular.fontWeightTable.Length > 7)
+            {
+                regular.fontWeightTable[7].regularTypeface = bold; // 700 = Bold
+                EditorUtility.SetDirty(regular);
+                AssetDatabase.SaveAssets();
+            }
+            return regular;
+        }
+
+        /// <summary>기존 폰트 에셋을 지우고 Fonts 폴더의 폰트로 다시 만든다 (폰트 교체용)</summary>
+        public static TMP_FontAsset RebuildKoreanFont()
+        {
+            AssetDatabase.DeleteAsset(HorseRanchPaths.FontAssetPath);
+            AssetDatabase.DeleteAsset(BoldFontAssetPath);
+            return EnsureKoreanFont(true);
+        }
+
+        private static TMP_FontAsset CreateFontAsset(Font source, string path, string assetName)
+        {
             // 동적(Dynamic) 모드: 실제로 쓰인 글자만 런타임에 아틀라스에 추가 → 한글 11,172자를 미리 굽지 않아도 됨
             var fa = TMP_FontAsset.CreateFontAsset(source, 64, 6, GlyphRenderMode.SDFAA, 2048, 2048, AtlasPopulationMode.Dynamic);
             if (fa == null)
             {
-                Debug.LogError("[HorseRanch] 폰트 에셋 생성 실패. 폰트 파일 Import 설정에서 Include Font Data가 켜져 있는지 확인하세요.");
+                Debug.LogError("[HorseRanch] 폰트 에셋 생성 실패: " + source.name + ". 폰트 Import 설정에서 Include Font Data가 켜져 있는지 확인하세요.");
                 return null;
             }
-            fa.name = "HorseRanchKR SDF";
-            AssetDatabase.CreateAsset(fa, HorseRanchPaths.FontAssetPath);
+            fa.name = assetName;
+            AssetDatabase.CreateAsset(fa, path);
             // 아틀라스 텍스처와 머티리얼을 같은 에셋 안에 저장해야 재시작 후에도 유지됨
             if (fa.atlasTextures != null)
             {
                 for (int i = 0; i < fa.atlasTextures.Length; i++)
                 {
                     if (fa.atlasTextures[i] == null) continue;
-                    fa.atlasTextures[i].name = fa.name + " Atlas " + i;
+                    fa.atlasTextures[i].name = assetName + " Atlas " + i;
                     AssetDatabase.AddObjectToAsset(fa.atlasTextures[i], fa);
                 }
             }
             if (fa.material != null)
             {
-                fa.material.name = fa.name + " Material";
+                fa.material.name = assetName + " Material";
                 AssetDatabase.AddObjectToAsset(fa.material, fa);
             }
             EditorUtility.SetDirty(fa);
             AssetDatabase.SaveAssets();
-            Debug.Log("[HorseRanch] 한글 TMP 폰트 생성: " + HorseRanchPaths.FontAssetPath + " (원본: " + source.name + ")");
+            Debug.Log("[HorseRanch] TMP 폰트 생성: " + path + " (원본: " + source.name + ")");
             return fa;
         }
 
-        private static Font FindSourceFont()
+        private static List<Font> FindSourceFonts()
         {
+            var list = new List<Font>();
             string[] guids = AssetDatabase.FindAssets("t:Font", new[] { HorseRanchPaths.Fonts });
             for (int i = 0; i < guids.Length; i++)
             {
                 var f = AssetDatabase.LoadAssetAtPath<Font>(AssetDatabase.GUIDToAssetPath(guids[i]));
-                if (f != null) return f;
+                if (f != null) list.Add(f);
+            }
+            return list;
+        }
+
+        // 파일 이름으로 굵기 추정 (에스코어 드림: SCDream4 = Regular, SCDream6 = Bold)
+        private static Font PickRegular(List<Font> fonts)
+        {
+            return Find(fonts, "SCDream4") ?? Find(fonts, "Regular") ?? Find(fonts, "Medium") ?? fonts[0];
+        }
+
+        private static Font PickBold(List<Font> fonts)
+        {
+            var f = Find(fonts, "SCDream6") ?? Find(fonts, "SCDream7");
+            if (f != null) return f;
+            for (int i = 0; i < fonts.Count; i++)
+            {
+                string n = fonts[i].name.ToLowerInvariant();
+                if (n.Contains("bold") && !n.Contains("extra") && !n.Contains("semi")) return fonts[i];
             }
             return null;
+        }
+
+        private static Font Find(List<Font> fonts, string key)
+        {
+            for (int i = 0; i < fonts.Count; i++)
+                if (fonts[i].name.IndexOf(key, StringComparison.OrdinalIgnoreCase) >= 0) return fonts[i];
+            return null;
+        }
+
+        /// <summary>현재 열린 씬의 모든 TMP 텍스트(비활성 포함)에 한글 폰트 적용</summary>
+        public static int ApplyFontToOpenScene(TMP_FontAsset font)
+        {
+            int count = 0;
+            foreach (var t in Resources.FindObjectsOfTypeAll<TMP_Text>())
+            {
+                if (EditorUtility.IsPersistent(t) || !t.gameObject.scene.IsValid()) continue; // 프리팹 원본/에셋 제외
+                Undo.RecordObject(t, "Apply Korean Font");
+                t.font = font;
+                EditorUtility.SetDirty(t);
+                count++;
+            }
+            return count;
         }
 
         private static Font AskForFont()
@@ -264,7 +339,7 @@ namespace HorseRanch.EditorTools
             bool hasMalgun = File.Exists(malgun);
             int choice = EditorUtility.DisplayDialogComplex("한글 폰트 필요",
                 "TextMeshPro 기본 폰트에는 한글이 없어 글자가 □로 보입니다.\n\n" +
-                "권장: Google Fonts의 Noto Sans KR(무료, OFL)을 받아 .ttf를 선택하세요.\n" +
+                "권장: 에스코어 드림(SCDream4.otf) 또는 Noto Sans KR 같은 무료 한글 폰트를 선택하세요.\n" +
                 (hasMalgun ? "개인 학습용이라면 Windows의 맑은 고딕을 복사해 쓸 수도 있습니다 (배포 시 라이선스 확인 필요)." : ""),
                 "폰트 파일 선택...", "건너뛰기", hasMalgun ? "맑은 고딕 복사" : "닫기");
 

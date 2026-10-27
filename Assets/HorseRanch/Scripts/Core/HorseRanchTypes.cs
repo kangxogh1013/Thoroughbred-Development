@@ -11,6 +11,7 @@ namespace HorseRanch
     public enum AchievementId { SilverHorse = 0, KingOfGamblers = 1, HorseHunter = 2, HorseCollector = 3, FirstWin = 4, Longshot = 5, MasterTrainer = 6, GrandSlam = 7 }
     public enum TrainResult { Started, NotFound, Busy, Retired, NeedsConfirm, Died }
     public enum NoticeTone { Normal = 0, Good = 1, Bad = 2 }
+    public enum TicketStatus { Pending = 0, Won = 1, Lost = 2 }
 
     public static class RanchConst
     {
@@ -68,6 +69,8 @@ namespace HorseRanch
         [Tooltip("공제율 (운영 수수료)")] [Range(0f, 0.5f)] public float takeRate = 0.25f;
         public int minBet = 100;
         [Tooltip("마권 1장 최대 금액")] public int maxBetPerTicket = 50000;
+        [Tooltip("인벤토리 마권 최대 보관 수")] public int maxTickets = 40;
+        [Tooltip("정보통 NPC 정보 가격")] public int tipPrice = 300;
         [Tooltip("배당 계산용 몬테카를로 시뮬레이션 횟수")] [Range(50, 600)] public int marketSimulations = 200;
         [Tooltip("승식별 NPC 가상 배팅 풀 (단승, 연승, 복승, 쌍승, 삼복승, 삼쌍승)")]
         public float[] npcPool = { 120000f, 80000f, 90000f, 90000f, 100000f, 140000f };
@@ -245,12 +248,20 @@ namespace HorseRanch
         public bool sold;
     }
 
+    /// <summary>마권 1장. 구매 즉시 인벤토리에 보관되고, 경주 후 적중이면 교환소에서 골드로 바꾼다</summary>
     [Serializable]
     public class BetTicket
     {
+        public int id;
+        public int day;
+        public int raceIndex;
+        public bool grandPrix;
         public BetType type;
         public string key;
         public int amount;
+        public TicketStatus status;
+        public float odds;     // 확정 배당 (경주 후)
+        public int payout;     // 적중 시 교환 금액
     }
 
     [Serializable]
@@ -321,6 +332,9 @@ namespace HorseRanch
         public List<RaceDayState> races = new List<RaceDayState>();
         public bool[] grandPrixWon = new bool[2];
         public bool cleared;
+        [Tooltip("인벤토리의 마권")] public List<BetTicket> tickets = new List<BetTicket>();
+        public int nextTicketId = 1;
+        [Tooltip("어제 경주 결과 (게시판용)")] public List<string> lastResults = new List<string>();
     }
 
     /// <summary>경주 재생용 데이터 (저장하지 않음)</summary>

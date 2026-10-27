@@ -54,7 +54,7 @@ namespace HorseRanch
         private void Awake()
         {
             for (int i = 0; i < statRows.Length; i++) statRows[i].Bind(i, OnTrain);
-            emptyShopButton.onClick.AddListener(() => ui.ShowTab(RanchUI.TabShop));
+            emptyShopButton.onClick.AddListener(() => ui.CloseWindow()); // 상점은 마을에서 직접 방문
             drinkButton.onClick.AddListener(() => Game.UseItem(selectedId, ItemType.EnergyDrink));
             healButton.onClick.AddListener(() => Game.UseItem(selectedId, ItemType.Medicine));
             nutrientButton.onClick.AddListener(() => Game.UseItem(selectedId, ItemType.Nutrient));

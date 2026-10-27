@@ -15,7 +15,8 @@ namespace HorseRanch
         public event Action<string> Toast;                                  // 짧은 알림
         public event Action<AchievementDefinition> AchievementUnlocked;
         public event Action<int, TrainingEventDefinition> TrainingEventTriggered; // (말 id, 이벤트)
-        public event Action<RaceReplay> RaceFinished;
+        public event Action<RaceReplay> RaceFinished;                       // 관람한 경주 (재생 데이터)
+        public event Action<int, RaceResultData> RaceAutoRun;               // 관람하지 않아 자동 진행된 경주
         public event Action<HorseData, List<NoticeData>> LotRevealed;       // 블라인드 말 감정 결과
         public event Action<HorseData> FoalBorn;
         public event Action GameCleared;
@@ -159,16 +160,9 @@ namespace HorseRanch
         // ===== 하루 진행 =====
         public void NextDay()
         {
-            // 발주하지 않은 경주는 참가비와 마권 환불
+            // 경주는 매일 열린다: 관람하지 않은 경주는 하루가 끝날 때 자동 진행 (마권도 정산됨)
             for (int i = 0; i < State.races.Count; i++)
-            {
-                var r = State.races[i];
-                if (r.done) continue;
-                int refund = 0;
-                for (int k = 0; k < r.slip.Count; k++) refund += r.slip[k].amount;
-                if (r.entryId > 0) refund += EntryFee(i);
-                if (refund > 0) { State.gold += refund; AddLog(Data.races[i].displayName + " 미발주 환불 " + Gold(refund)); }
-            }
+                if (!State.races[i].done) RunRace(i, false);
 
             State.day++;
             int eventHorse = 0;
@@ -206,6 +200,24 @@ namespace HorseRanch
 
         void GenerateDay()
         {
+            // 게시판용: 어제 결과 보관
+            if (State.races.Count > 0)
+            {
+                State.lastResults.Clear();
+                for (int r = 0; r < State.races.Count; r++)
+                {
+                    var rs = State.races[r];
+                    if (!rs.done || rs.result.rows.Count < 3) continue;
+                    var sb = new StringBuilder();
+                    sb.Append(Data.races[r].displayName).Append(rs.grandPrix ? " G1" : "").Append(" (").Append(State.day).Append("일차)  ");
+                    for (int k = 0; k < 3; k++)
+                    {
+                        var row = rs.result.rows[k];
+                        sb.Append(k + 1).Append("착 ").Append(row.lane).Append("번 ").Append(row.name).Append(k < 2 ? " / " : "");
+                    }
+                    State.lastResults.Add(sb.ToString());
+                }
+            }
             State.lots.Clear();
             for (int i = 0; i < B.lotCount; i++) State.lots.Add(MakeLot());
 
@@ -561,23 +573,103 @@ namespace HorseRanch
             if (amount > B.maxBetPerTicket) { RaiseToast("마권 1장 최대 " + Gold(B.maxBetPerTicket) + "입니다"); return false; }
             if (State.gold < amount) { RaiseToast("골드가 부족합니다"); return false; }
 
+            if (State.tickets.Count >= B.maxTickets) { RaiseToast("마권이 너무 많습니다. 교환소에서 정리하세요 (최대 " + B.maxTickets + "장)"); return false; }
+
             string key = ParimutuelMarket.Key(type, picks);
             Market(raceIndex).Add(type, key, amount);
             State.gold -= amount;
-            rs.slip.Add(new BetTicket { type = type, key = key, amount = amount });
+            int id = State.nextTicketId++;
+            // 배당 풀 기록용(slip)과 인벤토리용(tickets)을 따로 보관
+            rs.slip.Add(new BetTicket { id = id, day = State.day, raceIndex = raceIndex, grandPrix = rs.grandPrix, type = type, key = key, amount = amount });
+            State.tickets.Add(new BetTicket { id = id, day = State.day, raceIndex = raceIndex, grandPrix = rs.grandPrix, type = type, key = key, amount = amount });
+            RaiseToast("마권 구매 · " + ParimutuelMarket.DisplayName(type) + " " + key + " · " + Gold(amount) + " (인벤토리 보관)");
             RaiseChanged();
             return true;
         }
 
-        public void CancelBet(int raceIndex, int ticketIndex)
+        /// <summary>발주 전 마권 환불</summary>
+        public bool CancelTicket(int ticketId)
+        {
+            var t = State.tickets.Find(x => x.id == ticketId);
+            if (t == null || t.status != TicketStatus.Pending || t.day != State.day) return false;
+            var rs = Race(t.raceIndex);
+            if (rs.done) return false;
+            rs.slip.RemoveAll(x => x.id == ticketId);
+            State.tickets.Remove(t);
+            Market(t.raceIndex).Add(t.type, t.key, -t.amount);
+            State.gold += t.amount;
+            RaiseToast("마권 환불 " + Gold(t.amount));
+            RaiseChanged();
+            return true;
+        }
+
+        public int CountTickets(TicketStatus status)
+        {
+            int c = 0;
+            for (int i = 0; i < State.tickets.Count; i++) if (State.tickets[i].status == status) c++;
+            return c;
+        }
+
+        public int PendingPayout
+        {
+            get { int s = 0; for (int i = 0; i < State.tickets.Count; i++) if (State.tickets[i].status == TicketStatus.Won) s += State.tickets[i].payout; return s; }
+        }
+
+        /// <summary>교환소: 적중 마권을 모두 골드로 교환</summary>
+        public int RedeemWinningTickets()
+        {
+            int total = 0, count = 0;
+            for (int i = State.tickets.Count - 1; i >= 0; i--)
+            {
+                var t = State.tickets[i];
+                if (t.status != TicketStatus.Won) continue;
+                total += t.payout; count++;
+                State.tickets.RemoveAt(i);
+            }
+            if (count == 0) { RaiseToast("교환할 적중 마권이 없습니다"); return 0; }
+            State.gold += total;
+            AddLog("교환소에서 적중 마권 " + count + "장 교환 +" + Gold(total));
+            RaiseToast("적중 마권 " + count + "장 교환 +" + Gold(total));
+            RaiseChanged();
+            return total;
+        }
+
+        /// <summary>교환소: 꽝 마권 버리기</summary>
+        public int DiscardLostTickets()
+        {
+            int n = State.tickets.RemoveAll(t => t.status == TicketStatus.Lost);
+            if (n > 0) { RaiseToast("꽝 마권 " + n + "장을 버렸습니다"); RaiseChanged(); }
+            return n;
+        }
+
+        /// <summary>정보통 NPC: 배당과 컨디션으로 본 예상 (유료). 골드 부족이나 종료된 경주면 null</summary>
+        public string BuyTip(int raceIndex)
         {
             var rs = Race(raceIndex);
-            if (rs.done || ticketIndex < 0 || ticketIndex >= rs.slip.Count) return;
-            var b = rs.slip[ticketIndex];
-            rs.slip.RemoveAt(ticketIndex);
-            Market(raceIndex).Add(b.type, b.key, -b.amount);
-            State.gold += b.amount;
+            if (rs.done) return null;
+            if (State.gold < B.tipPrice) { RaiseToast("골드가 부족합니다"); return null; }
+            State.gold -= B.tipPrice;
+            var run = Runners(raceIndex);
+            var idx = new List<int>();
+            var odds = new float[run.Count];
+            for (int i = 0; i < run.Count; i++) { idx.Add(i); odds[i] = Odds(raceIndex, BetType.Win, (i + 1).ToString(), 0f); }
+            idx.Sort((a, b) => odds[a].CompareTo(odds[b]));
+            // 복병: 배당 6배 이상 중 (스탯 합계 + 컨디션) 최고
+            int dark = -1; float best = float.MinValue;
+            for (int i = 0; i < run.Count; i++)
+            {
+                if (odds[i] < 6f) continue;
+                float score = run[i].Total + run[i].condition * 0.2f;
+                if (score > best) { best = score; dark = i; }
+            }
+            var sb = new StringBuilder();
+            sb.Append(Data.races[raceIndex].displayName).Append(" 정보야.\n");
+            sb.Append("인기 1위는 ").Append(idx[0] + 1).Append("번 ").Append(run[idx[0]].name).Append(" (단승 ").Append(odds[idx[0]].ToString("0.0")).Append("배), ");
+            sb.Append("2위는 ").Append(idx[1] + 1).Append("번 ").Append(run[idx[1]].name).Append(".\n");
+            if (dark >= 0) sb.Append("근데 말이야, ").Append(dark + 1).Append("번 ").Append(run[dark].name).Append(" 컨디션이 ").Append(Math.Round(run[dark].condition)).Append("이라더군. 배당 ").Append(odds[dark].ToString("0.0")).Append("배면 노려볼 만해.");
+            else sb.Append("이번엔 이변 없을 거야. 인기마 위주로 가.");
             RaiseChanged();
+            return sb.ToString();
         }
 
         /// <summary>등록된 내 말의 부상 단계 (0이면 경고 없이 출발 가능)</summary>
@@ -587,7 +679,8 @@ namespace HorseRanch
             return h == null ? 0 : h.injury;
         }
 
-        public void RunRace(int raceIndex)
+        /// <summary>경주 진행. watched=false면 재생 없이 결과만 (하루가 끝날 때 자동 진행)</summary>
+        public void RunRace(int raceIndex, bool watched = true)
         {
             var rs = Race(raceIndex);
             if (rs.done) return;
@@ -685,25 +778,28 @@ namespace HorseRanch
                 }
             }
 
-            // 마권 정산
+            // 마권 정산: 인벤토리의 마권 상태만 바꾸고, 골드는 교환소에서 받는다
             var fin = new List<int>();
             for (int p = 0; p < res.order.Length; p++) if (!res.dnf[res.order[p]]) fin.Add(res.order[p] + 1);
-            int spent = 0, got = 0;
-            for (int i = 0; i < rs.slip.Count; i++)
+            int spent = 0, got = 0, count = 0;
+            for (int i = 0; i < State.tickets.Count; i++)
             {
-                var b = rs.slip[i];
+                var b = State.tickets[i];
+                if (b.status != TicketStatus.Pending || b.day != State.day || b.raceIndex != raceIndex) continue;
+                count++;
                 spent += b.amount;
-                if (!IsWinningTicket(b, fin)) continue;
+                if (!IsWinningTicket(b, fin)) { b.status = TicketStatus.Lost; continue; }
                 float od = market.Odds(b.type, b.key, 0f, B.takeRate);
-                int pay = (int)Math.Floor(b.amount * od);
-                got += pay;
-                State.gold += pay;
-                notes.Add(new NoticeData("적중! " + ParimutuelMarket.DisplayName(b.type) + " " + b.key + " · " + od.ToString("0.0") + "배 · " + Gold(pay), NoticeTone.Good));
+                b.status = TicketStatus.Won;
+                b.odds = od;
+                b.payout = (int)Math.Floor(b.amount * od);
+                got += b.payout;
+                notes.Add(new NoticeData("적중! " + ParimutuelMarket.DisplayName(b.type) + " " + b.key + " · " + od.ToString("0.0") + "배 · " + Gold(b.payout), NoticeTone.Good));
                 if (b.type == BetType.Trifecta) Unlock(AchievementId.KingOfGamblers, notes);
                 if (od >= 50f) Unlock(AchievementId.Longshot, notes);
             }
-            if (rs.slip.Count > 0)
-                notes.Add(new NoticeData("마권 " + rs.slip.Count + "장 · 구매 " + Gold(spent) + " · 환급 " + Gold(got) + " · 손익 " + (got - spent >= 0 ? "+" : "-") + Gold(Math.Abs(got - spent)), NoticeTone.Normal));
+            if (count > 0)
+                notes.Add(new NoticeData("마권 " + count + "장 · 구매 " + Gold(spent) + " · 적중 " + Gold(got) + (got > 0 ? " → 도박장 교환소에서 교환하세요" : ""), NoticeTone.Normal));
 
             // 게임 목표: 단거리·장거리 대상경주 모두 제패
             bool allGp = true;
@@ -727,7 +823,8 @@ namespace HorseRanch
             for (int i = 0; i < run.Count; i++) { replay.names[i] = run[i].name; replay.coats[i] = run[i].coat; }
 
             RaiseChanged();
-            if (RaceFinished != null) RaceFinished(replay);
+            if (watched) { if (RaceFinished != null) RaceFinished(replay); }
+            else if (RaceAutoRun != null) RaceAutoRun(raceIndex, result);
             if (justCleared && GameCleared != null) GameCleared();
             CheckBankrupt();
         }

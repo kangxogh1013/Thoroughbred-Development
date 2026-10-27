@@ -13,16 +13,13 @@ using static HorseRanch.EditorTools.UIFactory;
 namespace HorseRanch.EditorTools
 {
     /// <summary>
-    /// 씬 전체(카메라, EventSystem, Canvas, 탭 5개, 경주 재생, 팝업, 토스트)를 코드로 만들고
-    /// 각 뷰의 [SerializeField] 참조를 자동 연결한 뒤 씬 파일로 저장한다.
+    /// 쯔꾸르식 탐험 씬 전체를 코드로 만든다: 카메라(플레이어 추적), 맵 4구역 + NPC, HUD, 대화창,
+    /// 기능 창 9개, 경주 관람 화면, 팝업, 토스트, 페이드. 각 [SerializeField] 참조를 자동 연결하고 씬으로 저장.
     /// </summary>
     public static class HorseRanchSceneBuilder
     {
-        // 기준 해상도 1920×1080, 상단 바 96 + 탭 60
-        private const float TopBarH = 96f, TabH = 60f;
-
         private static RanchGameRunner runner;
-        private static RanchUI rootUI;
+        private static GameUI rootUI;
         private static HorseRanchArt art;
 
         // 자주 쓰는 색
@@ -49,14 +46,7 @@ namespace HorseRanch.EditorTools
 
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
-            // ===== 카메라 / EventSystem / 게임 러너 =====
-            var cam = new GameObject("Main Camera").AddComponent<Camera>();
-            cam.tag = "MainCamera";
-            cam.orthographic = true;
-            cam.clearFlags = CameraClearFlags.SolidColor;
-            cam.backgroundColor = UITheme.Background;
-            cam.transform.position = new Vector3(0f, 0f, -10f);
-
+            // ===== EventSystem / 게임 러너 =====
             var es = new GameObject("EventSystem");
             es.AddComponent<EventSystem>();
 #if ENABLE_INPUT_SYSTEM
@@ -64,9 +54,26 @@ namespace HorseRanch.EditorTools
 #else
             es.AddComponent<StandaloneInputModule>();      // 레거시 입력 (New Input System 미설치 시)
 #endif
-
             runner = new GameObject("GameRunner").AddComponent<RanchGameRunner>();
             Set(runner, "database", db);
+
+            // ===== 맵 4구역 + NPC + 플레이어 =====
+            var world = HorseRanchWorldBuilder.Build(runner, sprites, font);
+
+            // ===== 카메라: 1080p에서 1타일 = 64px (32px 도트 2배) =====
+            var cam = new GameObject("Main Camera").AddComponent<Camera>();
+            cam.tag = "MainCamera";
+            cam.orthographic = true;
+            cam.orthographicSize = 8.4375f;
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = new Color(0.08f, 0.07f, 0.09f);
+            var spawn = GridMover.CellToWorld(world.spawn);
+            cam.transform.position = new Vector3(spawn.x, spawn.y, -10f);
+            var follow = cam.gameObject.AddComponent<CameraFollow>();
+            Set(follow, "target", world.player.transform);
+            Set(follow, "map", world.map);
+            Set(follow, "cam", cam);
+            AddGlobalLight2D();
 
             // ===== Canvas (해상도 대응: Scale With Screen Size 1920×1080, Match 0.5) =====
             var canvasGo = new GameObject("RanchCanvas", typeof(RectTransform));
@@ -80,38 +87,64 @@ namespace HorseRanch.EditorTools
             scaler.matchWidthOrHeight = 0.5f;
             canvasGo.AddComponent<GraphicRaycaster>();
             var root = (RectTransform)canvasGo.transform;
-            rootUI = canvasGo.AddComponent<RanchUI>();
+            rootUI = canvasGo.AddComponent<GameUI>();
 
-            Stretch(Panel("Background", root, UITheme.Background, false).rectTransform);
-            BuildTopBar(root);
-            var tabs = BuildTabBar(root);
+            BuildHud(root);
 
-            var content = Stretch(NewRect("Content", root), 24f, TopBarH + TabH + 16f, 24f, 20f);
-            var panels = new GameObject[]
-            {
-                BuildStable(content), BuildRace(content), BuildShop(content), BuildBreed(content), BuildAchievements(content)
-            };
-            var playback = BuildPlayback(content);
+            // 기능 창 (WindowId 순서)
+            var windows = new WindowView[9];
+            RectTransform c;
+            windows[(int)WindowId.Stable] = Window(root, "Stable", "마구간", new Vector2(1720f, 920f), out c); BuildStable(c);
+            windows[(int)WindowId.Shop] = Window(root, "Shop", "상점", new Vector2(1720f, 640f), out c); BuildShop(c);
+            windows[(int)WindowId.Breed] = Window(root, "Breed", "교배소", new Vector2(1400f, 760f), out c); BuildBreed(c);
+            windows[(int)WindowId.Achievements] = Window(root, "Achievements", "업적", new Vector2(1900f, 620f), out c); BuildAchievements(c);
+            windows[(int)WindowId.Inventory] = Window(root, "Inventory", "인벤토리", new Vector2(1200f, 800f), out c); BuildInventory(c);
+            windows[(int)WindowId.Bet] = Window(root, "Bet", "마권 판매소", new Vector2(1860f, 960f), out c); BuildBet(c);
+            windows[(int)WindowId.Exchange] = Window(root, "Exchange", "교환소", new Vector2(1200f, 800f), out c); BuildExchange(c);
+            windows[(int)WindowId.Entry] = Window(root, "Entry", "출전 접수", new Vector2(1240f, 560f), out c); BuildEntry(c);
+            windows[(int)WindowId.Bulletin] = Window(root, "Bulletin", "게시판", new Vector2(1600f, 860f), out c); BuildBulletin(c);
+
+            var dialogue = BuildDialogue(root);
+            var playback = BuildPlayback(root);
             var toast = BuildToast(root);
             var modal = BuildModal(root);
+            var fade = BuildFade(root);
 
             Set(rootUI, "runner", runner);
+            Set(rootUI, "player", world.player);
+            Set(rootUI, "cameraFollow", follow);
             Set(rootUI, "modal", modal);
             Set(rootUI, "toast", toast);
+            Set(rootUI, "dialogue", dialogue);
             Set(rootUI, "playback", playback);
-            SetArr(rootUI, "tabButtons", tabs.buttons);
-            SetArr(rootUI, "tabUnderlines", tabs.underlines);
-            SetArr(rootUI, "tabLabels", tabs.labels);
-            SetArr(rootUI, "tabPanels", panels);
+            Set(rootUI, "fade", fade);
+            SetArr(rootUI, "windows", windows);
+            SetV2I(rootUI, "spawnCell", world.spawn);
+            Set(world.player, "ui", rootUI);
 
-            // 첫 탭만 켜고 나머지는 꺼 둔다
-            for (int i = 1; i < panels.Length; i++) panels[i].SetActive(false);
+            foreach (var w in windows) w.gameObject.SetActive(false);
+            playback.gameObject.SetActive(false);
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, HorseRanchPaths.ScenePath);
             AddToBuildSettings(HorseRanchPaths.ScenePath);
-            Selection.activeGameObject = canvasGo;
+            Selection.activeGameObject = world.player.gameObject;
             Debug.Log("[HorseRanch] 씬 생성 완료: " + HorseRanchPaths.ScenePath);
+        }
+
+        /// <summary>URP 2D 렌더러면 전역 2D 조명 추가 (없으면 Lit 스프라이트가 어둡게 보일 수 있음). 내장 파이프라인이면 건너뜀</summary>
+        private static void AddGlobalLight2D()
+        {
+            var t = System.Type.GetType("UnityEngine.Rendering.Universal.Light2D, Unity.RenderPipelines.Universal.Runtime");
+            if (t == null) return;
+            var go = new GameObject("Global Light 2D");
+            var light = go.AddComponent(t);
+            var prop = t.GetProperty("lightType");
+            if (prop != null && prop.CanWrite)
+            {
+                try { prop.SetValue(light, System.Enum.Parse(prop.PropertyType, "Global"), null); }
+                catch (System.Exception e) { Debug.LogWarning("[HorseRanch] Global Light 2D 설정 실패: " + e.Message); }
+            }
         }
 
         private static void AddToBuildSettings(string path)
@@ -134,72 +167,6 @@ namespace HorseRanch.EditorTools
             var t = NewText("Label", parent, text, size, Mute, TextAlignmentOptions.MidlineLeft, true);
             t.characterSpacing = 4f;
             LE(t, -1f, prefH);
-            return t;
-        }
-
-        // =====================================================================
-        // 상단 바
-        // =====================================================================
-        private static void BuildTopBar(RectTransform root)
-        {
-            var bar = Panel("TopBar", root, UITheme.Board, false).rectTransform;
-            Place(bar, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, TopBarH));
-            H(bar, 28f, 28, 28, 10, 10);
-
-            var brand = NewRect("Brand", bar);
-            LE(brand, 380f);
-            V(brand, 2f, 0, 0, 0, 0, TextAnchor.MiddleLeft);
-            var title = NewText("Title", brand, "질주마 목장", 40f, White, TextAlignmentOptions.MidlineLeft, true);
-            LE(title, -1f, 50f);
-            var titles = NewText("Titles", brand, "", 16f, UITheme.BoardFg);
-            LE(titles, -1f, 22f);
-
-            var goal = NewText("Goal", bar, "", 18f, UITheme.BoardText, TextAlignmentOptions.MidlineRight);
-            LE(goal, -1f, -1f, 1f);
-
-            var dayBlock = NewRect("Day", bar);
-            LE(dayBlock, 110f);
-            V(dayBlock, 0f, 0, 0, 0, 0, TextAnchor.MiddleLeft);
-            LE(NewText("Key", dayBlock, "DAY", 13f, UITheme.BoardMute, TextAlignmentOptions.MidlineLeft, true), -1f, 18f);
-            var day = NewText("Value", dayBlock, "1", 36f, UITheme.BoardFg, TextAlignmentOptions.MidlineLeft, true);
-            LE(day, -1f, 44f);
-
-            var goldBlock = NewRect("Gold", bar);
-            LE(goldBlock, 240f);
-            V(goldBlock, 0f, 0, 0, 0, 0, TextAnchor.MiddleLeft);
-            LE(NewText("Key", goldBlock, "GOLD", 13f, UITheme.BoardMute, TextAlignmentOptions.MidlineLeft, true), -1f, 18f);
-            var gold = NewText("Value", goldBlock, "0 G", 36f, UITheme.BoardFg, TextAlignmentOptions.MidlineLeft, true);
-            LE(gold, -1f, 44f);
-
-            var next = Btn("NextDayButton", bar, "다음 날 ▶", UITheme.Turf, White, 26f);
-            LE(next, 230f);
-
-            Set(rootUI, "dayText", day);
-            Set(rootUI, "goldText", gold);
-            Set(rootUI, "titlesText", titles);
-            Set(rootUI, "goalText", goal);
-            Set(rootUI, "nextDayButton", next);
-        }
-
-        private struct Tabs { public Button[] buttons; public Image[] underlines; public TMP_Text[] labels; }
-
-        private static Tabs BuildTabBar(RectTransform root)
-        {
-            var bar = Panel("TabBar", root, UITheme.Panel, false).rectTransform;
-            Place(bar, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -TopBarH), new Vector2(0f, TabH));
-            H(bar, 4f, 24, 24, 0, 0);
-            string[] names = { "마구간", "경마장", "상점", "교배소", "업적" };
-            var t = new Tabs { buttons = new Button[5], underlines = new Image[5], labels = new TMP_Text[5] };
-            for (int i = 0; i < names.Length; i++)
-            {
-                TextMeshProUGUI label;
-                var b = Btn("Tab_" + i, bar, (i + 1) + "  " + names[i], new Color(1f, 1f, 1f, 0f), Mute, 22f, out label);
-                ((Image)b.targetGraphic).sprite = null;
-                LE(b, 200f);
-                var line = Img(NewRect("Underline", b.transform), UITheme.Turf);
-                Place(line.rectTransform, Vector2.zero, new Vector2(1f, 0f), new Vector2(0.5f, 0f), Vector2.zero, new Vector2(0f, 4f));
-                t.buttons[i] = b; t.underlines[i] = line; t.labels[i] = label;
-            }
             return t;
         }
 
@@ -239,9 +206,9 @@ namespace HorseRanch.EditorTools
 
             var empty = Stretch(NewRect("Empty", right));
             V(empty, 18f, 0, 0, 0, 0, TextAnchor.MiddleCenter, false);
-            var emptyText = NewText("Message", empty, "마구간이 비었습니다.\n상점의 블라인드 마시장에서 말을 구매하세요.", 24f, Mute, TextAlignmentOptions.Center);
+            var emptyText = NewText("Message", empty, "마구간이 비었습니다.\n마을 상점의 블라인드 마시장에서 말을 구매하세요.", 24f, Mute, TextAlignmentOptions.Center);
             LE(emptyText, 700f, 90f);
-            var emptyBtn = Btn("GoShop", empty, "상점으로", UITheme.Turf, White, 22f);
+            var emptyBtn = Btn("GoShop", empty, "확인", UITheme.Turf, White, 22f);
             LE(emptyBtn, 240f, 56f);
 
             var detail = Stretch(NewRect("Detail", right));
@@ -405,15 +372,9 @@ namespace HorseRanch.EditorTools
         private static readonly float[] BoardCols = { 46f, -1f, 40f, 90f, 60f, 300f, 70f, 80f, 80f };
         private static readonly string[] BoardHeads = { "마번", "마명", "성", "최근", "합계", "스탯", "컨디션", "단승", "연승" };
 
-        private static GameObject BuildRace(RectTransform content)
+        private static UIRow[] RaceSelectRow(Transform parent)
         {
-            var panel = Stretch(NewRect("Panel_Race", content));
-            V(panel, 14f);
-            var view = panel.gameObject.AddComponent<RaceLobbyView>();
-            WireView(view);
-
-            // 대회 선택 버튼 2개
-            var pick = NewRect("RaceSelect", panel);
+            var pick = NewRect("RaceSelect", parent);
             LE(pick, -1f, 100f);
             H(pick, 14f);
             var raceButtons = new UIRow[2];
@@ -428,51 +389,24 @@ namespace HorseRanch.EditorTools
                 var t2 = NewText("Status", b.transform, "", 16f, UITheme.Good, TextAlignmentOptions.MidlineLeft, true); LE(t2, -1f, 22f);
                 raceButtons[i] = Row(b.gameObject, (Image)b.targetGraphic, b, new TMP_Text[] { t0, t1, t2 });
             }
+            return raceButtons;
+        }
+
+        private static GameObject BuildBet(RectTransform content)
+        {
+            var panel = Stretch(NewRect("Panel_Bet", content));
+            V(panel, 14f);
+            var view = panel.gameObject.AddComponent<BetWindowView>();
+            WireView(view);
+            var raceButtons = RaceSelectRow(panel);
 
             var body = NewRect("Body", panel);
             LE(body, -1f, -1f, -1f, 1f);
-
-            // ----- 결과 화면 -----
-            var result = Panel("Result", body, UITheme.Panel).rectTransform;
-            Stretch(result);
-            V(result, 14f, 28, 28, 22, 22, TextAnchor.UpperLeft, false);
-            var resLabel = NewText("Title", result, "경주 결과", 26f, Ink, TextAlignmentOptions.MidlineLeft, true);
-            LE(resLabel, -1f, 36f, 1f);
-            var resText = NewText("Body", result, "", 20f, Ink, TextAlignmentOptions.TopLeft);
-            resText.overflowMode = TextOverflowModes.Overflow;
-            LE(resText, -1f, -1f, 1f, 1f);
-            var foot = NewRect("Footer", result);
-            LE(foot, -1f, 56f, 1f);
-            H(foot, 14f);
-            var replay = Btn("Replay", foot, "경주 다시 보기", UITheme.Panel2, Ink, 20f);
-            LE(replay, 260f);
-            var nextHint = NewText("Hint", foot, "다음 경주는 [다음 날]에 열립니다.", 17f, Mute);
-            LE(nextHint, -1f, -1f, 1f);
-
-            // ----- 출전/배팅 화면 -----
-            var lobby = Stretch(NewRect("Lobby", body));
-            H(lobby, 16f, 0, 0, 0, 0, TextAnchor.UpperLeft);
-
-            var left = NewRect("Left", lobby);
-            LE(left, -1f, -1f, 1f, 1f);
-            V(left, 10f);
-
-            var entry = Panel("Entry", left, UITheme.Panel).rectTransform;
-            LE(entry, -1f, 66f);
-            H(entry, 10f, 16, 12, 10, 10);
-            LE(Label(entry, "출전 등록", 15f), 100f);
-            TextMeshProUGUI toggleLabel;
-            var prev = Btn("Prev", entry, "◀", UITheme.Panel2, Ink, 20f); LE(prev, 52f);
-            var entryName = NewText("EntryName", entry, "", 21f, Ink, TextAlignmentOptions.MidlineLeft, true);
-            LE(entryName, -1f, -1f, 1f);
-            var next = Btn("Next", entry, "▶", UITheme.Panel2, Ink, 20f); LE(next, 52f);
-            var toggle = Btn("Toggle", entry, "출전 등록", UITheme.Turf, White, 18f, out toggleLabel); LE(toggle, 250f);
-            var entryHint = NewText("EntryHint", left, "", 15f, Mute);
-            LE(entryHint, -1f, 22f);
+            H(body, 16f, 0, 0, 0, 0, TextAnchor.UpperLeft);
 
             // 출마표 (전광판)
-            var board = Panel("Board", left, UITheme.Board).rectTransform;
-            LE(board, -1f, -1f, -1f, 1f);
+            var board = Panel("Board", body, UITheme.Board).rectTransform;
+            LE(board, -1f, -1f, 1f, 1f);
             V(board, 2f, 14, 14, 12, 12);
             var head = NewRect("Head", board);
             LE(head, -1f, 30f);
@@ -485,10 +419,10 @@ namespace HorseRanch.EditorTools
             var boardRows = new UIRow[8];
             for (int i = 0; i < 8; i++) boardRows[i] = BoardRow(board, i);
             var boardFooter = NewText("Footer", board, "", 14f, UITheme.BoardMute);
-            LE(boardFooter, -1f, 28f);
+            LE(boardFooter, -1f, 40f);
 
-            // ----- 마권 패널 -----
-            var bet = Panel("BetPanel", lobby, UITheme.Panel).rectTransform;
+            // 마권 패널
+            var bet = Panel("BetPanel", body, UITheme.Panel).rectTransform;
             LE(bet, 540f, -1f, -1f, 1f);
             V(bet, 10f, 18, 18, 16, 16);
             Label(bet, "마권 구매", 16f, 24f);
@@ -536,33 +470,21 @@ namespace HorseRanch.EditorTools
             H(est, 8f, 14, 14, 4, 4);
             var estLabel = NewText("Key", est, "마번을 선택하세요", 16f, UITheme.BoardMute);
             LE(estLabel, -1f, -1f, 1f);
-            var estOdds = NewText("Odds", est, "—", 30f, UITheme.BoardFg, TextAlignmentOptions.MidlineRight, true);
+            var estOdds = NewText("Odds", est, "-", 30f, UITheme.BoardFg, TextAlignmentOptions.MidlineRight, true);
             LE(estOdds, 170f);
 
-            var buy = Btn("Buy", bet, "마권 구매", UITheme.Ink, White, 20f);
-            LE(buy, -1f, 50f);
+            TextMeshProUGUI buyLabel;
+            var buy = Btn("Buy", bet, "마권 구매", UITheme.Turf, White, 20f, out buyLabel);
+            LE(buy, -1f, 54f);
 
+            Label(bet, "오늘 이 경주에 산 마권", 14f, 22f);
             RectTransform ticketContent;
             var tickets = Scroll("Tickets", bet, 6f, out ticketContent);
             LE(tickets, -1f, -1f, -1f, 1f);
             var ticketTpl = TicketTemplate(ticketContent);
             var ticketList = List(tickets.gameObject, ticketTpl, ticketContent);
 
-            TextMeshProUGUI startLabel;
-            var start = Btn("Start", bet, "발주! 경주 시작", UITheme.Turf, White, 26f, out startLabel);
-            LE(start, -1f, 66f);
-
-            Set(view, "lobbyRoot", lobby.gameObject);
-            Set(view, "resultRoot", result.gameObject);
-            Set(view, "resultText", resText);
-            Set(view, "replayButton", replay);
             SetArr(view, "raceButtons", raceButtons);
-            Set(view, "entryPrevButton", prev);
-            Set(view, "entryNextButton", next);
-            Set(view, "entryToggleButton", toggle);
-            Set(view, "entryNameText", entryName);
-            Set(view, "entryToggleLabel", toggleLabel);
-            Set(view, "entryHintText", entryHint);
             SetArr(view, "boardRows", boardRows);
             Set(view, "boardFooter", boardFooter);
             SetArr(view, "betTypeButtons", betTypeButtons);
@@ -576,10 +498,39 @@ namespace HorseRanch.EditorTools
             Set(view, "estLabel", estLabel);
             Set(view, "estOdds", estOdds);
             Set(view, "buyButton", buy);
+            Set(view, "buyLabel", buyLabel);
             Set(view, "ticketList", ticketList);
-            Set(view, "startButton", start);
-            Set(view, "startLabel", startLabel);
-            result.gameObject.SetActive(false);
+            return panel.gameObject;
+        }
+
+        private static GameObject BuildEntry(RectTransform content)
+        {
+            var panel = Stretch(NewRect("Panel_Entry", content));
+            V(panel, 16f);
+            var view = panel.gameObject.AddComponent<EntryWindowView>();
+            WireView(view);
+            var raceButtons = RaceSelectRow(panel);
+
+            var entry = Panel("Entry", panel, UITheme.Panel).rectTransform;
+            LE(entry, -1f, 76f);
+            H(entry, 10f, 16, 12, 12, 12);
+            LE(Label(entry, "출전마", 15f), 80f);
+            TextMeshProUGUI toggleLabel;
+            var prev = Btn("Prev", entry, "◀", UITheme.Panel2, Ink, 20f); LE(prev, 56f);
+            var name = NewText("Name", entry, "", 22f, Ink, TextAlignmentOptions.MidlineLeft, true);
+            LE(name, -1f, -1f, 1f);
+            var next = Btn("Next", entry, "▶", UITheme.Panel2, Ink, 20f); LE(next, 56f);
+            var toggle = Btn("Toggle", entry, "출전 등록", UITheme.Turf, White, 19f, out toggleLabel); LE(toggle, 280f);
+            var hint = NewText("Hint", panel, "", 17f, Mute, TextAlignmentOptions.TopLeft);
+            LE(hint, -1f, 80f);
+
+            SetArr(view, "raceButtons", raceButtons);
+            Set(view, "prevButton", prev);
+            Set(view, "nextButton", next);
+            Set(view, "toggleButton", toggle);
+            Set(view, "nameText", name);
+            Set(view, "toggleLabel", toggleLabel);
+            Set(view, "hintText", hint);
             return panel.gameObject;
         }
 
@@ -619,18 +570,20 @@ namespace HorseRanch.EditorTools
             LE(t0, -1f, -1f, 1f);
             var t1 = NewText("Amount", row.transform, "", 15f, Mute, TextAlignmentOptions.MidlineRight);
             LE(t1, 170f);
-            var cancel = Btn("Cancel", row.transform, "취소", UITheme.Panel, UITheme.Bad, 15f);
+            TextMeshProUGUI cl;
+            var cancel = Btn("Cancel", row.transform, "환불", UITheme.Panel, UITheme.Bad, 15f, out cl);
             LE(cancel, 64f);
-            return Row(row.gameObject, row, cancel, new TMP_Text[] { t0, t1 });
+            return Row(row.gameObject, row, cancel, new TMP_Text[] { t0, t1, cl });
         }
 
         // =====================================================================
         // 경주 재생
         // =====================================================================
-        private static RacePlaybackView BuildPlayback(RectTransform content)
+        private static RacePlaybackView BuildPlayback(RectTransform root)
         {
-            var panel = Stretch(NewRect("Panel_Playback", content));
-            V(panel, 12f);
+            var panel = Stretch(NewRect("Panel_Playback", root));
+            Img(panel, UITheme.Background, false, true);
+            V(panel, 12f, 28, 28, 24, 24);
             var view = panel.gameObject.AddComponent<RacePlaybackView>();
 
             var hud = NewRect("HUD", panel);
@@ -927,7 +880,7 @@ namespace HorseRanch.EditorTools
 
             var grid = NewRect("Grid", panel);
             LE(grid, -1f, -1f, -1f, 1f);
-            NewGrid(grid, new Vector2(456f, 200f), new Vector2(14f, 14f), 4);
+            NewGrid(grid, new Vector2(452f, 200f), new Vector2(14f, 14f), 4);
             var cards = new UIRow[8];
             for (int i = 0; i < 8; i++)
             {
@@ -957,19 +910,232 @@ namespace HorseRanch.EditorTools
         }
 
         // =====================================================================
+        // HUD / 창 / 대화창 / 페이드
+        // =====================================================================
+        private static void BuildHud(RectTransform root)
+        {
+            // 왼쪽 위: 날짜·골드·마권
+            var info = Panel("HUD_Info", root, UITheme.Board).rectTransform;
+            Place(info, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(20f, -20f), new Vector2(520f, 112f));
+            V(info, 4f, 22, 18, 12, 12);
+            var row = NewRect("Row", info);
+            LE(row, -1f, 50f);
+            H(row, 24f);
+            var day = NewText("Day", row, "1일차", 34f, UITheme.BoardFg, TextAlignmentOptions.MidlineLeft, true); LE(day, 150f);
+            var gold = NewText("Gold", row, "0 G", 34f, White, TextAlignmentOptions.MidlineLeft, true); LE(gold, -1f, -1f, 1f);
+            var tickets = NewText("Tickets", info, "", 18f, UITheme.BoardText); LE(tickets, -1f, 30f);
+
+            // 가운데 위: 현재 위치
+            var loc = Panel("HUD_Location", root, UITheme.Board).rectTransform;
+            Place(loc, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -20f), new Vector2(360f, 52f));
+            var locText = NewText("Text", loc, "목장 마을", 22f, White, TextAlignmentOptions.Center, true);
+            Stretch(locText.rectTransform);
+
+            // 오른쪽 위: 목표
+            var goal = Panel("HUD_Goal", root, UITheme.Board).rectTransform;
+            Place(goal, Vector2.one, Vector2.one, Vector2.one, new Vector2(-20f, -20f), new Vector2(560f, 56f));
+            var goalText = NewText("Text", goal, "", 18f, UITheme.BoardText, TextAlignmentOptions.MidlineRight);
+            Stretch(goalText.rectTransform, 16f, 0f, 18f, 0f);
+
+            // 왼쪽 아래: 조작 안내
+            var keys = Panel("HUD_Keys", root, new Color(0.08f, 0.1f, 0.08f, 0.75f)).rectTransform;
+            Place(keys, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(20f, 20f), new Vector2(860f, 40f));
+            var keyText = NewText("Text", keys, "WASD/방향키 이동 · Shift 달리기 · E 상호작용 · Tab 인벤토리 · J 업적 · Esc 닫기", 16f, UITheme.BoardText, TextAlignmentOptions.Center);
+            Stretch(keyText.rectTransform, 12f, 0f, 12f, 0f);
+
+            // 가운데 아래: 상호작용 안내
+            var prompt = Panel("HUD_Prompt", root, UITheme.Board).rectTransform;
+            Place(prompt, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 84f), new Vector2(460f, 58f));
+            var promptText = NewText("Text", prompt, "[E]", 22f, White, TextAlignmentOptions.Center);
+            Stretch(promptText.rectTransform);
+
+            Set(rootUI, "dayText", day);
+            Set(rootUI, "goldText", gold);
+            Set(rootUI, "ticketText", tickets);
+            Set(rootUI, "locationText", locText);
+            Set(rootUI, "goalText", goalText);
+            Set(rootUI, "promptRoot", prompt.gameObject);
+            Set(rootUI, "promptText", promptText);
+        }
+
+        /// <summary>중앙 창 틀: 반투명 배경(뒤 클릭 차단) + 제목 줄 + 닫기 버튼 + 내용 영역</summary>
+        private static WindowView Window(RectTransform root, string name, string title, Vector2 size, out RectTransform content)
+        {
+            var dim = Img(Stretch(NewRect("Window_" + name, root)), new Color(0f, 0f, 0f, 0.45f), false, true);
+            var win = dim.gameObject.AddComponent<WindowView>();
+            var frame = Panel("Frame", dim.transform, UITheme.Background).rectTransform;
+            Place(frame, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, size);
+            var bar = Panel("TitleBar", frame, UITheme.Board).rectTransform;
+            Place(bar, new Vector2(0f, 1f), Vector2.one, new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 64f));
+            H(bar, 12f, 26, 12, 8, 8);
+            var t = NewText("Title", bar, title, 28f, White, TextAlignmentOptions.MidlineLeft, true);
+            LE(t, -1f, -1f, 1f);
+            var hint = NewText("Hint", bar, "Esc", 16f, UITheme.BoardMute, TextAlignmentOptions.MidlineRight);
+            LE(hint, 60f);
+            var close = Btn("Close", bar, "닫기", UITheme.Panel2, Ink, 18f);
+            LE(close, 110f);
+            content = Stretch(NewRect("Content", frame), 20f, 82f, 20f, 20f);
+            Set(win, "titleText", t);
+            Set(win, "closeButton", close);
+            SetString(win, "defaultTitle", title);
+            return win;
+        }
+
+        private static DialogueView BuildDialogue(RectTransform root)
+        {
+            var host = Stretch(NewRect("Dialogue", root));
+            var view = host.gameObject.AddComponent<DialogueView>();
+            var box = Panel("Box", host, UITheme.Panel).rectTransform;
+            Place(box, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 24f), new Vector2(1560f, 260f));
+            box.GetComponent<Image>().raycastTarget = true; // 대화창 뒤 클릭 막기
+
+            var tag = Panel("NameTag", box, UITheme.Board).rectTransform;
+            Place(tag, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 0f), new Vector2(28f, -8f), new Vector2(380f, 50f));
+            var nameText = NewText("Name", tag, "이름", 22f, UITheme.BoardFg, TextAlignmentOptions.Center, true);
+            Stretch(nameText.rectTransform, 10f, 0f, 10f, 0f);
+
+            var body = NewText("Body", box, "", 24f, Ink, TextAlignmentOptions.TopLeft);
+            body.overflowMode = TextOverflowModes.Overflow;
+            body.lineSpacing = 10f;
+            Stretch(body.rectTransform, 36f, 52f, 500f, 40f);
+
+            var hintText = NewText("Hint", box, "E 닫기", 15f, Mute, TextAlignmentOptions.MidlineRight);
+            Place(hintText.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-500f, 10f), new Vector2(420f, 28f));
+
+            var col = NewRect("Choices", box);
+            col.anchorMin = new Vector2(1f, 0f);
+            col.anchorMax = new Vector2(1f, 1f);
+            col.pivot = new Vector2(1f, 0.5f);
+            col.offsetMin = new Vector2(-470f, 22f);
+            col.offsetMax = new Vector2(-24f, -22f);
+            V(col, 8f, 0, 0, 0, 0, TextAnchor.MiddleCenter);
+            var buttons = new Button[4];
+            var labels = new TMP_Text[4];
+            for (int i = 0; i < 4; i++)
+            {
+                TextMeshProUGUI l;
+                buttons[i] = Btn("Choice_" + i, col, "선택지", UITheme.Panel2, Ink, 19f, out l);
+                l.alignment = TextAlignmentOptions.MidlineLeft;
+                Stretch(l.rectTransform, 18f, 2f, 10f, 2f);
+                LE(buttons[i], -1f, 46f);
+                labels[i] = l;
+            }
+
+            Set(view, "root", box.gameObject);
+            Set(view, "nameText", nameText);
+            Set(view, "bodyText", body);
+            Set(view, "hintText", hintText);
+            SetArr(view, "choiceButtons", buttons);
+            SetArr(view, "choiceLabels", labels);
+            box.gameObject.SetActive(false);
+            return view;
+        }
+
+        private static Image BuildFade(RectTransform root)
+        {
+            var f = Img(Stretch(NewRect("Fade", root)), new Color(0f, 0f, 0f, 0f), false, true);
+            f.gameObject.SetActive(false);
+            return f;
+        }
+
+        /// <summary>마권 목록 행 (texts: 0 마권, 1 상태)</summary>
+        private static UIRow TicketInfoTemplate(RectTransform parent)
+        {
+            var row = Panel("TicketRow", parent, UITheme.Panel, true);
+            LE(row, -1f, 48f);
+            H(row, 10f, 16, 16, 4, 4);
+            var t0 = NewText("Ticket", row.transform, "", 18f, Ink); LE(t0, -1f, -1f, 1f);
+            var t1 = NewText("Status", row.transform, "", 18f, Mute, TextAlignmentOptions.MidlineRight); LE(t1, 320f);
+            return Row(row.gameObject, row, null, new TMP_Text[] { t0, t1 });
+        }
+
+        private static GameObject BuildExchange(RectTransform content)
+        {
+            var panel = Stretch(NewRect("Panel_Exchange", content));
+            V(panel, 12f);
+            var view = panel.gameObject.AddComponent<ExchangeView>();
+            WireView(view);
+            var summary = NewText("Summary", panel, "", 20f, Ink, TextAlignmentOptions.MidlineLeft, true); LE(summary, -1f, 34f);
+            var empty = NewText("Empty", panel, "보관 중인 마권이 없습니다. 도박장 마권 판매소에서 살 수 있어요.", 18f, Mute); LE(empty, -1f, 30f);
+            RectTransform listContent;
+            var scroll = Scroll("List", panel, 6f, out listContent);
+            LE(scroll, -1f, -1f, -1f, 1f);
+            var list = List(scroll.gameObject, TicketInfoTemplate(listContent), listContent);
+            var buttons = NewRect("Buttons", panel);
+            LE(buttons, -1f, 62f);
+            H(buttons, 12f, 0, 0, 0, 0, TextAnchor.MiddleRight);
+            Spacer(buttons);
+            var discard = Btn("Discard", buttons, "꽝 마권 버리기", UITheme.Panel2, UITheme.Bad, 18f); LE(discard, 220f);
+            TextMeshProUGUI rl;
+            var redeem = Btn("Redeem", buttons, "적중 마권 교환", UITheme.Turf, White, 20f, out rl); LE(redeem, 380f);
+            Set(view, "summaryText", summary);
+            Set(view, "ticketList", list);
+            Set(view, "emptyText", empty);
+            Set(view, "redeemButton", redeem);
+            Set(view, "redeemLabel", rl);
+            Set(view, "discardButton", discard);
+            return panel.gameObject;
+        }
+
+        private static GameObject BuildInventory(RectTransform content)
+        {
+            var panel = Stretch(NewRect("Panel_Inventory", content));
+            V(panel, 12f);
+            var view = panel.gameObject.AddComponent<InventoryView>();
+            WireView(view);
+            var summary = NewText("Summary", panel, "", 20f, Ink, TextAlignmentOptions.TopLeft); LE(summary, -1f, 70f);
+            var itemsBox = Panel("Items", panel, UITheme.Panel).rectTransform;
+            LE(itemsBox, -1f, 92f);
+            var items = NewText("Text", itemsBox, "", 20f, Ink, TextAlignmentOptions.MidlineLeft);
+            Stretch(items.rectTransform, 18f, 8f, 18f, 8f);
+            Label(panel, "마권 (적중 마권은 도박장 교환소에서 교환)", 15f, 24f);
+            var empty = NewText("Empty", panel, "보관 중인 마권이 없습니다.", 18f, Mute); LE(empty, -1f, 30f);
+            RectTransform listContent;
+            var scroll = Scroll("List", panel, 6f, out listContent);
+            LE(scroll, -1f, -1f, -1f, 1f);
+            var list = List(scroll.gameObject, TicketInfoTemplate(listContent), listContent);
+            Set(view, "summaryText", summary);
+            Set(view, "itemsText", items);
+            Set(view, "ticketList", list);
+            Set(view, "emptyText", empty);
+            return panel.gameObject;
+        }
+
+        private static GameObject BuildBulletin(RectTransform content)
+        {
+            var panel = Stretch(NewRect("Panel_Bulletin", content));
+            H(panel, 16f, 0, 0, 0, 0, TextAnchor.UpperLeft);
+            var view = panel.gameObject.AddComponent<BulletinView>();
+            WireView(view);
+            var left = Panel("Today", panel, UITheme.Panel).rectTransform;
+            LE(left, -1f, -1f, 1f, 1f);
+            var today = NewText("Text", left, "", 18f, Ink, TextAlignmentOptions.TopLeft);
+            today.overflowMode = TextOverflowModes.Truncate;
+            Stretch(today.rectTransform, 22f, 18f, 22f, 18f);
+            var right = Panel("Results", panel, UITheme.Panel).rectTransform;
+            LE(right, -1f, -1f, 1f, 1f);
+            var results = NewText("Text", right, "", 17f, Ink, TextAlignmentOptions.TopLeft);
+            results.overflowMode = TextOverflowModes.Truncate;
+            Stretch(results.rectTransform, 22f, 18f, 22f, 18f);
+            Set(view, "todayText", today);
+            Set(view, "resultText", results);
+            return panel.gameObject;
+        }
+
+        // =====================================================================
         // 토스트 / 팝업
         // =====================================================================
         private static ToastView BuildToast(RectTransform root)
         {
             var host = NewRect("ToastHost", root);
-            Place(host, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-24f, 24f), new Vector2(560f, 260f));
-            V(host, 8f, 0, 0, 0, 0, TextAnchor.LowerRight, false);
+            Place(host, Vector2.one, Vector2.one, Vector2.one, new Vector2(-24f, -96f), new Vector2(620f, 280f));
+            V(host, 8f, 0, 0, 0, 0, TextAnchor.UpperRight, false);
             var view = host.gameObject.AddComponent<ToastView>();
             var slots = new UIRow[4];
             for (int i = 0; i < 4; i++)
             {
                 var s = Panel("Toast_" + i, host, UITheme.Ink);
-                LE(s, 520f, 54f);
+                LE(s, 600f, 54f);
                 var t = NewText("Text", s.transform, "", 18f, White, TextAlignmentOptions.MidlineLeft, true);
                 Stretch(t.rectTransform, 18f, 4f, 18f, 4f);
                 slots[i] = Row(s.gameObject, s, null, new TMP_Text[] { t });

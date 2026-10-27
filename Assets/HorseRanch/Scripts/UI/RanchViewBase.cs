@@ -7,7 +7,7 @@ namespace HorseRanch
     {
         [Header("공통 참조")]
         [SerializeField] protected RanchGameRunner runner;
-        [SerializeField] protected RanchUI ui;
+        [SerializeField] protected GameUI ui;
 
         protected RanchGame Game { get { return runner.Game; } }
         protected GameData Data { get { return runner.Game.Data; } }

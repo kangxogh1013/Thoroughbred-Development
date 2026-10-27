@@ -43,7 +43,7 @@ namespace HorseRanch.EditorTools
                 MakeAch(AchievementId.FirstWin, overwrite, "첫 우승", "대회 1위 1회", "3,000G", 3000, ""),
                 MakeAch(AchievementId.Longshot, overwrite, "고배당 적중", "배당 50배 이상 마권 적중", "칭호 「복권 당첨자」", 0, "복권 당첨자"),
                 MakeAch(AchievementId.MasterTrainer, overwrite, "명마 육성", "스탯 합계 90 이상 말 보유", "5,000G", 5000, ""),
-                MakeAch(AchievementId.GrandSlam, overwrite, "그랑프리 제패", "단거리·장거리 대상경주(G1)를 모두 우승 — 게임 목표", "칭호 「명예 목장주」 + 20,000G", 20000, "명예 목장주"),
+                MakeAch(AchievementId.GrandSlam, overwrite, "그랑프리 제패", "단거리·장거리 대상경주(G1)를 모두 우승 (게임 목표)", "칭호 「명예 목장주」 + 20,000G", 20000, "명예 목장주"),
             };
 
             var db = GetOrCreate<GameDatabaseSO>(HorseRanchPaths.Data + "/GameDatabase.asset", out created);

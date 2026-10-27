@@ -104,7 +104,10 @@ namespace HorseRanch.EditorTools
             var le = c.GetComponent<LayoutElement>();
             if (le == null) le = c.gameObject.AddComponent<LayoutElement>();
             le.preferredWidth = prefW; le.preferredHeight = prefH;
-            le.flexibleWidth = flexW; le.flexibleHeight = flexH;
+            // 지정하지 않은 flexible은 0으로 고정: 레이아웃 그룹의 childForceExpand가 남는 공간을 빼앗아
+            // 다른 영역(출마표 등)을 찌그러뜨리던 버그 방지
+            le.flexibleWidth = flexW < 0f ? 0f : flexW;
+            le.flexibleHeight = flexH < 0f ? 0f : flexH;
             le.minWidth = minW; le.minHeight = minH;
             return le;
         }
@@ -246,6 +249,24 @@ namespace HorseRanch.EditorTools
             }
             p.arraySize = values.Count;
             for (int i = 0; i < values.Count; i++) p.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        public static void SetString(Object target, string field, string value)
+        {
+            var so = new SerializedObject(target);
+            var p = so.FindProperty(field);
+            if (p == null) { Debug.LogError("[HorseRanch] " + target.GetType().Name + "." + field + " 필드를 찾을 수 없습니다"); return; }
+            p.stringValue = value;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        public static void SetV2I(Object target, string field, Vector2Int value)
+        {
+            var so = new SerializedObject(target);
+            var p = so.FindProperty(field);
+            if (p == null) { Debug.LogError("[HorseRanch] " + target.GetType().Name + "." + field + " 필드를 찾을 수 없습니다"); return; }
+            p.vector2IntValue = value;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
