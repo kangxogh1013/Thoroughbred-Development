@@ -7,7 +7,7 @@ using UnityEngine.UI;
 
 namespace HorseRanch
 {
-    public enum WindowId { Stable = 0, Shop = 1, Breed = 2, Achievements = 3, Inventory = 4, Bet = 5, Exchange = 6, Entry = 7, Bulletin = 8 }
+    public enum WindowId { Stable = 0, Shop = 1, Breed = 2, Achievements = 3, Inventory = 4, Bet = 5, Exchange = 6, Entry = 7, Bulletin = 8, Map = 9 }
 
     /// <summary>
     /// 마을 탐험형 UI 총괄: HUD, 상호작용 안내, 대화창, 기능 창, 경주 관람, 화면 전환(페이드), 게임 이벤트 연결.
@@ -22,7 +22,8 @@ namespace HorseRanch
         [SerializeField] private ModalView modal;
         [SerializeField] private ToastView toast;
         [SerializeField] private DialogueView dialogue;
-        [SerializeField] private RacePlaybackView playback;
+        [Tooltip("경기장 트랙 위 실경주")]
+        [SerializeField] private WorldRaceView race;
 
         [Header("HUD")]
         [SerializeField] private TMP_Text dayText;
@@ -34,7 +35,7 @@ namespace HorseRanch
         [SerializeField] private TMP_Text promptText;
         [SerializeField] private Image fade;
 
-        [Header("창 (WindowId 순서: 마구간, 상점, 교배, 업적, 인벤토리, 마권, 교환, 출전, 게시판)")]
+        [Header("창 (WindowId 순서: 마구간, 상점, 교배, 업적, 인벤토리, 마권, 교환, 출전, 게시판, 지도)")]
         [SerializeField] private WindowView[] windows;
 
         [Header("시작 위치 (집 앞)")]
@@ -51,7 +52,7 @@ namespace HorseRanch
         public bool IsFading { get { return fadeT >= 0f; } }
         public bool IsBusy
         {
-            get { return openWindow >= 0 || dialogue.IsOpen || modal.IsOpen || playback.IsPlaying || IsFading; }
+            get { return openWindow >= 0 || dialogue.IsOpen || modal.IsOpen || race.IsPlaying || IsFading; }
         }
         private RanchGame Game { get { return runner.Game; } }
 
@@ -62,7 +63,6 @@ namespace HorseRanch
                 windows[i].CloseButton.onClick.AddListener(CloseWindow);
                 windows[i].gameObject.SetActive(false);
             }
-            playback.gameObject.SetActive(false);
             fade.gameObject.SetActive(false);
             promptRoot.SetActive(false);
         }
@@ -104,23 +104,25 @@ namespace HorseRanch
             player.WarpTo(spawnCell, Vector2Int.down);
             cameraFollow.Snap();
             RefreshHud();
-            dialogue.Show("안내", "질주마 목장에 오신 것을 환영합니다!\n방향키/WASD 이동 · E 상호작용 · Shift 달리기 · Tab 인벤토리 · J 업적\n경주는 매일 열립니다. 도박장에서 마권을 사고 경기장에서 관람하세요.");
+            dialogue.Show("안내", "질주마 목장에 오신 것을 환영합니다! 소지금 " + Game.State.gold.ToString("N0") + "G로 시작합니다.\n방향키/WASD 이동 · E 상호작용 · Shift 달리기 · Tab 인벤토리 · J 업적 · M 지도\n경주는 매일 열립니다. 도박장에서 마권을 사고 경기장에서 관람하세요.");
         }
 
         private void Update()
         {
             UpdateFade();
-            if (modal.IsOpen || playback.IsPlaying || IsFading || dialogue.IsOpen) return;
+            if (modal.IsOpen || race.IsPlaying || IsFading || dialogue.IsOpen) return;
 
             if (openWindow >= 0)
             {
                 if (GameInput.Cancel) CloseWindow();
                 else if (GameInput.Inventory && openWindow == (int)WindowId.Inventory) CloseWindow();
                 else if (GameInput.Achievements && openWindow == (int)WindowId.Achievements) CloseWindow();
+                else if (GameInput.Map && openWindow == (int)WindowId.Map) CloseWindow();
                 return;
             }
             if (GameInput.Inventory) OpenWindow(WindowId.Inventory, null);
             else if (GameInput.Achievements) OpenWindow(WindowId.Achievements, null);
+            else if (GameInput.Map) OpenWindow(WindowId.Map, null);
         }
 
         // ===== HUD =====
@@ -131,7 +133,8 @@ namespace HorseRanch
             dayText.text = s.day + "일차";
             goldText.text = s.gold.ToString("N0") + " G";
             int won = g.CountTickets(TicketStatus.Won), pending = g.CountTickets(TicketStatus.Pending);
-            ticketText.text = "마권 " + s.tickets.Count + "장" + (won > 0 ? "  <color=#F2BF37>적중 " + won + "장 (" + g.PendingPayout.ToString("N0") + "G)</color>" : pending > 0 ? "  <color=#8B927F>대기 " + pending + "</color>" : "");
+            ticketText.text = "마권 " + s.tickets.Count + "장" + (won > 0 ? "  <color=#F2BF37>적중 " + won + "장 (" + g.PendingPayout.ToString("N0") + "G)</color>" : pending > 0 ? "  <color=#8B927F>대기 " + pending + "</color>" : "")
+                + (g.IsLucky ? "   <color=#7FD38A>★ 행운</color>" : "");
             int d = g.DaysToGrandPrix;
             var sb = new StringBuilder(64);
             sb.Append(d == 0 ? "<color=#F2BF37>오늘 대상경주(G1)!</color>" : "G1까지 " + d + "일").Append("   목표 ");
@@ -178,7 +181,7 @@ namespace HorseRanch
                     Warp(it.WarpCell, it.WarpFacing);
                     break;
                 case InteractKind.Sleep:
-                    dialogue.Show(it.DisplayName, "푹 자고 내일을 맞이할까요?\n<size=80%><color=#566458>관람하지 않은 오늘 경주는 자동으로 진행되고, 마권도 정산됩니다.</color></size>",
+                    dialogue.Show(it.DisplayName, "푹신한 침대다. 자고 내일을 맞이할까요?\n<size=80%><color=#566458>관람하지 않은 오늘 경주는 자동으로 진행되고, 마권도 정산됩니다.</color></size>",
                         new ModalAction("잠자기", () => Sleep(it.WarpCell)), new ModalAction("그만두기", null));
                     break;
                 case InteractKind.Stable:
@@ -194,7 +197,7 @@ namespace HorseRanch
                     dialogue.Show(it.DisplayName, it.RandomLine(), new ModalAction("교배 상담", () => OpenWindow(WindowId.Breed, "교배소")), new ModalAction("나중에", null));
                     break;
                 case InteractKind.BetCounter:
-                    OpenWindow(WindowId.Bet, "마권 판매소");
+                    OpenWindow(WindowId.Bet, it.DisplayName);
                     break;
                 case InteractKind.Exchange:
                     int won = g.CountTickets(TicketStatus.Won);
@@ -217,6 +220,18 @@ namespace HorseRanch
                     break;
                 case InteractKind.Tipster:
                     AskTip(it.DisplayName);
+                    break;
+                case InteractKind.Fountain:
+                    int price = g.Data.balance.coinPrice;
+                    if (g.IsLucky) dialogue.Show(it.DisplayName, "물속에서 내가 던진 동전이 반짝인다. 오늘은 운이 좋을 것 같다.");
+                    else dialogue.Show(it.DisplayName, "맑은 물속에 동전이 가득하다. 소원을 빌며 동전을 던질까요?\n<size=80%><color=#566458>" + price + "G · 오늘 하루 행운 (경주마다 3분의 1 확률로 내 마권 하나가 적중)</color></size>",
+                        new ModalAction("동전 던지기 (" + price + "G)", () => { if (g.ThrowCoin()) dialogue.Show(it.DisplayName, "퐁당! 동전이 반짝이며 가라앉았다.\n어쩐지 오늘은 운이 좋을 것 같다!"); }, ModalStyle.Primary, g.State.gold >= price),
+                        new ModalAction("그만두기", null));
+                    break;
+                case InteractKind.GambleMaster:
+                    dialogue.Show(it.DisplayName, "허허, 여기까지 찾아오다니. 내 예언 한번 들어볼 텐가? 하루에 한 번이네.",
+                        new ModalAction("예언 듣기", () => dialogue.Show(it.DisplayName, g.AskMaster()), ModalStyle.Primary),
+                        new ModalAction("됐어요", null));
                     break;
                 default:
                     dialogue.Show(it.DisplayName, it.RandomLine());
@@ -331,10 +346,11 @@ namespace HorseRanch
         private void OnRaceFinished(RaceReplay replay)
         {
             CloseWindow();
-            playback.gameObject.SetActive(true);
-            playback.Play(replay, runner.Database, () =>
+            SetPrompt(null);
+            cameraFollow.SetTarget(race.Focus, true);   // 카메라를 트랙 선두로
+            race.Play(replay, runner.Database, () =>
             {
-                playback.gameObject.SetActive(false);
+                cameraFollow.SetTarget(player.transform, true);
                 string title = Game.Data.races[replay.raceIndex].displayName + (replay.grandPrix ? " 대상경주(G1)" : "") + " 결과";
                 modal.Show(title, ResultBody(replay.result));
             });

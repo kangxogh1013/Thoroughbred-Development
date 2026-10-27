@@ -83,6 +83,9 @@ namespace HorseRanch.EditorTools
                 case 't': Turf(px, ox, oy, ty); break;
                 case 'l': Turf(px, ox, oy, ty); px.Rect(ox, oy + 14, T, 4, C(245, 245, 240)); for (int i = 0; i < T; i += 16) px.Rect(ox + i + 6, oy + 6, 3, 12, C(230, 230, 225)); break;
                 case 's': Stand(px, ox, oy); break;
+                case 'v': Water(px, map, tx, ty); break;
+                case 'h': Ground(px, ox, oy, tx, ty, C(214, 186, 110), C(190, 160, 88), 14); for (int i = 0; i < 6; i++) px.Rect(ox + Hash(tx, ty, 80 + i) % 26 + 2, oy + Hash(tx, ty, 90 + i) % 28 + 2, 5, 1, C(236, 210, 130)); break;
+                case 'u': Carpet(px, ox, oy, C(70, 96, 150), C(220, 200, 120)); break;
                 default: px.Rect(ox, oy, T, T, C(20, 18, 22)); break;
             }
         }
@@ -175,6 +178,23 @@ namespace HorseRanch.EditorTools
             Color32 a = (ty / 2) % 2 == 0 ? C(72, 146, 76) : C(84, 160, 86);
             px.Rect(ox, oy, T, T, a);
             for (int i = 0; i < 5; i++) px.Set(ox + Hash(ox, oy, i) % T, oy + Hash(oy, ox, i + 9) % T, Shade(a, 0.88f));
+        }
+
+        static void Water(Px px, char[,] map, int tx, int ty)
+        {
+            int ox = tx * T, oy = ty * T, W = map.GetLength(0), H = map.GetLength(1);
+            px.Rect(ox, oy, T, T, C(78, 146, 206));
+            for (int i = 0; i < 3; i++)
+            {
+                int x = Hash(tx, ty, 110 + i) % 24 + 2, y = Hash(tx, ty, 120 + i) % 26 + 3;
+                px.Rect(ox + x, oy + y, 6, 1, C(150, 200, 240));
+            }
+            // 물가 (풀과 맞닿은 쪽은 밝은 테두리)
+            Color32 edge = C(198, 186, 140);
+            if (tx > 0 && map[tx - 1, ty] != 'v') px.Rect(ox, oy, 3, T, edge);
+            if (tx < W - 1 && map[tx + 1, ty] != 'v') px.Rect(ox + T - 3, oy, 3, T, edge);
+            if (ty > 0 && map[tx, ty - 1] != 'v') px.Rect(ox, oy, T, 3, edge);
+            if (ty < H - 1 && map[tx, ty + 1] != 'v') px.Rect(ox, oy + T - 3, T, 3, edge);
         }
 
         static void Stand(Px px, int ox, int oy)
@@ -365,6 +385,97 @@ namespace HorseRanch.EditorTools
             }
             px.Outline(Line);
             return Save(name, px, Vector2.zero);
+        }
+
+        /// <summary>1×2 타일 침대 (머리가 위)</summary>
+        public static Sprite Bed(string name)
+        {
+            var px = new Px(T, 68);
+            px.Rect(1, 0, 30, 64, C(120, 78, 46));
+            px.Rect(3, 2, 26, 50, C(236, 232, 224));
+            px.Rect(3, 2, 26, 34, C(196, 72, 72)); px.Rect(3, 34, 26, 3, C(160, 52, 52)); // 이불
+            px.Rect(6, 42, 20, 10, C(250, 250, 246)); // 베개
+            px.Rect(1, 54, 30, 14, C(140, 92, 56));
+            px.Outline(Line);
+            return Save(name, px, Vector2.zero);
+        }
+
+        /// <summary>마구간 칸막이 기둥 (세로로 2타일)</summary>
+        public static Sprite StallPost(string name)
+        {
+            var px = new Px(10, 80);
+            px.Rect(2, 0, 6, 80, C(140, 96, 58)); px.Rect(2, 0, 2, 80, C(110, 74, 44));
+            px.Rect(0, 74, 10, 6, C(110, 74, 44));
+            px.Outline(Line);
+            return Save(name, px, new Vector2(0.5f, 0f));
+        }
+
+        /// <summary>8레인 출발 게이트</summary>
+        public static Sprite StartGate(string name, int lanes)
+        {
+            var px = new Px(48, lanes * T + 20);
+            for (int i = 0; i <= lanes; i++) px.Rect(0, i * T, 48, 5, C(60, 120, 80));
+            px.Rect(0, 0, 6, lanes * T + 20, C(46, 96, 64)); px.Rect(42, 0, 6, lanes * T + 20, C(46, 96, 64));
+            px.Rect(0, lanes * T + 6, 48, 14, C(70, 140, 92));
+            for (int i = 0; i < lanes; i++) px.Rect(8, i * T + 8, 32, 2, C(230, 230, 220));
+            px.Outline(Line);
+            return Save(name, px, Vector2.zero);
+        }
+
+        /// <summary>결승선 (체크무늬 띠 + 기둥)</summary>
+        public static Sprite FinishPole(string name, int lanes)
+        {
+            var px = new Px(16, lanes * T + 40);
+            for (int y = 0; y < lanes * T; y++)
+                for (int x = 0; x < 16; x++)
+                    px.Set(x, y, ((x / 8) + (y / 8)) % 2 == 0 ? C(250, 250, 250) : C(24, 24, 24));
+            px.Rect(5, lanes * T, 6, 40, C(230, 230, 230));
+            px.Rect(0, lanes * T + 28, 16, 12, C(200, 40, 40));
+            px.Outline(Line);
+            return Save(name, px, Vector2.zero);
+        }
+
+        /// <summary>지도(M)용 축소 이미지: 타일 1칸 = 4px, 건물은 지붕 색</summary>
+        public static Sprite MiniMap(string name, char[,] tiles, bool[,] block, System.Collections.Generic.List<KeyValuePairRect> buildings)
+        {
+            int W = tiles.GetLength(0), H = tiles.GetLength(1), S = 4;
+            var px = new Px(W * S, H * S);
+            for (int y = 0; y < H; y++)
+                for (int x = 0; x < W; x++)
+                {
+                    Color32 c;
+                    switch (tiles[x, y])
+                    {
+                        case 'r': case 'm': c = C(214, 188, 140); break;
+                        case 'p': c = C(196, 194, 186); break;
+                        case 'd': c = C(176, 124, 80); break;
+                        case 'v': c = C(84, 150, 210); break;
+                        case 'w': case 'h': c = C(190, 146, 98); break;
+                        case 'c': c = C(160, 56, 62); break;
+                        case 'u': c = C(84, 108, 160); break;
+                        case 'W': case 'T': c = C(60, 50, 46); break;
+                        case 'f': c = C(150, 110, 70); break;
+                        case 's': c = C(150, 152, 160); break;
+                        case 'l': c = C(240, 240, 236); break;
+                        case 't': c = C(86, 160, 88); break;
+                        default: c = C(116, 176, 90); break;
+                    }
+                    if (block[x, y] && (tiles[x, y] == 'g' || tiles[x, y] == 'k')) c = C(52, 112, 60); // 나무·숲
+                    px.Rect(x * S, y * S, S, S, c);
+                }
+            foreach (var b in buildings)
+            {
+                px.Rect(b.rect.x * S, b.rect.y * S, b.rect.width * S, b.rect.height * S, b.color);
+                px.Rect(b.rect.x * S, b.rect.y * S, b.rect.width * S, 2, Shade(b.color, 0.6f));
+            }
+            return Save(name, px, new Vector2(0.5f, 0.5f));
+        }
+
+        public struct KeyValuePairRect
+        {
+            public RectInt rect;
+            public Color32 color;
+            public KeyValuePairRect(RectInt r, Color32 c) { rect = r; color = c; }
         }
 
         /// <summary>벽걸이 배당 전광판</summary>

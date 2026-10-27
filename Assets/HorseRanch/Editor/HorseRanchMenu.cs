@@ -13,9 +13,18 @@ namespace HorseRanch.EditorTools
     {
         private const string Menu = "Tools/HorseRanch/";
 
+        /// <summary>플레이 중에는 씬/에셋 생성 불가 (EditorSceneManager 예외 방지)</summary>
+        private static bool NotPlaying()
+        {
+            if (!EditorApplication.isPlayingOrWillChangePlaymode) return true;
+            EditorUtility.DisplayDialog("질주마 목장", "플레이 중에는 생성할 수 없습니다.\n▶ 버튼을 눌러 플레이를 멈춘 뒤 다시 실행하세요.", "확인");
+            return false;
+        }
+
         [MenuItem(Menu + "전체 자동 생성 (Build All)", false, 0)]
         public static void BuildAll()
         {
+            if (!NotPlaying()) return;
             HorseRanchPaths.EnsureFolders();
             if (!HorseRanchSceneBuilder.EnsureTmpEssentials()) return; // TMP 리소스 가져온 뒤 다시 실행
 
@@ -35,6 +44,7 @@ namespace HorseRanch.EditorTools
         [MenuItem(Menu + "1. 데이터 에셋 생성 (ScriptableObject)", false, 20)]
         public static void BuildData()
         {
+            if (!NotPlaying()) return;
             HorseRanchPaths.EnsureFolders();
             var db = HorseRanchDataBuilder.Build(false);
             Selection.activeObject = db;
@@ -44,6 +54,7 @@ namespace HorseRanch.EditorTools
         [MenuItem(Menu + "2. 스프라이트 생성", false, 21)]
         public static void BuildSprites()
         {
+            if (!NotPlaying()) return;
             HorseRanchPaths.EnsureFolders();
             HorseRanchArtBuilder.BuildSprites();
         }
@@ -51,6 +62,7 @@ namespace HorseRanch.EditorTools
         [MenuItem(Menu + "3. 한글 폰트 설정", false, 22)]
         public static void BuildFont()
         {
+            if (!NotPlaying()) return;
             HorseRanchPaths.EnsureFolders();
             if (!HorseRanchSceneBuilder.EnsureTmpEssentials()) return;
             var f = HorseRanchArtBuilder.EnsureKoreanFont(true);
@@ -60,6 +72,7 @@ namespace HorseRanch.EditorTools
         [MenuItem(Menu + "3-1. 한글 폰트 교체 (다시 만들기)", false, 24)]
         public static void RebuildFont()
         {
+            if (!NotPlaying()) return;
             HorseRanchPaths.EnsureFolders();
             if (!HorseRanchSceneBuilder.EnsureTmpEssentials()) return;
             var f = HorseRanchArtBuilder.RebuildKoreanFont();
@@ -72,6 +85,7 @@ namespace HorseRanch.EditorTools
         [MenuItem(Menu + "3-2. 열린 씬에 한글 폰트 적용", false, 25)]
         public static void ApplyFont()
         {
+            if (!NotPlaying()) return;
             if (!HorseRanchSceneBuilder.EnsureTmpEssentials()) return;
             var f = HorseRanchArtBuilder.EnsureKoreanFont(true);
             if (f == null) return;
@@ -83,6 +97,7 @@ namespace HorseRanch.EditorTools
         [MenuItem(Menu + "4. 씬 다시 생성 (UI 포함)", false, 26)]
         public static void BuildScene()
         {
+            if (!NotPlaying()) return;
             HorseRanchPaths.EnsureFolders();
             if (!HorseRanchSceneBuilder.EnsureTmpEssentials()) return;
             var db = HorseRanchDataBuilder.Build(false);
@@ -107,6 +122,7 @@ namespace HorseRanch.EditorTools
         [MenuItem(Menu + "데이터 값 초기화 (기본 밸런스로 덮어쓰기)", false, 60)]
         public static void ResetData()
         {
+            if (!NotPlaying()) return;
             if (!EditorUtility.DisplayDialog("데이터 초기화", "인스펙터에서 조정한 밸런스·이름·보상 값이 기본값으로 돌아갑니다.", "초기화", "취소")) return;
             HorseRanchPaths.EnsureFolders();
             Selection.activeObject = HorseRanchDataBuilder.Build(true);

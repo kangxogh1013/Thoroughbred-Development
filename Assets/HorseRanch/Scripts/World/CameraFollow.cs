@@ -8,7 +8,7 @@ namespace HorseRanch
     {
         [SerializeField] private Transform target;
         [SerializeField] private WorldMap map;
-        [SerializeField] [Range(1f, 30f)] private float smooth = 12f;
+        [Tooltip("클수록 바로 따라감 (낮으면 미끄러지는 느낌)")] [SerializeField] [Range(1f, 60f)] private float smooth = 22f;
         [SerializeField] private Camera cam;
 
         private void LateUpdate()
@@ -16,6 +16,12 @@ namespace HorseRanch
             if (target == null) return;
             Vector3 goal = Clamped(target.position);
             transform.position = Vector3.Lerp(transform.position, goal, 1f - Mathf.Exp(-smooth * Time.deltaTime));
+        }
+
+        public void SetTarget(Transform t, bool snap)
+        {
+            target = t;
+            if (snap) Snap();
         }
 
         /// <summary>구역 이동 직후 즉시 이동</summary>

@@ -41,6 +41,14 @@ namespace HorseRanch
 
         private void Init()
         {
+#if UNITY_EDITOR
+            // 참조가 끊긴 경우(씬 재생성 중 에셋 언로드 등) 기본 경로에서 복구
+            if (database == null)
+            {
+                database = UnityEditor.AssetDatabase.LoadAssetAtPath<GameDatabaseSO>("Assets/HorseRanch/Data/GameDatabase.asset");
+                if (database != null) Debug.LogWarning("[HorseRanch] GameRunner의 Database 참조가 비어 있어 기본 경로에서 불러왔습니다. 씬을 저장하려면 Tools > HorseRanch > 4. 씬 다시 생성을 실행하세요.", this);
+            }
+#endif
             if (database == null)
             {
                 Debug.LogError("[HorseRanch] GameDatabase가 할당되지 않았습니다. Tools > HorseRanch > 전체 자동 생성을 다시 실행하세요.", this);

@@ -34,6 +34,21 @@ namespace HorseRanch.EditorTools
             return art;
         }
 
+        /// <summary>이미 만들어진 스프라이트를 경로로 다시 로드 (없으면 생성)</summary>
+        public static HorseRanchArt LoadSprites()
+        {
+            var art = new HorseRanchArt
+            {
+                round = AssetDatabase.LoadAssetAtPath<Sprite>(HorseRanchPaths.Art + "/ui_round.png"),
+                gallopA = AssetDatabase.LoadAssetAtPath<Sprite>(HorseRanchPaths.Art + "/horse_gallop_0.png"),
+                gallopB = AssetDatabase.LoadAssetAtPath<Sprite>(HorseRanchPaths.Art + "/horse_gallop_1.png"),
+                silk = AssetDatabase.LoadAssetAtPath<Sprite>(HorseRanchPaths.Art + "/horse_silk.png"),
+                finish = AssetDatabase.LoadAssetAtPath<Sprite>(HorseRanchPaths.Art + "/finish_line.png"),
+            };
+            if (art.round == null || art.gallopA == null || art.gallopB == null || art.silk == null || art.finish == null) return BuildSprites();
+            return art;
+        }
+
         private const int W = 160, H = 110; // 말 스프라이트 캔버스 (y는 위→아래 좌표로 설계)
 
         // 도형: 점이 내부인지 판정 (grow = 외곽선용 확장 픽셀)

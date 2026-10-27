@@ -43,7 +43,11 @@ namespace HorseRanch
         private void OnArrived(Vector2Int cell)
         {
             var it = map.InteractableAt(cell);
-            if (it != null && it.TriggerOnStep) ui.Interact(it, this);
+            if (it != null && it.TriggerOnStep) { ui.Interact(it, this); return; }
+            if (ui.IsBusy) return;
+            // 키를 누르고 있으면 멈추지 않고 바로 다음 칸으로 (방향 전환도 즉시 반영)
+            var dir = GameInput.Move;
+            if (dir != Vector2Int.zero && !mover.TryMove(dir, GameInput.Run)) mover.Face(dir);
         }
 
         private void UpdateArea()

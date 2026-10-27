@@ -7,7 +7,7 @@ namespace HorseRanch
 {
     /// <summary>
     /// 키 입력을 한 곳에 모은 정적 래퍼. New Input System이 있으면 Keyboard.current, 없으면 레거시 Input.
-    /// 이동: WASD/방향키, 달리기: Shift, 상호작용: E/Space/Enter, 취소: Esc, 인벤토리: Tab/I, 업적: J
+    /// 이동: WASD/방향키, 달리기: Shift, 상호작용: E/Space/Enter, 취소: Esc, 인벤토리: Tab/I, 업적: J, 지도: M
     /// </summary>
     public static class GameInput
     {
@@ -33,6 +33,7 @@ namespace HorseRanch
         public static bool Cancel { get { return K != null && K.escapeKey.wasPressedThisFrame; } }
         public static bool Inventory { get { return K != null && (K.tabKey.wasPressedThisFrame || K.iKey.wasPressedThisFrame); } }
         public static bool Achievements { get { return K != null && K.jKey.wasPressedThisFrame; } }
+        public static bool Map { get { return K != null && K.mKey.wasPressedThisFrame; } }
         public static int Number
         {
             get
@@ -63,6 +64,7 @@ namespace HorseRanch
         public static bool Cancel { get { return Input.GetKeyDown(KeyCode.Escape); } }
         public static bool Inventory { get { return Input.GetKeyDown(KeyCode.Tab) || Input.GetKeyDown(KeyCode.I); } }
         public static bool Achievements { get { return Input.GetKeyDown(KeyCode.J); } }
+        public static bool Map { get { return Input.GetKeyDown(KeyCode.M); } }
         public static int Number
         {
             get

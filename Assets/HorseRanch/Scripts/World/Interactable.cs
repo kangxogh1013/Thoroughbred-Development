@@ -18,6 +18,8 @@ namespace HorseRanch
         RaceStaff,   // 경기장 진행요원: 경주 관람
         HallStaff,   // 도박장 진행요원: 경기장 안내
         Tipster,     // 정보통 (유료 예상)
+        Fountain,    // 분수: 동전 던지기 (하루 행운)
+        GambleMaster,// 숨은 도박 고수 (3번 중 1번 정답)
     }
 
     /// <summary>

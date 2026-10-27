@@ -126,7 +126,7 @@ namespace HorseRanch
                 row.SetText(0, info.displayName);
                 row.SetText(1, info.role);
                 row.SetText(2, v.ToString("0.0"));
-                row.SetText(3, info.trainingName);
+                row.SetText(3, info.trainingName + "  <size=80%>" + Game.TrainingCost(h, i).ToString("N0") + "G</size>");
                 row.SetBar(0, v / b.statCap);
                 row.SetInteractable(!busy);
                 row.SetBackground(h.IsTraining && h.trainStat == i ? UITheme.Panel2 : UITheme.Panel);
@@ -149,7 +149,7 @@ namespace HorseRanch
             else
             {
                 trainingTitle.text = "훈련 대기";
-                trainingDesc.text = Game.IsEnteredAnywhere(h.id) ? "경주에 등록되어 오늘은 훈련할 수 없습니다." : "스탯 옆 버튼으로 훈련을 시작하세요. 훈련은 " + b.trainDays + "일 걸리고 한 번에 하나만 진행됩니다.";
+                trainingDesc.text = Game.IsEnteredAnywhere(h.id) ? "경주에 등록되어 오늘은 훈련할 수 없습니다." : "스탯 옆 버튼으로 훈련을 시작하세요 (훈련비는 스탯이 높을수록 비쌈). " + b.trainDays + "일 걸리고 한 번에 하나만 진행됩니다.";
                 trainingBar.Set(0f);
             }
             var items = Game.State.items;

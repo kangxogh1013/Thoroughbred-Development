@@ -13,10 +13,21 @@ namespace HorseRanch
         [SerializeField] private Vector2Int origin;
         [SerializeField] private int width = 20;
         [SerializeField] private int height = 14;
+        [Tooltip("지도(M) 표시용 지면 스프라이트")]
+        [SerializeField] private Sprite groundSprite;
+        [Tooltip("지도(M) 전용 축소 이미지 (건물 포함)")]
+        [SerializeField] private Sprite mapSprite;
+        [SerializeField] private string[] mapLabels;
+        [Tooltip("이름표 위치 (구역 로컬 타일 좌표)")]
+        [SerializeField] private Vector2[] mapLabelCells;
         [Tooltip("이동 불가 타일 (width × height, 행 우선)")]
         [SerializeField] private bool[] blocked;
 
         public string AreaName { get { return areaName; } }
+        public Sprite GroundSprite { get { return groundSprite; } }
+        public Sprite MapSprite { get { return mapSprite != null ? mapSprite : groundSprite; } }
+        public string[] MapLabels { get { return mapLabels; } }
+        public Vector2[] MapLabelCells { get { return mapLabelCells; } }
         public Vector2Int Origin { get { return origin; } }
         public int Width { get { return width; } }
         public int Height { get { return height; } }
@@ -38,9 +49,14 @@ namespace HorseRanch
 
 #if UNITY_EDITOR
         /// <summary>에디터 빌더 전용</summary>
-        public void EditorSetup(string name, Vector2Int o, int w, int h, bool[] block)
+        public void EditorSetup(string name, Vector2Int o, int w, int h, bool[] block, Sprite ground)
         {
-            areaName = name; origin = o; width = w; height = h; blocked = block;
+            areaName = name; origin = o; width = w; height = h; blocked = block; groundSprite = ground;
+        }
+
+        public void EditorSetMap(Sprite mini, string[] names, Vector2[] cells)
+        {
+            mapSprite = mini; mapLabels = names; mapLabelCells = cells;
         }
 #endif
 

@@ -8,7 +8,7 @@ namespace HorseRanch
     public enum StatType { Speed = 0, Stamina = 1, Durability = 2, Agility = 3, Grit = 4, Wisdom = 5 }
     public enum ItemType { Medicine = 0, Nutrient = 1, EnergyDrink = 2 }
     public enum BetType { Win = 0, Place = 1, Quinella = 2, Exacta = 3, Trio = 4, Trifecta = 5 }
-    public enum AchievementId { SilverHorse = 0, KingOfGamblers = 1, HorseHunter = 2, HorseCollector = 3, FirstWin = 4, Longshot = 5, MasterTrainer = 6, GrandSlam = 7 }
+    public enum AchievementId { SilverHorse = 0, KingOfGamblers = 1, HorseHunter = 2, HorseCollector = 3, FirstWin = 4, Longshot = 5, MasterTrainer = 6, GrandSlam = 7, HiddenMaster = 8 }
     public enum TrainResult { Started, NotFound, Busy, Retired, NeedsConfirm, Died }
     public enum NoticeTone { Normal = 0, Good = 1, Bad = 2 }
     public enum TicketStatus { Pending = 0, Won = 1, Lost = 2 }
@@ -18,7 +18,7 @@ namespace HorseRanch
         public const int StatCount = 6;
         public const int RunnerCount = 8;
         public const int BetTypeCount = 6;
-        public const int AchievementCount = 8;
+        public const int AchievementCount = 9;
         public const int ItemCount = 3;
     }
 
@@ -34,6 +34,8 @@ namespace HorseRanch
         [Tooltip("스탯 상한")] public float statCap = 20f;
         [Tooltip("훈련 1회에 걸리는 날짜 (게이지 칸 수)")] [Range(1, 7)] public int trainDays = 2;
         [Tooltip("훈련 기본 성장량 (상한에 가까울수록 감소)")] public float trainBaseGain = 1.6f;
+        [Tooltip("훈련비 = 기본 + 현재 스탯 × 가중치")] public int trainCostBase = 200;
+        public int trainCostPerStat = 40;
         public float fatigueOnTrain = 14f;
         public float fatigueOnRace = 20f;
         [Tooltip("훈련하지 않는 날의 피로 회복량")] public float restRecovery = 20f;
@@ -71,6 +73,9 @@ namespace HorseRanch
         [Tooltip("마권 1장 최대 금액")] public int maxBetPerTicket = 50000;
         [Tooltip("인벤토리 마권 최대 보관 수")] public int maxTickets = 40;
         [Tooltip("정보통 NPC 정보 가격")] public int tipPrice = 300;
+        [Tooltip("분수에 던지는 동전 가격")] public int coinPrice = 100;
+        [Tooltip("행운 상태에서 경주마다 내 마권 하나가 적중할 확률")] [Range(0f, 1f)] public float luckChance = 1f / 3f;
+        [Tooltip("도박 고수 아저씨가 진짜 정답을 말할 확률")] [Range(0f, 1f)] public float masterTruthChance = 1f / 3f;
         [Tooltip("배당 계산용 몬테카를로 시뮬레이션 횟수")] [Range(50, 600)] public int marketSimulations = 200;
         [Tooltip("승식별 NPC 가상 배팅 풀 (단승, 연승, 복승, 쌍승, 삼복승, 삼쌍승)")]
         public float[] npcPool = { 120000f, 80000f, 90000f, 90000f, 100000f, 140000f };
@@ -302,6 +307,7 @@ namespace HorseRanch
         public List<BetTicket> slip = new List<BetTicket>();
         public RaceResultData result = new RaceResultData();
         public int marketSeed;
+        [Tooltip("경주 결과를 정하는 시드 (도박 고수 예언용으로 미리 고정)")] public int raceSeed;
     }
 
     [Serializable]
@@ -335,6 +341,10 @@ namespace HorseRanch
         [Tooltip("인벤토리의 마권")] public List<BetTicket> tickets = new List<BetTicket>();
         public int nextTicketId = 1;
         [Tooltip("어제 경주 결과 (게시판용)")] public List<string> lastResults = new List<string>();
+        [Tooltip("내일 경주 출주마 (게시판 예고용)")] public List<RaceDayState> tomorrow = new List<RaceDayState>();
+        [Tooltip("분수에 동전을 던진 날 (그날 하루 행운)")] public int luckDay = -1;
+        [Tooltip("도박 고수에게 예언을 들은 날")] public int masterDay = -1;
+        public List<string> masterTips = new List<string>();
     }
 
     /// <summary>경주 재생용 데이터 (저장하지 않음)</summary>

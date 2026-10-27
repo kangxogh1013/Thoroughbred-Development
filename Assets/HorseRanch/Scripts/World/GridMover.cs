@@ -13,8 +13,8 @@ namespace HorseRanch
         [SerializeField] private SpriteRenderer body;
         [SerializeField] private CharacterLook look = new CharacterLook();
         [Header("이동")]
-        [SerializeField] [Range(1f, 10f)] private float walkSpeed = 4f;
-        [SerializeField] [Range(1f, 14f)] private float runSpeed = 7f;
+        [Tooltip("초당 이동 칸 수")] [SerializeField] [Range(1f, 12f)] private float walkSpeed = 5.5f;
+        [SerializeField] [Range(1f, 16f)] private float runSpeed = 9f;
         [SerializeField] private Vector2Int startCell;
         [SerializeField] private Vector2Int startFacing = new Vector2Int(0, -1);
 
@@ -36,7 +36,7 @@ namespace HorseRanch
 #if UNITY_EDITOR
         public void EditorSetup(WorldMap m, SpriteRenderer sr, CharacterLook l, Vector2Int start, Vector2Int face, float walk)
         {
-            map = m; body = sr; look = l; startCell = start; startFacing = face; walkSpeed = walk;
+            map = m; body = sr; look = l; startCell = start; startFacing = face; walkSpeed = walk; runSpeed = Mathf.Max(runSpeed, walk * 1.6f);
         }
 #endif
 
@@ -95,15 +95,18 @@ namespace HorseRanch
         {
             if (!moving) return;
             t += Time.deltaTime * speed;
-            if (t >= 1f)
+            // 한 프레임에 칸 도착 + 다음 칸 출발까지 처리 → 멈칫하는 프레임 없음
+            int guard = 0;
+            while (t >= 1f && guard++ < 4)
             {
+                float carry = t - 1f;
                 transform.position = to;
                 moving = false;
                 map.Release(prevCell, this);
                 prevCell = cell;
-                UpdateSprite(0);
-                if (Arrived != null) Arrived(cell);
-                return;
+                if (Arrived != null) Arrived(cell);   // 플레이어는 여기서 키가 눌려 있으면 TryMove로 이어 감
+                if (!moving) { UpdateSprite(0); return; }
+                t = carry;                              // 남은 시간을 다음 칸에 이월 (일정한 속도)
             }
             transform.position = Vector3.Lerp(from, to, t);
             UpdateSprite(t < 0.5f ? (stepParity ? 1 : 2) : 0);

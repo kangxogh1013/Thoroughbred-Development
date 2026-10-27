@@ -46,6 +46,15 @@ namespace HorseRanch.EditorTools
 
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
+            // 새 씬을 열면 참조 없는 에셋이 메모리에서 내려가 C# 참조가 끊길 수 있다 → 경로로 다시 로드
+            db = AssetDatabase.LoadAssetAtPath<GameDatabaseSO>(HorseRanchPaths.Data + "/GameDatabase.asset");
+            font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(HorseRanchPaths.FontAssetPath);
+            sprites = HorseRanchArtBuilder.LoadSprites();
+            art = sprites;
+            DefaultFont = font;
+            RoundSprite = sprites.round;
+            if (db == null) { Debug.LogError("[HorseRanch] GameDatabase 에셋이 없습니다. Tools > HorseRanch > 1. 데이터 에셋 생성을 먼저 실행하세요."); return; }
+
             // ===== EventSystem / 게임 러너 =====
             var es = new GameObject("EventSystem");
             es.AddComponent<EventSystem>();
@@ -92,7 +101,7 @@ namespace HorseRanch.EditorTools
             BuildHud(root);
 
             // 기능 창 (WindowId 순서)
-            var windows = new WindowView[9];
+            var windows = new WindowView[10];
             RectTransform c;
             windows[(int)WindowId.Stable] = Window(root, "Stable", "마구간", new Vector2(1720f, 920f), out c); BuildStable(c);
             windows[(int)WindowId.Shop] = Window(root, "Shop", "상점", new Vector2(1720f, 640f), out c); BuildShop(c);
@@ -102,10 +111,11 @@ namespace HorseRanch.EditorTools
             windows[(int)WindowId.Bet] = Window(root, "Bet", "마권 판매소", new Vector2(1860f, 960f), out c); BuildBet(c);
             windows[(int)WindowId.Exchange] = Window(root, "Exchange", "교환소", new Vector2(1200f, 800f), out c); BuildExchange(c);
             windows[(int)WindowId.Entry] = Window(root, "Entry", "출전 접수", new Vector2(1240f, 560f), out c); BuildEntry(c);
-            windows[(int)WindowId.Bulletin] = Window(root, "Bulletin", "게시판", new Vector2(1600f, 860f), out c); BuildBulletin(c);
+            windows[(int)WindowId.Bulletin] = Window(root, "Bulletin", "게시판", new Vector2(1600f, 900f), out c); BuildBulletin(c);
+            windows[(int)WindowId.Map] = Window(root, "Map", "지도", new Vector2(1600f, 920f), out c); BuildMap(c, world);
 
             var dialogue = BuildDialogue(root);
-            var playback = BuildPlayback(root);
+            BuildRaceOverlay(root, world.race);
             var toast = BuildToast(root);
             var modal = BuildModal(root);
             var fade = BuildFade(root);
@@ -116,14 +126,19 @@ namespace HorseRanch.EditorTools
             Set(rootUI, "modal", modal);
             Set(rootUI, "toast", toast);
             Set(rootUI, "dialogue", dialogue);
-            Set(rootUI, "playback", playback);
+            Set(rootUI, "race", world.race);
             Set(rootUI, "fade", fade);
             SetArr(rootUI, "windows", windows);
             SetV2I(rootUI, "spawnCell", world.spawn);
             Set(world.player, "ui", rootUI);
 
             foreach (var w in windows) w.gameObject.SetActive(false);
-            playback.gameObject.SetActive(false);
+
+            // 저장 직전에 한 번 더 연결 확인 (스프라이트 대량 임포트 후에도 유지되는지)
+            db = AssetDatabase.LoadAssetAtPath<GameDatabaseSO>(HorseRanchPaths.Data + "/GameDatabase.asset");
+            Set(runner, "database", db);
+            if (runner.Database == null) Debug.LogError("[HorseRanch] GameRunner에 GameDatabase를 연결하지 못했습니다.");
+            else Debug.Log("[HorseRanch] GameRunner ← GameDatabase 연결 확인");
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, HorseRanchPaths.ScenePath);
@@ -577,153 +592,6 @@ namespace HorseRanch.EditorTools
         }
 
         // =====================================================================
-        // 경주 재생
-        // =====================================================================
-        private static RacePlaybackView BuildPlayback(RectTransform root)
-        {
-            var panel = Stretch(NewRect("Panel_Playback", root));
-            Img(panel, UITheme.Background, false, true);
-            V(panel, 12f, 28, 28, 24, 24);
-            var view = panel.gameObject.AddComponent<RacePlaybackView>();
-
-            var hud = NewRect("HUD", panel);
-            LE(hud, -1f, 58f);
-            H(hud, 10f);
-            var title = NewText("Title", hud, "단거리 1,000m", 30f, Ink, TextAlignmentOptions.MidlineLeft, true);
-            LE(title, 360f);
-            var progress = NewText("Progress", hud, "", 18f, Mute);
-            LE(progress, -1f, -1f, 1f);
-            var speedButtons = new Button[3];
-            var speedImages = new Image[3];
-            string[] sp = { "1×", "2×", "4×" };
-            for (int i = 0; i < 3; i++)
-            {
-                TextMeshProUGUI l;
-                speedButtons[i] = Btn("Speed_" + i, hud, sp[i], UITheme.Panel2, Ink, 18f, out l);
-                speedImages[i] = (Image)speedButtons[i].targetGraphic;
-                LE(speedButtons[i], 72f);
-            }
-            var skip = Btn("Skip", hud, "결과 바로 보기", UITheme.Panel2, Ink, 18f);
-            LE(skip, 200f);
-
-            var body = NewRect("Body", panel);
-            LE(body, -1f, -1f, -1f, 1f);
-            H(body, 14f, 0, 0, 0, 0, TextAnchor.UpperLeft);
-
-            // 트랙 (마스크로 바깥 잘라냄)
-            var trackImg = Panel("Track", body, UITheme.TurfLight, false);
-            var track = trackImg.rectTransform;
-            LE(track, -1f, -1f, 1f, 1f);
-            track.gameObject.AddComponent<RectMask2D>();
-            const float topM = 34f, botM = 14f;
-
-            var stripes = new RectTransform[8];
-            for (int i = 0; i < stripes.Length; i++)
-            {
-                var s = Img(NewRect("Stripe_" + i, track), UITheme.TurfStripe);
-                Place(s.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), Vector2.zero, new Vector2(40f, 600f));
-                stripes[i] = s.rectTransform;
-            }
-            // 상단 표지 띠 + 레일
-            var band = Img(NewRect("TopBand", track), UITheme.Turf);
-            Place(band.rectTransform, new Vector2(0f, 1f), Vector2.one, new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, topM - 4f));
-            var railTop = Img(NewRect("RailTop", track), UITheme.Panel);
-            Place(railTop.rectTransform, new Vector2(0f, 1f), Vector2.one, new Vector2(0.5f, 1f), new Vector2(0f, -(topM - 4f)), new Vector2(0f, 4f));
-            var botBand = Img(NewRect("BottomBand", track), UITheme.Turf);
-            Place(botBand.rectTransform, Vector2.zero, new Vector2(1f, 0f), new Vector2(0.5f, 0f), Vector2.zero, new Vector2(0f, botM - 4f));
-            var railBot = Img(NewRect("RailBottom", track), UITheme.Panel);
-            Place(railBot.rectTransform, Vector2.zero, new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, botM - 4f), new Vector2(0f, 4f));
-
-            var laneLines = new RectTransform[7];
-            for (int i = 0; i < laneLines.Length; i++)
-            {
-                var l = Img(NewRect("LaneLine_" + i, track), new Color(1f, 1f, 1f, 0.13f));
-                Place(l.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(1000f, 2f));
-                laneLines[i] = l.rectTransform;
-            }
-
-            var markers = new RectTransform[12];
-            var markerTexts = new TMP_Text[12];
-            for (int i = 0; i < markers.Length; i++)
-            {
-                var m = NewRect("Marker_" + i, track);
-                Place(m, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(70f, topM - 4f));
-                var post = Img(NewRect("Post", m), UITheme.Panel);
-                Place(post.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), Vector2.zero, new Vector2(3f, 10f));
-                var t = NewText("Text", m, "0", 14f, UITheme.Panel, TextAlignmentOptions.Top, true);
-                Stretch(t.rectTransform, 0f, 2f, 0f, 10f);
-                markers[i] = m;
-                markerTexts[i] = t;
-            }
-
-            var finish = Img(NewRect("FinishLine", track), Color.white);
-            finish.sprite = art.finish;
-            Place(finish.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), Vector2.zero, new Vector2(10f, 600f));
-            var finishLabel = NewText("Label", finish.transform, "결승", 15f, UITheme.BoardFg, TextAlignmentOptions.Bottom, true);
-            Place(finishLabel.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0.5f, 0f), new Vector2(5f, 4f), new Vector2(60f, 24f));
-
-            var runners = new RectTransform[8];
-            var bodies = new Image[8];
-            var silks = new Image[8];
-            var numbers = new TMP_Text[8];
-            var flags = new Image[8];
-            for (int i = 0; i < 8; i++)
-            {
-                var r = NewRect("Runner_" + (i + 1), track);
-                Place(r, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(116f, 80f));
-                var b = Img(NewRect("Body", r), Color.white);
-                b.sprite = art.gallopA;
-                Stretch(b.rectTransform);
-                var s = Img(NewRect("Silk", r), UITheme.Silk[i]);
-                s.sprite = art.silk;
-                Stretch(s.rectTransform);
-                var n = NewText("Number", r, (i + 1).ToString(), 14f, UITheme.SilkInk[i], TextAlignmentOptions.Center, true);
-                n.rectTransform.anchorMin = new Vector2(0.375f, 0.45f);
-                n.rectTransform.anchorMax = new Vector2(0.525f, 0.66f);
-                n.rectTransform.offsetMin = Vector2.zero;
-                n.rectTransform.offsetMax = Vector2.zero;
-                n.enableAutoSizing = true;
-                n.fontSizeMin = 6f;
-                n.fontSizeMax = 22f;
-                n.overflowMode = TextOverflowModes.Overflow;
-                var f = Img(NewRect("MineFlag", r), UITheme.BoardFg);
-                f.rectTransform.anchorMin = new Vector2(0.52f, 0.96f);
-                f.rectTransform.anchorMax = new Vector2(0.6f, 1.1f);
-                f.rectTransform.offsetMin = Vector2.zero;
-                f.rectTransform.offsetMax = Vector2.zero;
-                runners[i] = r; bodies[i] = b; silks[i] = s; numbers[i] = n; flags[i] = f;
-            }
-
-            var standings = Panel("Standings", body, UITheme.Panel).rectTransform;
-            LE(standings, 400f, -1f, -1f, 1f);
-            var standText = NewText("Text", standings, "", 18f, Ink, TextAlignmentOptions.TopLeft);
-            standText.overflowMode = TextOverflowModes.Overflow;
-            Stretch(standText.rectTransform, 18f, 16f, 18f, 16f);
-
-            Set(view, "track", track);
-            SetFloat(view, "topMargin", topM);
-            SetFloat(view, "bottomMargin", botM);
-            SetArr(view, "runners", runners);
-            SetArr(view, "runnerBodies", bodies);
-            SetArr(view, "runnerSilks", silks);
-            SetArr(view, "runnerNumbers", numbers);
-            SetArr(view, "runnerMarkers", flags);
-            SetArr(view, "gallopFrames", new Object[] { art.gallopA, art.gallopB });
-            SetArr(view, "laneLines", laneLines);
-            SetArr(view, "stripes", stripes);
-            SetArr(view, "markers", markers);
-            SetArr(view, "markerTexts", markerTexts);
-            Set(view, "finishLine", finish.rectTransform);
-            Set(view, "titleText", title);
-            Set(view, "progressText", progress);
-            Set(view, "standingsText", standText);
-            SetArr(view, "speedButtons", speedButtons);
-            SetArr(view, "speedButtonImages", speedImages);
-            Set(view, "skipButton", skip);
-            return view;
-        }
-
-        // =====================================================================
         // 상점
         // =====================================================================
         private static GameObject BuildShop(RectTransform content)
@@ -880,9 +748,9 @@ namespace HorseRanch.EditorTools
 
             var grid = NewRect("Grid", panel);
             LE(grid, -1f, -1f, -1f, 1f);
-            NewGrid(grid, new Vector2(452f, 200f), new Vector2(14f, 14f), 4);
-            var cards = new UIRow[8];
-            for (int i = 0; i < 8; i++)
+            NewGrid(grid, new Vector2(360f, 200f), new Vector2(14f, 14f), 5);
+            var cards = new UIRow[10];
+            for (int i = 0; i < 10; i++)
             {
                 var card = Panel("Ach_" + i, grid, UITheme.Panel);
                 V(card, 6f, 20, 20, 0, 16);
@@ -939,8 +807,8 @@ namespace HorseRanch.EditorTools
 
             // 왼쪽 아래: 조작 안내
             var keys = Panel("HUD_Keys", root, new Color(0.08f, 0.1f, 0.08f, 0.75f)).rectTransform;
-            Place(keys, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(20f, 20f), new Vector2(860f, 40f));
-            var keyText = NewText("Text", keys, "WASD/방향키 이동 · Shift 달리기 · E 상호작용 · Tab 인벤토리 · J 업적 · Esc 닫기", 16f, UITheme.BoardText, TextAlignmentOptions.Center);
+            Place(keys, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(20f, 20f), new Vector2(940f, 40f));
+            var keyText = NewText("Text", keys, "WASD/방향키 이동 · Shift 달리기 · E 상호작용 · Tab 인벤토리 · J 업적 · M 지도 · Esc 닫기", 16f, UITheme.BoardText, TextAlignmentOptions.Center);
             Stretch(keyText.rectTransform, 12f, 0f, 12f, 0f);
 
             // 가운데 아래: 상호작용 안내
@@ -1029,6 +897,81 @@ namespace HorseRanch.EditorTools
             SetArr(view, "choiceLabels", labels);
             box.gameObject.SetActive(false);
             return view;
+        }
+
+        /// <summary>트랙 경주 관람 중 화면 위에 뜨는 정보 (제목·진행·순위·배속·건너뛰기)</summary>
+        private static void BuildRaceOverlay(RectTransform root, WorldRaceView race)
+        {
+            var host = Stretch(NewRect("RaceOverlay", root));
+            var top = Panel("Top", host, UITheme.Board).rectTransform;
+            Place(top, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -86f), new Vector2(760f, 92f));
+            V(top, 2f, 20, 20, 10, 10, TextAnchor.MiddleCenter);
+            var title = NewText("Title", top, "단거리 1,000m", 30f, UITheme.BoardFg, TextAlignmentOptions.Center, true); LE(title, -1f, 40f);
+            var progress = NewText("Progress", top, "", 18f, UITheme.BoardText, TextAlignmentOptions.Center); LE(progress, -1f, 26f);
+
+            var stand = Panel("Standings", host, new Color(0.08f, 0.1f, 0.08f, 0.88f)).rectTransform;
+            Place(stand, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-20f, 40f), new Vector2(400f, 380f));
+            var standText = NewText("Text", stand, "", 18f, UITheme.BoardText, TextAlignmentOptions.TopLeft);
+            standText.overflowMode = TextOverflowModes.Overflow;
+            Stretch(standText.rectTransform, 18f, 14f, 18f, 14f);
+
+            var bottom = Panel("Controls", host, UITheme.Board).rectTransform;
+            Place(bottom, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 24f), new Vector2(560f, 70f));
+            H(bottom, 10f, 16, 16, 10, 10, TextAnchor.MiddleCenter);
+            var speedButtons = new Button[3];
+            var speedImages = new Image[3];
+            string[] sp = { "1×", "2×", "4×" };
+            for (int i = 0; i < 3; i++)
+            {
+                speedButtons[i] = Btn("Speed_" + i, bottom, sp[i], UITheme.Panel2, Ink, 20f);
+                speedImages[i] = (Image)speedButtons[i].targetGraphic;
+                LE(speedButtons[i], 80f);
+            }
+            var skip = Btn("Skip", bottom, "결과 바로 보기", UITheme.Turf, White, 18f);
+            LE(skip, 220f);
+
+            Set(race, "overlay", host.gameObject);
+            Set(race, "titleText", title);
+            Set(race, "progressText", progress);
+            Set(race, "standingsText", standText);
+            SetArr(race, "speedButtons", speedButtons);
+            SetArr(race, "speedImages", speedImages);
+            Set(race, "skipButton", skip);
+            host.gameObject.SetActive(false);
+        }
+
+        private static GameObject BuildMap(RectTransform content, WorldBuildResult world)
+        {
+            var panel = Stretch(NewRect("Panel_Map", content));
+            var view = panel.gameObject.AddComponent<MapView>();
+            WireView(view);
+            var area = NewText("Area", panel, "목장 마을", 24f, Ink, TextAlignmentOptions.MidlineLeft, true);
+            Place(area.rectTransform, new Vector2(0f, 1f), Vector2.one, new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 36f));
+            var frame = Panel("Frame", panel, UITheme.Board).rectTransform;
+            Stretch(frame, 0f, 44f, 0f, 0f);
+            var img = Img(NewRect("MapImage", frame), Color.white);
+            Place(img.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1500f, 760f));
+            var labels = new TMP_Text[16];
+            for (int i = 0; i < labels.Length; i++)
+            {
+                var l = NewText("Label_" + i, img.transform, "", 18f, White, TextAlignmentOptions.Center, true);
+                Place(l.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(160f, 30f));
+                l.overflowMode = TextOverflowModes.Overflow;
+                l.outlineWidth = 0.25f;
+                l.outlineColor = new Color32(20, 20, 20, 255);
+                labels[i] = l;
+            }
+            var marker = Img(NewRect("Marker", img.transform), new Color(0.95f, 0.2f, 0.2f), true);
+            Place(marker.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(22f, 22f));
+            var you = NewText("You", marker.transform, "나", 15f, White, TextAlignmentOptions.Center, true);
+            Place(you.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 0f), new Vector2(0f, 2f), new Vector2(40f, 22f));
+            Set(view, "map", world.map);
+            Set(view, "player", world.player);
+            Set(view, "mapImage", img);
+            Set(view, "marker", marker.rectTransform);
+            Set(view, "areaText", area);
+            SetArr(view, "labels", labels);
+            return panel.gameObject;
         }
 
         private static Image BuildFade(RectTransform root)

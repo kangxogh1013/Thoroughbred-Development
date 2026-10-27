@@ -58,7 +58,14 @@ namespace HorseRanch
             markets.Clear();
             // 구버전 세이브 보정
             if (State.items == null || State.items.Length < RanchConst.ItemCount) State.items = new int[RanchConst.ItemCount];
-            if (State.achievementDays == null || State.achievementDays.Length < RanchConst.AchievementCount) State.achievementDays = new int[RanchConst.AchievementCount];
+            if (State.achievementDays == null) State.achievementDays = new int[RanchConst.AchievementCount];
+            else if (State.achievementDays.Length < RanchConst.AchievementCount)
+            {
+                var a = State.achievementDays; Array.Resize(ref a, RanchConst.AchievementCount); State.achievementDays = a; // 기존 기록 유지
+            }
+            if (State.tickets == null) State.tickets = new List<BetTicket>();
+            if (State.tomorrow == null) State.tomorrow = new List<RaceDayState>();
+            if (State.masterTips == null) State.masterTips = new List<string>();
             if (State.specialists == null || State.specialists.Length < RanchConst.StatCount) State.specialists = new bool[RanchConst.StatCount];
             if (State.grandPrixWon == null || State.grandPrixWon.Length < 2) State.grandPrixWon = new bool[2];
             if (State.races == null || State.races.Count != Data.races.Length) GenerateDay();
@@ -223,13 +230,21 @@ namespace HorseRanch
 
             State.races.Clear();
             markets.Clear();
-            bool gp = IsGrandPrixDay(State.day);
-            for (int r = 0; r < Data.races.Length; r++)
-            {
-                var rs = new RaceDayState { raceIndex = r, grandPrix = gp, playerSlot = rng.Next(RanchConst.RunnerCount), marketSeed = rng.Next() };
-                for (int i = 0; i < RanchConst.RunnerCount; i++) rs.field.Add(MakeNpc(r, gp, i));
-                State.races.Add(rs);
-            }
+            // 어제 게시판에 예고한 출주마가 오늘 그대로 나온다
+            if (State.tomorrow != null && State.tomorrow.Count == Data.races.Length && State.tomorrow[0].field.Count == RanchConst.RunnerCount)
+                State.races.AddRange(State.tomorrow);
+            else
+                for (int r = 0; r < Data.races.Length; r++) State.races.Add(MakeRaceDay(r, State.day));
+            State.tomorrow = new List<RaceDayState>();
+            for (int r = 0; r < Data.races.Length; r++) State.tomorrow.Add(MakeRaceDay(r, State.day + 1));
+        }
+
+        RaceDayState MakeRaceDay(int r, int day)
+        {
+            bool gp = IsGrandPrixDay(day);
+            var rs = new RaceDayState { raceIndex = r, grandPrix = gp, playerSlot = rng.Next(RanchConst.RunnerCount), marketSeed = rng.Next(), raceSeed = rng.Next() };
+            for (int i = 0; i < RanchConst.RunnerCount; i++) rs.field.Add(MakeNpc(r, gp, i, day));
+            return rs;
         }
 
         LotData MakeLot()
@@ -260,10 +275,10 @@ namespace HorseRanch
             return s;
         }
 
-        HorseData MakeNpc(int raceIndex, bool gp, int lane)
+        HorseData MakeNpc(int raceIndex, bool gp, int lane, int day)
         {
             // 날짜에 따라 강해지되 상한에서 멈춤 + 대상경주 보너스
-            float baseTotal = Math.Min(B.npcMaxTotal, B.npcBaseTotal + State.day * B.npcGrowthPerDay) + (gp ? B.grandPrixNpcBonus : 0f);
+            float baseTotal = Math.Min(B.npcMaxTotal, B.npcBaseTotal + day * B.npcGrowthPerDay) + (gp ? B.grandPrixNpcBonus : 0f);
             float total = RngUtil.Clamp(baseTotal + RngUtil.Range(rng, -(int)B.npcSpread, (int)B.npcSpread), 18f, B.statCap * RanchConst.StatCount * 0.9f);
             var w = new float[RanchConst.StatCount];
             for (int i = 0; i < w.Length; i++) w[i] = 0.5f + RngUtil.Next(rng);
@@ -306,6 +321,12 @@ namespace HorseRanch
         }
 
         // ===== 훈련 =====
+        /// <summary>훈련비: 스탯이 높을수록 비싸진다</summary>
+        public int TrainingCost(HorseData h, int stat)
+        {
+            return B.trainCostBase + B.trainCostPerStat * (int)Math.Floor(h.stats[stat]);
+        }
+
         public TrainResult StartTraining(int horseId, int stat, bool force)
         {
             var h = FindHorse(horseId);
@@ -313,7 +334,10 @@ namespace HorseRanch
             if (h.retired) return TrainResult.Retired;
             if (h.IsTraining) { RaiseToast("이미 훈련 중입니다. 게이지가 찰 때까지 기다리세요."); return TrainResult.Busy; }
             if (IsEnteredAnywhere(h.id)) { RaiseToast("경주에 등록된 말은 훈련할 수 없습니다."); return TrainResult.Busy; }
+            int cost = TrainingCost(h, stat);
+            if (State.gold < cost) { RaiseToast("훈련비가 부족합니다 (" + Gold(cost) + ")"); return TrainResult.Busy; }
             if (h.injury > 0 && !force) return TrainResult.NeedsConfirm;
+            State.gold -= cost;
             if (h.injury > 0)
             {
                 float p = h.injury == 2 ? B.forcedTrainDeathMajor : B.forcedTrainDeathMinor;
@@ -331,7 +355,7 @@ namespace HorseRanch
             h.trainTotal = B.trainDays;
             h.trainBoost = h.nutrient ? 1.5f : 1f;
             h.nutrient = false;
-            AddLog("「" + h.name + "」 " + Data.stats[stat].trainingName + " 훈련 시작");
+            AddLog("「" + h.name + "」 " + Data.stats[stat].trainingName + " 훈련 시작 (-" + Gold(cost) + ")");
             RaiseChanged();
             return TrainResult.Started;
         }
@@ -690,14 +714,27 @@ namespace HorseRanch
             var me = FindHorse(rs.entryId);
             int mi = me != null ? rs.playerSlot : -1;
 
-            int collapseIdx = -1; float collapseAt = 0f;
-            if (me != null && me.injury > 0)
+            // 행운(분수 동전): luckChance 확률로 내 마권 하나가 맞도록 '순풍'을 불어 준다.
+            // 마권에 적힌 말들에게 순서대로 힘을 실어 주고(1착 > 2착 > 3착), 그 마권이 맞는 시드를 찾는다.
+            int seed = rs.raceSeed;
+            bool lucky = false;
+            if (State.luckDay == State.day && RngUtil.Next(rng) < B.luckChance)
             {
-                float p = me.injury == 2 ? B.forcedRaceDeathMajor : B.forcedRaceDeathMinor;
-                if (RngUtil.Next(rng) < p) { collapseIdx = mi; collapseAt = 0.35f + RngUtil.Next(rng) * 0.45f; }
+                var mine = State.tickets.FindAll(t => t.status == TicketStatus.Pending && t.day == State.day && t.raceIndex == raceIndex);
+                if (mine.Count > 0)
+                {
+                    var target = mine[rng.Next(mine.Count)];
+                    var boosted = WithTailwind(run, target);
+                    for (int k = 1; k <= 400 && !lucky; k++)
+                    {
+                        int trialSeed = unchecked(seed + k * 7919);
+                        var trial = SimulateSeeded(boosted, def.distance, mi, me, trialSeed, false);
+                        if (IsWinningTicket(target, Finishers(trial))) { seed = trialSeed; run = boosted; lucky = true; }
+                    }
+                }
             }
-
-            var res = RaceSimulator.Simulate(run, def.distance, 0.1f, true, collapseIdx, collapseAt, B.statCap, rng);
+            int collapseIdx;
+            var res = SimulateSeeded(run, def.distance, mi, me, seed, true, out collapseIdx);
             var result = new RaceResultData();
             for (int p = 0; p < res.order.Length; p++)
             {
@@ -711,6 +748,7 @@ namespace HorseRanch
             }
             var notes = result.notes;
             string raceName = def.displayName + (rs.grandPrix ? " 대상경주(G1)" : "");
+            if (lucky) notes.Add(new NoticeData("분수의 행운이 따랐다! 마권이 맞아떨어졌다.", NoticeTone.Good));
 
             // 내 말 정산
             if (me != null)
@@ -827,6 +865,102 @@ namespace HorseRanch
             else if (RaceAutoRun != null) RaceAutoRun(raceIndex, result);
             if (justCleared && GameCleared != null) GameCleared();
             CheckBankrupt();
+        }
+
+        // ===== 시드 고정 경주 =====
+        RaceSimResult SimulateSeeded(IList<HorseData> run, float distance, int mi, HorseData me, int seed, bool record)
+        {
+            int c;
+            return SimulateSeeded(run, distance, mi, me, seed, record, out c);
+        }
+
+        /// <summary>같은 시드면 같은 결과 (부상마 낙마 판정 포함). 탐색용(record=false)은 거친 틱으로 빠르게</summary>
+        RaceSimResult SimulateSeeded(IList<HorseData> run, float distance, int mi, HorseData me, int seed, bool record, out int collapseIdx)
+        {
+            var r = new Random(seed);
+            collapseIdx = -1; float collapseAt = 0f;
+            if (me != null && me.injury > 0)
+            {
+                float p = me.injury == 2 ? B.forcedRaceDeathMajor : B.forcedRaceDeathMinor;
+                if (RngUtil.Next(r) < p) { collapseIdx = mi; collapseAt = 0.35f + RngUtil.Next(r) * 0.45f; }
+            }
+            return RaceSimulator.Simulate(run, distance, 0.1f, record, collapseIdx, collapseAt, B.statCap, r);
+        }
+
+        /// <summary>행운용 복사본: 마권에 적힌 말을 순서대로 강하게 (원본 데이터는 그대로)</summary>
+        List<HorseData> WithTailwind(IList<HorseData> run, BetTicket t)
+        {
+            var picks = new List<int>();
+            foreach (var part in t.key.Split('>', '-')) picks.Add(int.Parse(part) - 1);
+            var copy = new List<HorseData>(run.Count);
+            for (int i = 0; i < run.Count; i++)
+            {
+                int rank = picks.IndexOf(i);
+                if (rank < 0) { copy.Add(run[i]); continue; }
+                var h = new HorseData { id = run[i].id, name = run[i].name, coat = run[i].coat, male = run[i].male, condition = 100f, fatigue = 0f };
+                float k = rank == 0 ? 1.45f : rank == 1 ? 1.3f : 1.15f;
+                // 순서 없는 승식은 고른 말 모두 비슷하게
+                if (!ParimutuelMarket.IsOrdered(t.type)) k = 1.35f;
+                for (int s = 0; s < RanchConst.StatCount; s++) h.stats[s] = run[i].stats[s] * k + 2f;
+                copy.Add(h);
+            }
+            return copy;
+        }
+
+        static List<int> Finishers(RaceSimResult res)
+        {
+            var fin = new List<int>();
+            for (int p = 0; p < res.order.Length; p++) if (!res.dnf[res.order[p]]) fin.Add(res.order[p] + 1);
+            return fin;
+        }
+
+        /// <summary>오늘 이 경주의 실제 1착 마번 (도박 고수용, 행운 효과는 반영하지 않음)</summary>
+        public int PredictWinner(int raceIndex)
+        {
+            var rs = Race(raceIndex);
+            var me = FindHorse(rs.entryId);
+            var run = new List<HorseData>(Runners(raceIndex));
+            var res = SimulateSeeded(run, Data.races[raceIndex].distance, me != null ? rs.playerSlot : -1, me, rs.raceSeed, false);
+            var fin = Finishers(res);
+            return fin.Count > 0 ? fin[0] : 1;
+        }
+
+        // ===== 분수 / 도박 고수 =====
+        public bool IsLucky { get { return State.luckDay == State.day; } }
+
+        public bool ThrowCoin()
+        {
+            if (IsLucky) { RaiseToast("오늘은 이미 동전을 던졌습니다"); return false; }
+            if (State.gold < B.coinPrice) { RaiseToast("동전 던질 돈도 없습니다"); return false; }
+            State.gold -= B.coinPrice;
+            State.luckDay = State.day;
+            AddLog("분수에 동전을 던졌다. 오늘은 운이 좋을 것 같다!");
+            RaiseChanged();
+            return true;
+        }
+
+        /// <summary>숨은 도박 고수의 예언. 하루 1번, 경주마다 masterTruthChance 확률로만 진짜</summary>
+        public string AskMaster()
+        {
+            if (!IsAchieved(AchievementId.HiddenMaster)) Unlock(AchievementId.HiddenMaster, null);
+            if (State.masterDay != State.day)
+            {
+                State.masterDay = State.day;
+                State.masterTips.Clear();
+                for (int r = 0; r < Data.races.Length; r++)
+                {
+                    if (Race(r).done) { State.masterTips.Add(Data.races[r].displayName + "은 이미 끝났지."); continue; }
+                    int truth = PredictWinner(r);
+                    int said = truth;
+                    if (RngUtil.Next(rng) >= B.masterTruthChance)
+                        while (said == truth) said = rng.Next(RanchConst.RunnerCount) + 1;
+                    var run = Runners(r);
+                    State.masterTips.Add(Data.races[r].displayName + "은 " + said + "번 " + run[said - 1].name + "이(가) 1등이야.");
+                }
+                AddLog("숲속의 도박 고수에게 예언을 들었다.");
+                RaiseChanged();
+            }
+            return string.Join("\n", State.masterTips.ToArray()) + "\n...뭐, 셋 중 하나는 맞더라고. 흐흐.";
         }
 
         static bool IsWinningTicket(BetTicket b, List<int> fin)
