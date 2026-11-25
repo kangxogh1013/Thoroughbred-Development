@@ -157,7 +157,7 @@ namespace HorseRanch
                 int ix = order[r];
                 bool mine = ix == replay.mine;
                 if (mine) sb.Append("<b>");
-                sb.Append(r + 1).Append("  <color=#").Append(UITheme.SilkHex[ix]).Append(">■</color> ").Append(ix + 1).Append("번 ").Append(replay.names[ix]);
+                sb.Append(r + 1).Append("  <color=#").Append(UITheme.SilkHex[ix]).Append(">").Append(ix + 1).Append("번</color> ").Append(replay.names[ix]);
                 if (r > 0) sb.Append("<pos=78%><color=#8B927F>-").Append((pos[order[0]] - pos[ix]).ToString("0.0")).Append("m</color>");
                 if (mine) sb.Append("</b>");
                 sb.Append('\n');

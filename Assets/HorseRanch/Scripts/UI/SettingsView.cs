@@ -16,7 +16,7 @@ namespace HorseRanch
 
         [Header("행 배경 (0 배경음, 1 효과음, 2 창 크기, 3 화면 모드) — 키보드 선택 표시")]
         [SerializeField] private Image[] rowBackgrounds;
-        [Header("◀ ▶ 버튼 (행 0~3 순서로 [왼쪽, 오른쪽] × 4 = 8개)")]
+        [Header("< > 버튼 (행 0~3 순서로 [왼쪽, 오른쪽] × 4 = 8개)")]
         [SerializeField] private Button[] arrowButtons;
 
         [Header("값 표시")]

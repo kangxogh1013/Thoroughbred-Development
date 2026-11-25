@@ -123,7 +123,7 @@ namespace HorseRanch
                 row.SetText(0, (i + 1).ToString());
                 row.SetTextColor(0, UITheme.SilkInk[i]);
                 row.SetBackground(UITheme.Silk[i]);
-                row.SetText(1, ix >= 0 ? (need > 1 ? (ix + 1).ToString() : "●") : "");
+                row.SetText(1, ix >= 0 ? (need > 1 ? (ix + 1).ToString() : "O") : "");
                 row.SetSwatch(0, ix >= 0 ? UITheme.Accent : Color.clear);
                 row.SetInteractable(!rs.done);
             }

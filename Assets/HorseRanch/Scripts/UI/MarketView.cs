@@ -72,7 +72,7 @@ namespace HorseRanch
                 string limit = f.dailyLimit > 0 ? "  <size=75%><color=#B8860B>오늘 " + left + "/" + f.dailyLimit + "개 남음</color></size>" : "";
                 row.SetText(0, (f.forHorse ? "<color=#8A6A44>[말]</color> " : "<color=#2E6FB8>[나]</color> ") + f.displayName + limit);
                 row.SetText(1, Gold(f.price));
-                row.SetText(2, f.description + (f.effect == FoodEffect.PermanentStat ? " → <b>" + Data.stats[stat].displayName + "</b>" : ""));
+                row.SetText(2, f.description + (f.effect == FoodEffect.PermanentStat ? " > <b>" + Data.stats[stat].displayName + "</b>" : ""));
                 string reason;
                 bool ok = Game.CanBuyFood(i, h != null ? h.id : 0, stat, out reason);
                 row.SetText(3, ok ? (f.forHorse ? "사서 먹이기" : "사서 먹기") : reason);

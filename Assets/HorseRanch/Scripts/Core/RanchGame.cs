@@ -20,7 +20,6 @@ namespace HorseRanch
         public event Action<HorseData, List<NoticeData>> LotRevealed;       // 블라인드 말 감정 결과
         public event Action<HorseData> FoalBorn;
         public event Action GameCleared;
-        public event Action Bankrupt;
 
         public GameState State { get; private set; }
         public GameData Data { get; private set; }
@@ -40,7 +39,7 @@ namespace HorseRanch
         // ===== 시작 / 불러오기 =====
         public void NewGame()
         {
-            State = new GameState { gold = B.startGold };
+            State = new GameState { gold = B.startGold, debt = B.startDebt };
             State.items[(int)ItemType.Medicine] = 1;
             var h = MakeHorse(true);
             for (int i = 0; i < RanchConst.StatCount; i++) h.stats[i] = B.startStat;
@@ -49,7 +48,8 @@ namespace HorseRanch
             markets.Clear();
             GenerateDay();
             EnsureTownState();
-            AddLog("목장을 열었습니다. 첫 말 「새싹」이 도착했습니다. (전 스탯 " + B.startStat + ")");
+            EnsureStoryState();
+            AddLog("아버지의 목장을 물려받았다. 남은 건 말 「새싹」과 빚 " + Gold(B.startDebt) + ".");
             RaiseChanged();
         }
 
@@ -71,6 +71,9 @@ namespace HorseRanch
             if (State.grandPrixWon == null || State.grandPrixWon.Length < 2) State.grandPrixWon = new bool[2];
             if (State.races == null || State.races.Count != Data.races.Length) GenerateDay();
             EnsureTownState();
+            EnsureStoryState();
+            // 스토리 이전 버전 세이브: 튜토리얼은 건너뛴 것으로
+            if (!State.introSeen && State.day > 1) { State.introSeen = true; State.tutorialStep = (int)TutorialStep.Done; }
             RaiseChanged();
         }
 
@@ -186,9 +189,9 @@ namespace HorseRanch
                     if (h.trainLeft <= 0) FinishTraining(h);
                     else if (eventHorse == 0 && RngUtil.Next(rng) < B.trainingEventChance) eventHorse = h.id;
                 }
-                else h.fatigue = Math.Max(0f, h.fatigue - (h.retired ? B.retiredRecovery : B.restRecovery));
+                else h.fatigue = Math.Max(0f, h.fatigue - (h.retired ? B.retiredRecovery : B.restRecovery) - RoomRecoveryBonus);
 
-                h.condition = RngUtil.Clamp(h.condition + (70f - h.condition) * 0.2f + RngUtil.Range(rng, -6, 6), 20f, 100f);
+                h.condition = RngUtil.Clamp(h.condition + (70f - h.condition) * 0.2f + RngUtil.Range(rng, -6, 6) + PastureBonus, 20f, 100f);
 
                 if (h.injury > 0)
                 {
@@ -201,6 +204,9 @@ namespace HorseRanch
             }
             GenerateDay();
             if (IsGrandPrixDay(State.day)) AddLog("오늘은 대상경주(G1) 개최일입니다! 상금 " + B.grandPrixPrizeMultiplier + "배.");
+            AdvanceTutorial(TutorialStep.Sleep);
+            CollectDebt();
+            if (IsOver) return;
             RaiseChanged();
 
             if (eventHorse != 0 && Data.events.Length > 0 && TrainingEventTriggered != null)
@@ -247,6 +253,7 @@ namespace HorseRanch
             bool gp = IsGrandPrixDay(day);
             var rs = new RaceDayState { raceIndex = r, grandPrix = gp, playerSlot = rng.Next(RanchConst.RunnerCount), marketSeed = rng.Next(), raceSeed = rng.Next() };
             for (int i = 0; i < RanchConst.RunnerCount; i++) rs.field.Add(MakeNpc(r, gp, i, day));
+            AddRival(rs);
             return rs;
         }
 
@@ -337,10 +344,11 @@ namespace HorseRanch
             if (h.retired) return TrainResult.Retired;
             if (h.IsTraining) { RaiseToast("이미 훈련 중입니다. 게이지가 찰 때까지 기다리세요."); return TrainResult.Busy; }
             if (IsEnteredAnywhere(h.id)) { RaiseToast("경주에 등록된 말은 훈련할 수 없습니다."); return TrainResult.Busy; }
-            int cost = TrainingCost(h, stat);
+            int cost = IsFree(FreeKind.Training) ? 0 : TrainingCost(h, stat);
             if (State.gold < cost) { RaiseToast("훈련비가 부족합니다 (" + Gold(cost) + ")"); return TrainResult.Busy; }
             if (h.injury > 0 && !force) return TrainResult.NeedsConfirm;
             State.gold -= cost;
+            if (cost == 0 && IsFree(FreeKind.Training)) { UseFree(FreeKind.Training); RaiseToast("튜토리얼: 첫 훈련 무료!"); }
             if (h.injury > 0)
             {
                 float p = h.injury == 2 ? B.forcedTrainDeathMajor : B.forcedTrainDeathMinor;
@@ -359,6 +367,7 @@ namespace HorseRanch
             h.trainBoost = h.nutrient ? 1.5f : 1f;
             h.nutrient = false;
             AddLog("「" + h.name + "」 " + Data.stats[stat].trainingName + " 훈련 시작 (-" + Gold(cost) + ")");
+            AdvanceTutorial(TutorialStep.Train);
             RaiseChanged();
             return TrainResult.Started;
         }
@@ -368,7 +377,7 @@ namespace HorseRanch
             int k = h.trainStat;
             float cur = h.stats[k];
             // 상한에 가까울수록 성장 둔화, 컨디션·영양제 보정, 피로 70 이상이면 -30%
-            float g = B.trainBaseGain * (1f - cur / (B.statCap + 2f)) * (0.85f + h.condition / 100f * 0.3f) * h.trainBoost;
+            float g = B.trainBaseGain * (1f - cur / (B.statCap + 2f)) * (0.85f + h.condition / 100f * 0.3f) * h.trainBoost * TrainingGearBonus;
             if (h.fatigue >= 70f) g *= 0.7f;
             h.stats[k] = Math.Min(B.statCap, (float)Math.Round((cur + g) * 10f) / 10f);
             h.fatigue = RngUtil.Clamp(h.fatigue + B.fatigueOnTrain * (1f - h.stats[(int)StatType.Durability] * 0.025f), 0f, 100f);
@@ -416,10 +425,14 @@ namespace HorseRanch
         {
             var it = Data.GetItem(type);
             if (it == null) return false;
-            if (State.gold < it.price) { RaiseToast("골드가 부족합니다"); return false; }
-            State.gold -= it.price;
+            bool free = IsFree(FreeKind.Shop);
+            int price = free ? 0 : it.price;
+            if (State.gold < price) { RaiseToast("골드가 부족합니다"); return false; }
+            State.gold -= price;
             State.items[(int)type]++;
-            RaiseToast(it.displayName + " 구매");
+            if (free) UseFree(FreeKind.Shop);
+            RaiseToast(it.displayName + (free ? " 구매 (튜토리얼: 첫 구매 무료!)" : " 구매"));
+            AdvanceTutorial(TutorialStep.Shop);
             RaiseChanged();
             return true;
         }
@@ -598,18 +611,21 @@ namespace HorseRanch
             amount = amount / 100 * 100;
             if (amount < B.minBet) { RaiseToast("최소 배팅은 " + Gold(B.minBet) + "입니다"); return false; }
             if (amount > B.maxBetPerTicket) { RaiseToast("마권 1장 최대 " + Gold(B.maxBetPerTicket) + "입니다"); return false; }
-            if (State.gold < amount) { RaiseToast("골드가 부족합니다"); return false; }
+            int freePart = IsFree(FreeKind.Bet) ? Math.Min(amount, B.freeBetMax) : 0;
+            if (State.gold < amount - freePart) { RaiseToast("골드가 부족합니다"); return false; }
 
             if (State.tickets.Count >= B.maxTickets) { RaiseToast("마권이 너무 많습니다. 교환소에서 정리하세요 (최대 " + B.maxTickets + "장)"); return false; }
 
             string key = ParimutuelMarket.Key(type, picks);
             Market(raceIndex).Add(type, key, amount);
-            State.gold -= amount;
+            State.gold -= amount - freePart;
+            if (freePart > 0) UseFree(FreeKind.Bet);
             int id = State.nextTicketId++;
             // 배당 풀 기록용(slip)과 인벤토리용(tickets)을 따로 보관
             rs.slip.Add(new BetTicket { id = id, day = State.day, raceIndex = raceIndex, grandPrix = rs.grandPrix, type = type, key = key, amount = amount });
-            State.tickets.Add(new BetTicket { id = id, day = State.day, raceIndex = raceIndex, grandPrix = rs.grandPrix, type = type, key = key, amount = amount });
-            RaiseToast("마권 구매 · " + ParimutuelMarket.DisplayName(type) + " " + key + " · " + Gold(amount) + " (인벤토리 보관)");
+            State.tickets.Add(new BetTicket { id = id, day = State.day, raceIndex = raceIndex, grandPrix = rs.grandPrix, type = type, key = key, amount = amount, freeAmount = freePart });
+            RaiseToast("마권 구매 · " + ParimutuelMarket.DisplayName(type) + " " + key + " · " + Gold(amount) + (freePart > 0 ? " (튜토리얼: " + Gold(freePart) + " 무료!)" : " (인벤토리 보관)"));
+            AdvanceTutorial(TutorialStep.Bet);
             RaiseChanged();
             return true;
         }
@@ -624,8 +640,9 @@ namespace HorseRanch
             rs.slip.RemoveAll(x => x.id == ticketId);
             State.tickets.Remove(t);
             Market(t.raceIndex).Add(t.type, t.key, -t.amount);
-            State.gold += t.amount;
-            RaiseToast("마권 환불 " + Gold(t.amount));
+            State.gold += t.amount - t.freeAmount;
+            if (t.freeAmount > 0) State.freeUsed[(int)FreeKind.Bet] = false;   // 무료권은 돌려준다
+            RaiseToast("마권 환불 " + Gold(t.amount - t.freeAmount) + (t.freeAmount > 0 ? " (무료권 반환)" : ""));
             RaiseChanged();
             return true;
         }
@@ -775,6 +792,7 @@ namespace HorseRanch
                     if (pos == 1)
                     {
                         me.wins++;
+                        State.lastPlayerWinDay = State.day;
                         me.condition = RngUtil.Clamp(me.condition + 5f, 0f, 100f);
                         Unlock(AchievementId.FirstWin, notes);
                         if (rs.grandPrix)
@@ -840,17 +858,13 @@ namespace HorseRanch
                 if (od >= 50f) Unlock(AchievementId.Longshot, notes);
             }
             if (count > 0)
-                notes.Add(new NoticeData("마권 " + count + "장 · 구매 " + Gold(spent) + " · 적중 " + Gold(got) + (got > 0 ? " → 도박장 교환소에서 교환하세요" : ""), NoticeTone.Normal));
+                notes.Add(new NoticeData("마권 " + count + "장 · 구매 " + Gold(spent) + " · 적중 " + Gold(got) + (got > 0 ? " - 도박장 교환소에서 교환하세요" : ""), NoticeTone.Normal));
 
-            // 게임 목표: 단거리·장거리 대상경주 모두 제패
+            // 스토리 목표: 장거리 그랑프리 우승 → 엔딩 / 업적: 단거리·장거리 대상경주 모두 제패
+            bool justCleared = me != null && collapseIdx < 0 && CheckStoryClear(rs, me, Array.IndexOf(res.order, mi) + 1, notes);
             bool allGp = true;
             for (int i = 0; i < State.grandPrixWon.Length; i++) if (!State.grandPrixWon[i]) allGp = false;
-            bool justCleared = false;
-            if (allGp && !State.cleared)
-            {
-                State.cleared = true; justCleared = true;
-                Unlock(AchievementId.GrandSlam, notes);
-            }
+            if (allGp) Unlock(AchievementId.GrandSlam, notes);
 
             rs.done = true;
             rs.result = result;
@@ -864,7 +878,7 @@ namespace HorseRanch
             for (int i = 0; i < run.Count; i++) { replay.names[i] = run[i].name; replay.coats[i] = run[i].coat; }
 
             RaiseChanged();
-            if (watched) { if (RaceFinished != null) RaceFinished(replay); }
+            if (watched) { AdvanceTutorial(TutorialStep.Watch); if (RaceFinished != null) RaceFinished(replay); }
             else if (RaceAutoRun != null) RaceAutoRun(raceIndex, result);
             if (justCleared && GameCleared != null) GameCleared();
             CheckBankrupt();
@@ -1027,9 +1041,12 @@ namespace HorseRanch
             if (State.deadCount >= 10) Unlock(AchievementId.HorseHunter, null);
         }
 
+        void RaiseGameCleared() { if (GameCleared != null) GameCleared(); }
+
         void CheckBankrupt()
         {
-            if (State.horses.Count == 0 && State.gold < LotPrice && Bankrupt != null) Bankrupt();
+            // 말도 없고 새 말을 살 돈도 없으면 파산 → 게임 오버
+            if (State.horses.Count == 0 && State.gold < LotPrice) TriggerGameOver(GameOverReason.Bankrupt);
         }
 
         void AddLog(string text)

@@ -63,15 +63,16 @@ namespace HorseRanch
             game.Changed += HandleChanged;
 
             GameState loaded = TryLoad();
-            hasSave = loaded != null;
-            if (loaded != null) game.LoadState(loaded);
+            // 게임 오버된 세이브는 이어할 수 없다
+            hasSave = loaded != null && loaded.gameOver == 0;
+            if (hasSave) game.LoadState(loaded);
             else game.NewGame();
             Debug.Log("[HorseRanch] 게임 시작 · " + game.Summary() + " · 저장 위치: " + SavePath);
         }
 
         private void HandleChanged()
         {
-            if (autoSave) Save();
+            if (autoSave && !game.IsOver) Save();
         }
 
         public void Save()
@@ -100,6 +101,20 @@ namespace HorseRanch
         {
             Game.NewGame();
         }
+
+        /// <summary>게임 오버: 세이브를 지워 이어하기를 막는다</summary>
+        public void ClearSave()
+        {
+            hasSave = false;
+            try { if (File.Exists(SavePath)) File.Delete(SavePath); }
+            catch (Exception e) { Debug.LogWarning("[HorseRanch] 세이브 삭제 실패: " + e.Message); }
+        }
+
+        [ContextMenu("치트: 그랑프리 우승 (엔딩 보기)")]
+        private void CheatEnding() { if (Application.isPlaying) Game.DebugClearStory(); }
+
+        [ContextMenu("치트: 목장 압류 (게임 오버 보기)")]
+        private void CheatGameOver() { if (Application.isPlaying) Game.DebugGameOver(); }
 
         // ===== 에디터 테스트용 (컴포넌트 우클릭 메뉴) =====
         [ContextMenu("세이브 삭제")]

@@ -26,7 +26,7 @@ namespace HorseRanch
         {
             var area = map.AreaAt(player.Mover.Cell);
             if (area == null) return;
-            areaText.text = area.AreaName + "  <size=70%><color=#8B927F>● 현재 위치</color></size>";
+            areaText.text = area.AreaName + "  <size=70%><color=#8B927F>점 = 내 위치</color></size>";
             mapImage.sprite = area.MapSprite;
             float s = Mathf.Min(frameSize.x / area.Width, frameSize.y / area.Height);
             mapImage.rectTransform.sizeDelta = new Vector2(area.Width * s, area.Height * s);

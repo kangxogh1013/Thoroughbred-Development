@@ -8,7 +8,7 @@ namespace HorseRanch
     public enum StatType { Speed = 0, Stamina = 1, Durability = 2, Agility = 3, Grit = 4, Wisdom = 5 }
     public enum ItemType { Medicine = 0, Nutrient = 1, EnergyDrink = 2 }
     public enum BetType { Win = 0, Place = 1, Quinella = 2, Exacta = 3, Trio = 4, Trifecta = 5 }
-    public enum AchievementId { SilverHorse = 0, KingOfGamblers = 1, HorseHunter = 2, HorseCollector = 3, FirstWin = 4, Longshot = 5, MasterTrainer = 6, GrandSlam = 7, HiddenMaster = 8, TreasureHunter = 9, CleanTown = 10 }
+    public enum AchievementId { SilverHorse = 0, KingOfGamblers = 1, HorseHunter = 2, HorseCollector = 3, FirstWin = 4, Longshot = 5, MasterTrainer = 6, GrandSlam = 7, HiddenMaster = 8, TreasureHunter = 9, CleanTown = 10, DebtFree = 11 }
     public enum TrainResult { Started, NotFound, Busy, Retired, NeedsConfirm, Died }
     public enum NoticeTone { Normal = 0, Good = 1, Bad = 2 }
     public enum TicketStatus { Pending = 0, Won = 1, Lost = 2 }
@@ -18,13 +18,23 @@ namespace HorseRanch
     public enum FoodEffect { Condition = 0, Fatigue = 1, PermanentStat = 2, PermanentAll = 3, SearchBoost = 4, Coffee = 5 }
     /// <summary>쓰레기통 뒤지기 결과</summary>
     public enum TrashResult { Trash = 0, Money = 1, Full = 2, Exhausted = 3 }
+    /// <summary>튜토리얼 순서 (처음 시작 시 길 안내). Done = 튜토리얼 끝, 이후 목표는 그랑프리 우승</summary>
+    public enum TutorialStep { TalkMom = 0, VisitStable = 1, Train = 2, Shop = 3, Market = 4, Bet = 5, Watch = 6, Bank = 7, Sleep = 8, Done = 9 }
+    /// <summary>튜토리얼 '첫 구매 1회 무료' 종류</summary>
+    public enum FreeKind { Training = 0, Shop = 1, Market = 2, Bet = 3 }
+    /// <summary>목장 시설 (돈을 쓸 곳): 훈련 장비 · 마구간 개량 · 목초지</summary>
+    public enum FacilityId { TrainingGear = 0, StableRoom = 1, Pasture = 2 }
+    /// <summary>게임 오버 사유</summary>
+    public enum GameOverReason { None = 0, Foreclosure = 1, Bankrupt = 2 }
 
     public static class RanchConst
     {
         public const int StatCount = 6;
         public const int RunnerCount = 8;
         public const int BetTypeCount = 6;
-        public const int AchievementCount = 11;
+        public const int AchievementCount = 12;
+        public const int FacilityCount = 3;
+        public const int FreeKindCount = 4;
         public const int ItemCount = 3;
         public const int SecretCount = 4;
     }
@@ -119,6 +129,26 @@ namespace HorseRanch
         [Header("숨겨진 요소 보상")]
         public int secretShelfGold = 3000;
         public int secretPondGold = 5000;
+
+        [Header("스토리 · 아버지의 빚 (게임 오버 조건)")]
+        [Tooltip("시작할 때 남아 있는 빚")] public int startDebt = 120000;
+        [Tooltip("첫 상환일 (일차)")] public int debtFirstDay = 10;
+        [Tooltip("상환 주기 (일)")] public int debtInterval = 7;
+        [Tooltip("한 번에 갚아야 하는 금액")] public int debtPayment = 8000;
+        [Tooltip("연체 시 빚에 더해지는 연체료")] public int latePenalty = 3000;
+        [Tooltip("이 횟수만큼 연체하면 목장 압류, 게임 오버")] public int maxMissedPayments = 3;
+
+        [Header("튜토리얼")]
+        [Tooltip("첫 마권 무료 한도 (이 금액까지 공짜)")] public int freeBetMax = 1000;
+
+        [Header("목장 시설 (레벨 1~3 가격)")]
+        public int[] facilityPrices = { 15000, 30000, 60000 };
+        [Tooltip("훈련 장비 레벨당 훈련 성장량 +")] [Range(0f, 0.5f)] public float gearGainPerLevel = 0.15f;
+        [Tooltip("마구간 개량 레벨당 하룻밤 피로 회복 +")] public float roomRecoveryPerLevel = 8f;
+        [Tooltip("목초지 레벨당 매일 컨디션 +")] public float pastureConditionPerLevel = 4f;
+
+        [Header("스토리 그랑프리 라이벌 (흑철 목장 '흑풍')")]
+        [Tooltip("라이벌 말 스탯 배율 (같은 날 NPC 평균 대비)")] public float rivalStatMultiplier = 1.18f;
     }
 
     /// <summary>시장에서 파는 음식 1종. forHorse면 고른 말에게 바로 먹인다</summary>
@@ -305,6 +335,7 @@ namespace HorseRanch
         public BetType type;
         public string key;
         public int amount;
+        [Tooltip("튜토리얼 무료로 낸 금액 (환불 시 돈 대신 무료권을 돌려줌)")] public int freeAmount;
         public TicketStatus status;
         public float odds;     // 확정 배당 (경주 후)
         public int payout;     // 적중 시 교환 금액
@@ -396,6 +427,21 @@ namespace HorseRanch
         [Tooltip("시장 음식별 오늘 구매 수 (자고 나면 초기화)")] public int[] foodBought = new int[0];
         public int searchBoostDay = -1;
         public int coffeeDay = -1;
+
+        [Header("스토리 · 진행")]
+        public int tutorialStep;                    // TutorialStep
+        public bool introSeen;
+        public List<string> tipsSeen = new List<string>();
+        public bool[] freeUsed = new bool[RanchConst.FreeKindCount];
+        public int debt;
+        public int debtCredit;                      // 미리 갚아서 다음 상환일에 빠지는 금액
+        public int missedPayments;
+        public int[] facility = new int[RanchConst.FacilityCount];
+        public int lastPlayerWinDay = -99;
+        public int storyClearDay;
+        public string storyWinner;                  // 그랑프리를 우승한 내 말 이름
+        public bool endingSeen;
+        public int gameOver;                        // GameOverReason
     }
 
     /// <summary>경주 재생용 데이터 (저장하지 않음)</summary>

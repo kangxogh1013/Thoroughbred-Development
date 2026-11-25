@@ -35,7 +35,7 @@ namespace HorseRanch
                 else if (a.id == AchievementId.HorseCollector) progress = " · " + Game.SpecialistCount + "/6 " + SpecialistList();
                 else if (a.id == AchievementId.TreasureHunter) progress = " · " + Game.SecretsFound + "/" + RanchConst.SecretCount;
                 else if (a.id == AchievementId.CleanTown) progress = " · " + System.Math.Min(s.trashDisposed, Data.balance.cleanTownGoal) + "/" + Data.balance.cleanTownGoal;
-                else if (a.id == AchievementId.GrandSlam) progress = " · " + (s.grandPrixWon[0] ? "●" : "○") + (s.grandPrixWon[1] ? "●" : "○");
+                else if (a.id == AchievementId.GrandSlam) progress = " · " + "단거리 " + (s.grandPrixWon[0] ? "O" : "X") + " 장거리 " + (s.grandPrixWon[1] ? "O" : "X");
 
                 var c = cards[i];
                 c.SetText(0, (day > 0 ? "<color=#B8860B>" + day + "일차 달성</color>" : "미달성") + progress);

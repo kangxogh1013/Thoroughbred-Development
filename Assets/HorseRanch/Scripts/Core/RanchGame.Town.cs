@@ -109,7 +109,7 @@ namespace HorseRanch
             if (food < 0 || food >= Data.foods.Length) { reason = "없는 음식"; return false; }
             var f = Data.foods[food];
             if (FoodLeftToday(food) <= 0) { reason = "오늘은 품절 (하루 " + f.dailyLimit + "개)"; return false; }
-            if (State.gold < f.price) { reason = "골드 부족"; return false; }
+            if (State.gold < (IsFree(FreeKind.Market) ? 0 : f.price)) { reason = "골드 부족"; return false; }
             if (!f.forHorse)
             {
                 if (f.effect == FoodEffect.SearchBoost && IsSearchBoosted) { reason = "오늘은 이미 배부름"; return false; }
@@ -141,8 +141,11 @@ namespace HorseRanch
             string reason;
             if (!CanBuyFood(food, horseId, stat, out reason)) { RaiseToast(reason); return false; }
             var f = Data.foods[food];
-            State.gold -= f.price;
+            bool free = IsFree(FreeKind.Market);
+            State.gold -= free ? 0 : f.price;
+            if (free) { UseFree(FreeKind.Market); RaiseToast("튜토리얼: 첫 구매 무료!"); }
             State.foodBought[food]++;
+            AdvanceTutorial(TutorialStep.Market);
             var h = FindHorse(horseId);
             switch (f.effect)
             {

@@ -88,7 +88,7 @@ namespace HorseRanch
                 bool on = i == selected;
                 buttonImages[i].color = on ? UITheme.Accent : new Color(0.08f, 0.1f, 0.08f, 0.78f);
                 buttonLabels[i].color = !buttons[i].interactable ? UITheme.BoardMute : on ? UITheme.Ink : UITheme.White;
-                buttonLabels[i].text = (on ? "▶  " : "") + Label(i);
+                buttonLabels[i].text = (on ? ">  " : "") + Label(i);
             }
         }
 

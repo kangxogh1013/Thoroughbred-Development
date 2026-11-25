@@ -12,6 +12,8 @@ namespace HorseRanch.EditorTools
         public GridMover playerMover;
         public Vector2Int spawn;
         public WorldRaceView race;
+        public NavigationGuide guide;
+        public MemorialSite memorial;
     }
 
     /// <summary>
@@ -71,6 +73,8 @@ namespace HorseRanch.EditorTools
             props["bed"] = Bed("prop_bed");
             props["post"] = StallPost("prop_stallpost");
             props["trash"] = TrashBin("prop_trashbin");
+            props["grave"] = Grave("prop_grave");
+            props["trophy"] = Trophy("prop_trophy");
 
             var result = new WorldBuildResult();
             BuildTown(result);
@@ -89,6 +93,22 @@ namespace HorseRanch.EditorTools
             pm.transform.SetParent(worldRoot, true);
             var pc = pm.gameObject.AddComponent<PlayerController>();
             pc.EditorSetup(pm, map);
+
+            // 튜토리얼 길 안내: 머리 위 화살표 + 목표 표식 (가장 위에 그림)
+            var guideGo = new GameObject("NavigationGuide");
+            guideGo.transform.SetParent(worldRoot, false);
+            var arrow = new GameObject("Arrow").AddComponent<SpriteRenderer>();
+            arrow.transform.SetParent(guideGo.transform, false);
+            arrow.sprite = NavArrow("nav_arrow");
+            arrow.sortingOrder = 32000;
+            var marker = new GameObject("Marker").AddComponent<SpriteRenderer>();
+            marker.transform.SetParent(guideGo.transform, false);
+            marker.sprite = NavMarker("nav_marker");
+            marker.sortingOrder = 32000;
+            arrow.enabled = marker.enabled = false;
+            result.guide = guideGo.AddComponent<NavigationGuide>();
+            result.guide.EditorSetup(pm.transform, arrow, marker);
+
             result.map = map;
             result.player = pc;
             result.playerMover = pm;
@@ -211,6 +231,28 @@ namespace HorseRanch.EditorTools
                 Prop(a, "Lamp", props["lamp"], p.x + 0.5f, p.y, true);
             BenchAt(a, 43, 26); BenchAt(a, 50, 26);
 
+            // ===== 추모 언덕 (북서쪽): 아버지의 묘. 엔딩 때 트로피가 놓인다 =====
+            Fill(a, 21, 50, 21, 57, 'r');
+            Fill(a, 18, 58, 24, 62, 'k');
+            var graveSr = Prop(a, "FatherGrave", props["grave"], 21.5f, 61, true);
+            Interact(a, "Grave", InteractKind.Grave, "아버지의 묘", null, new[] { G(a, 21, 61) }, false, Vector2Int.zero, Vector2Int.zero);
+            var trophy = Prop(a, "Trophy", props["trophy"], 22.6f, 60.9f, false);
+            a.block[22, 61] = true;
+            trophy.enabled = false;
+            var momAtGrave = Character("MemorialMom", Looks.Mom, G(a, 19, 60), Vector2Int.right, 3f);
+            momAtGrave.transform.SetParent(a.root, true);
+            momAtGrave.gameObject.SetActive(false);
+            var memorial = graveSr.gameObject.AddComponent<MemorialSite>();
+            memorial.EditorSetup(trophy, G(a, 21, 60), momAtGrave.gameObject);
+            result.memorial = memorial;
+            Sign(a.root, "추모 언덕", new Vector3(21.5f, 63.2f, 0f), 2.4f, YSort.Order(62f) + 5, 4.2f);
+            BenchAt(a, 18, 59);
+
+            // ===== 광장 은행 출장소: 아버지의 빚 =====
+            Npc(a, "Banker", Looks.Banker, 50, 35, Vector2Int.down, null, InteractKind.Bank, "은행원",
+                "목장 대출 담당입니다. 상환일 아침에 자동으로 출금됩니다.");
+            Sign(a.root, "은행", new Vector3(50.5f, 37.1f, 0f), 1.6f, YSort.Order(35f) + 5, 4.2f);
+
             // ===== 쓰레기통 8개 (번호 = BalanceConfig.trashBinValues 인덱스) =====
             int[,] bins = { { 44, 38 }, { 26, 33 }, { 55, 33 }, { 72, 33 }, { 80, 18 }, { 16, 22 }, { 49, 50 }, { 35, 21 } };
             for (int i = 0; i < bins.GetLength(0); i++) TrashBinAt(a, i, bins[i, 0], bins[i, 1]);
@@ -244,6 +286,7 @@ namespace HorseRanch.EditorTools
             Label(a, "집", 9, 46); Label(a, "상점", 21.5f, 46); Label(a, "도박장", 62.5f, 49); Label(a, "경기장", 79.5f, 48);
             Label(a, "목장", 13, 11); Label(a, "마구간", 9.5f, 27); Label(a, "훈련장", 33.5f, 11); Label(a, "교배소", 58.5f, 13);
             Label(a, "광장", 46.5f, 30); Label(a, "공원", 73, 20); Label(a, "연못", 39, 55); Label(a, "시장", 40.5f, 47);
+            Label(a, "추모 언덕", 21, 60); Label(a, "은행", 50.5f, 36);
 
             result.spawn = G(a, 8, 39);
             Finish(a);
@@ -296,7 +339,7 @@ namespace HorseRanch.EditorTools
 
             Door(a, "Exit", G(a, 18, 0), TownO + new Vector2Int(62, 39), Vector2Int.down);
             Door(a, "ToStadium", G(a, 35, 9), StadiumO + new Vector2Int(1, 6), Vector2Int.right);
-            Sign(a.root, "경기장 →", new Vector3(a.o.x + 33.5f, 11.4f, 0f), 2f, 200, 4.2f);
+            Sign(a.root, "경기장 >", new Vector3(a.o.x + 33.5f, 11.4f, 0f), 2f, 200, 4.2f);
             Label(a, "마권 판매소", 7, 13); Label(a, "교환소", 29, 13); Label(a, "전광판", 18, 17); Label(a, "경기장 통로", 33, 9); Label(a, "출구", 18, 1.5f);
             Finish(a);
         }
@@ -338,6 +381,9 @@ namespace HorseRanch.EditorTools
             Npc(a, "RaceStaff", Looks.Staff, 50, 6, Vector2Int.down, null, InteractKind.RaceStaff, "진행요원", "경주 관람 안내입니다.");
             Sign(a.root, "경주 관람", new Vector3(a.o.x + 50.5f, 8.6f, 0f), 2.6f, YSort.Order(9f), 4.2f);
 
+            // 라이벌: 흑철 목장주 도철 (스토리)
+            Npc(a, "Rival", Looks.Rival, 30, 6, Vector2Int.down, null, InteractKind.Talk, "흑철 목장주 도철", "흥.");
+
             var bb = Prop(a, "Bulletin", props["board"], 62.5f, 7, true);
             Interact(a, "Bulletin", InteractKind.Bulletin, "경기 게시판", null, new[] { G(a, 62, 7) }, false, Vector2Int.zero, Vector2Int.zero);
             Sign(a.root, "게시판", new Vector3(a.o.x + 62.5f, 8.75f, 0f), 1.6f, bb.sortingOrder + 2, 4.2f);
@@ -358,7 +404,7 @@ namespace HorseRanch.EditorTools
 
             Door(a, "Exit", G(a, 50, 0), TownO + new Vector2Int(79, 39), Vector2Int.down);
             Door(a, "ToHall", G(a, 0, 6), HallO + new Vector2Int(34, 9), Vector2Int.left);
-            Sign(a.root, "← 도박장", new Vector3(a.o.x + 1.6f, 7.4f, 0f), 2f, 200, 4.2f);
+            Sign(a.root, "< 도박장", new Vector3(a.o.x + 1.6f, 7.4f, 0f), 2f, 200, 4.2f);
             Label(a, "트랙", 50, 15); Label(a, "진행요원", 50, 5); Label(a, "출전 접수", 11, 5); Label(a, "출발", 5, 20); Label(a, "결승", 94, 20); Label(a, "도박장 통로", 2, 6);
             Finish(a);
             return race;
@@ -874,7 +920,7 @@ namespace HorseRanch.EditorTools
                 m.transform.SetParent(r, false);
                 var mt = m.AddComponent<TextMeshPro>();
                 if (font != null) mt.font = font;
-                mt.text = "▼ 내 말"; mt.fontSize = 3f; mt.fontStyle = FontStyles.Bold; mt.alignment = TextAlignmentOptions.Center;
+                mt.text = "내 말"; mt.fontSize = 3f; mt.fontStyle = FontStyles.Bold; mt.alignment = TextAlignmentOptions.Center;
                 mt.color = UITheme.BoardFg;
                 mt.rectTransform.sizeDelta = new Vector2(2f, 0.5f);
                 mt.rectTransform.localPosition = new Vector3(0f, 0.85f, 0f);
@@ -918,6 +964,8 @@ namespace HorseRanch.EditorTools
             public static CharacterLook Painter { get { return new CharacterLook(Skin1, Hex(0xC07030), Hex(0xF0E6D2), Hex(0x5A4A8A), Hex(0x8A3A5A), 1); } }
             public static CharacterLook Auntie { get { return new CharacterLook(Skin1, Hex(0x2A1C14), Hex(0xE07070), Hex(0xF4F0E4), Hex(0xF4F0E4), 1); } }
             public static CharacterLook FeedSeller { get { return new CharacterLook(Skin3, Hex(0x1E1A1A), Hex(0x5A8A4A), Hex(0x4A3A2E), Hex(0x3A6A3A), 0); } }
+            public static CharacterLook Banker { get { return new CharacterLook(Skin2, Hex(0x2A2420), Hex(0x2E3A5A), Hex(0x22222A), NoHat, 0); } }
+            public static CharacterLook Rival { get { return new CharacterLook(Skin3, Hex(0x141414), Hex(0x1E1E22), Hex(0x2A2A30), Hex(0x101012), 0); } }
             public static CharacterLook Master { get { return new CharacterLook(Skin2, Hex(0xD8D8D8), Hex(0x3A2A50), Hex(0x2A2030), Hex(0xB8860B), 0); } }
 
             static readonly int[] Shirts = { 0x7A9E3A, 0xD08A2E, 0x8A4FB0, 0x3A8EA8, 0xC0506A, 0x5A6E8A, 0xB8A040, 0x6A4A3A, 0x3A9A6A };

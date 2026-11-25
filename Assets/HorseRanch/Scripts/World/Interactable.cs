@@ -24,6 +24,8 @@ namespace HorseRanch
         TrashBin,    // 쓰레기통: 연타로 뒤지기 / 쓰레기 버리기 (param = 쓰레기통 번호)
         Bench,       // 벤치: 앉아서 쉬기 (주민들 수다가 들림)
         Market,      // 시장 상인: 음식 창
+        Bank,        // 광장 은행원: 아버지의 빚 확인 · 미리 갚기
+        Grave,       // 언덕 위 아버지의 묘 (엔딩 장소)
     }
 
     /// <summary>

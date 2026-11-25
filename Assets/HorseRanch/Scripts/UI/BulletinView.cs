@@ -45,7 +45,7 @@ namespace HorseRanch
                     var h = rs.field[i];
                     int best = 0;
                     for (int k = 1; k < RanchConst.StatCount; k++) if (h.stats[k] > h.stats[best]) best = k;
-                    sb.Append("  <color=#").Append(UITheme.SilkHex[i]).Append(">■</color> ").Append(i + 1).Append("번 ").Append(h.name)
+                    sb.Append("  <color=#").Append(UITheme.SilkHex[i]).Append(">").Append(i + 1).Append("번</color> ").Append(h.name)
                       .Append("<pos=52%>").Append(Data.stats[best].displayName).Append(" <b>").Append(Mathf.RoundToInt(h.stats[best])).Append("</b>\n");
                 }
             }

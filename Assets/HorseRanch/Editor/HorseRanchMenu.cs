@@ -17,7 +17,7 @@ namespace HorseRanch.EditorTools
         private static bool NotPlaying()
         {
             if (!EditorApplication.isPlayingOrWillChangePlaymode) return true;
-            EditorUtility.DisplayDialog("질주마 목장", "플레이 중에는 생성할 수 없습니다.\n▶ 버튼을 눌러 플레이를 멈춘 뒤 다시 실행하세요.", "확인");
+            EditorUtility.DisplayDialog("질주마 목장", "플레이 중에는 생성할 수 없습니다.\n플레이 버튼을 눌러 플레이를 멈춘 뒤 다시 실행하세요.", "확인");
             return false;
         }
 
@@ -39,8 +39,8 @@ namespace HorseRanch.EditorTools
                 "자동 생성이 끝났습니다.\n\n" +
                 "· 씬: " + HorseRanchPaths.ScenePath + "\n" +
                 "· 데이터: " + HorseRanchPaths.Data + "\n" +
-                (font == null ? "\n※ 한글 폰트가 없어 글자가 □로 보일 수 있습니다.\n  Tools > HorseRanch > 3. 한글 폰트 설정 후 다시 생성하세요.\n" : "") +
-                "\n▶ Play → 타이틀 화면에서 새 게임/이어하기. 게임 중 Esc = 메뉴(설정·타이틀로).", "확인");
+                (font == null ? "\n주의: 한글 폰트가 없어 글자가 네모로 보일 수 있습니다.\n  Tools > HorseRanch > 3. 한글 폰트 설정 후 다시 생성하세요.\n" : "") +
+                "\nPlay > 타이틀 화면에서 새 게임/이어하기. 게임 중 Esc = 메뉴(설정·타이틀로).", "확인");
         }
 
         [MenuItem(Menu + "1. 데이터 에셋 생성 (ScriptableObject)", false, 20)]

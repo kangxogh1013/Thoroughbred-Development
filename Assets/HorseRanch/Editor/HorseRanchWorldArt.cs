@@ -333,6 +333,57 @@ namespace HorseRanch.EditorTools
             return Save(name, px, new Vector2(0.5f, 0f));
         }
 
+        /// <summary>아버지의 묘비: 둥근 머리 돌 + 받침 + 들꽃</summary>
+        public static Sprite Grave(string name)
+        {
+            var px = new Px(T, 40);
+            Color32 stone = C(168, 170, 176), dark = C(128, 130, 138), light = C(196, 198, 204);
+            px.Rect(4, 0, 24, 6, dark);                          // 받침
+            px.Rect(8, 6, 16, 22, stone);                        // 비석
+            px.Ellipse(16, 28, 8f, 6f, stone);                   // 둥근 머리
+            px.Rect(9, 7, 2, 24, light);                         // 빛 받는 면
+            px.Rect(12, 20, 8, 1, dark); px.Rect(12, 16, 8, 1, dark); px.Rect(13, 12, 6, 1, dark); // 새긴 글자
+            px.Rect(2, 0, 3, 3, C(230, 200, 80)); px.Rect(27, 0, 3, 3, C(220, 120, 150)); px.Rect(25, 2, 2, 2, C(240, 240, 240)); // 들꽃
+            px.Outline(Line);
+            return Save(name, px, new Vector2(0.5f, 0f));
+        }
+
+        /// <summary>그랑프리 트로피 (금색 컵 + 손잡이 + 받침)</summary>
+        public static Sprite Trophy(string name)
+        {
+            var px = new Px(24, 30);
+            Color32 gold = C(236, 190, 60), deep = C(190, 140, 30), shine = C(255, 236, 150), wood = C(110, 74, 44);
+            px.Rect(4, 0, 16, 5, wood);                          // 나무 받침
+            px.Rect(9, 5, 6, 3, deep); px.Rect(10, 8, 4, 5, gold); // 기둥
+            px.Ellipse(12, 19, 8f, 7f, gold);                    // 컵
+            px.Rect(4, 22, 16, 5, gold);
+            px.Rect(1, 17, 3, 7, deep); px.Rect(20, 17, 3, 7, deep); // 손잡이
+            px.Rect(8, 16, 2, 9, shine);                         // 반짝임
+            px.Outline(Line);
+            return Save(name, px, new Vector2(0.5f, 0f));
+        }
+
+        /// <summary>길 안내 화살표 (오른쪽을 가리킴, 회전해서 사용)</summary>
+        public static Sprite NavArrow(string name)
+        {
+            var px = new Px(24, 24);
+            Color32 fill = C(255, 214, 70), edge = C(200, 120, 20);
+            px.Rect(2, 9, 12, 6, fill);
+            for (int i = 0; i < 9; i++) px.Rect(13 + i, 3 + i, 1, 18 - i * 2, fill);
+            px.Outline(edge);
+            return Save(name, px, new Vector2(0.5f, 0.5f));
+        }
+
+        /// <summary>목표 위에 뜨는 아래 방향 표식</summary>
+        public static Sprite NavMarker(string name)
+        {
+            var px = new Px(20, 20);
+            Color32 fill = C(255, 214, 70), edge = C(200, 120, 20);
+            for (int i = 0; i < 9; i++) px.Rect(1 + i, 18 - i * 2, 18 - i * 2, 2, fill);
+            px.Outline(edge);
+            return Save(name, px, new Vector2(0.5f, 0f));
+        }
+
         /// <summary>초록 쓰레기통 (뚜껑 + 세로 홈 + 삐져나온 쓰레기)</summary>
         public static Sprite TrashBin(string name)
         {

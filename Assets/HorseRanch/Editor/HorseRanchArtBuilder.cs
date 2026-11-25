@@ -353,7 +353,7 @@ namespace HorseRanch.EditorTools
             const string malgun = "C:/Windows/Fonts/malgun.ttf";
             bool hasMalgun = File.Exists(malgun);
             int choice = EditorUtility.DisplayDialogComplex("한글 폰트 필요",
-                "TextMeshPro 기본 폰트에는 한글이 없어 글자가 □로 보입니다.\n\n" +
+                "TextMeshPro 기본 폰트에는 한글이 없어 글자가 네모로 보입니다.\n\n" +
                 "권장: 에스코어 드림(SCDream4.otf) 또는 Noto Sans KR 같은 무료 한글 폰트를 선택하세요.\n" +
                 (hasMalgun ? "개인 학습용이라면 Windows의 맑은 고딕을 복사해 쓸 수도 있습니다 (배포 시 라이선스 확인 필요)." : ""),
                 "폰트 파일 선택...", "건너뛰기", hasMalgun ? "맑은 고딕 복사" : "닫기");

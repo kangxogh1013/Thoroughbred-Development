@@ -20,6 +20,7 @@ namespace HorseRanch
         [SerializeField] [Range(10f, 200f)] private float charsPerSecond = 60f;
 
         private ModalAction[] choices;
+        private Action onClosed;   // ShowThen: 닫히면 이어서 실행 (연출용 대사 이어 붙이기)
         private int openedFrame;
         private float visible;
         private int total;
@@ -36,8 +37,16 @@ namespace HorseRanch
             root.SetActive(false);
         }
 
+        /// <summary>선택지 없이 보여주고, 닫히면 next 실행 (엔딩 같은 연속 대사)</summary>
+        public void ShowThen(string speaker, string body, Action next)
+        {
+            Show(speaker, body);
+            onClosed = next;
+        }
+
         public void Show(string speaker, string body, params ModalAction[] options)
         {
+            onClosed = null;
             choices = options;
             nameText.text = speaker;
             bodyText.text = body;
@@ -90,7 +99,10 @@ namespace HorseRanch
         {
             root.SetActive(false);
             choices = null;
+            var next = onClosed;
+            onClosed = null;
             if (after != null) after();
+            if (next != null) next();
         }
     }
 }

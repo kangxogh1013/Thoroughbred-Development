@@ -134,6 +134,7 @@ namespace HorseRanch.EditorTools
             var dialogue = BuildDialogue(root);
             BuildRaceOverlay(root, world.race);
             var toast = BuildToast(root);
+            var cutscene = BuildCutscene(root);
             var title = BuildTitle(root, titleBg);
             var settings = BuildSettings(root);
             var modal = BuildModal(root);
@@ -150,6 +151,10 @@ namespace HorseRanch.EditorTools
             Set(rootUI, "title", title);
             Set(rootUI, "settings", settings);
             Set(rootUI, "audioManager", audioManager);
+            Set(rootUI, "cutscene", cutscene);
+            Set(rootUI, "guide", world.guide);
+            Set(rootUI, "memorial", world.memorial);
+            Set(rootUI, "map", world.map);
             Set(search, "audioManager", audioManager);
             Set(settings, "audioManager", audioManager);
             Set(title, "runner", runner);
@@ -167,7 +172,7 @@ namespace HorseRanch.EditorTools
             db = AssetDatabase.LoadAssetAtPath<GameDatabaseSO>(HorseRanchPaths.Data + "/GameDatabase.asset");
             Set(runner, "database", db);
             if (runner.Database == null) Debug.LogError("[HorseRanch] GameRunner에 GameDatabase를 연결하지 못했습니다.");
-            else Debug.Log("[HorseRanch] GameRunner ← GameDatabase 연결 확인");
+            else Debug.Log("[HorseRanch] GameRunner - GameDatabase 연결 확인");
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, HorseRanchPaths.ScenePath);
@@ -560,10 +565,10 @@ namespace HorseRanch.EditorTools
             H(entry, 10f, 16, 12, 12, 12);
             LE(Label(entry, "출전마", 15f), 80f);
             TextMeshProUGUI toggleLabel;
-            var prev = Btn("Prev", entry, "◀", UITheme.Panel2, Ink, 20f); LE(prev, 56f);
+            var prev = Btn("Prev", entry, "<", UITheme.Panel2, Ink, 20f); LE(prev, 56f);
             var name = NewText("Name", entry, "", 22f, Ink, TextAlignmentOptions.MidlineLeft, true);
             LE(name, -1f, -1f, 1f);
-            var next = Btn("Next", entry, "▶", UITheme.Panel2, Ink, 20f); LE(next, 56f);
+            var next = Btn("Next", entry, ">", UITheme.Panel2, Ink, 20f); LE(next, 56f);
             var toggle = Btn("Toggle", entry, "출전 등록", UITheme.Turf, White, 19f, out toggleLabel); LE(toggle, 280f);
             var hint = NewText("Hint", panel, "", 17f, Mute, TextAlignmentOptions.TopLeft);
             LE(hint, -1f, 80f);
@@ -830,8 +835,8 @@ namespace HorseRanch.EditorTools
 
             // 오른쪽 위: 목표
             var goal = Panel("HUD_Goal", root, UITheme.Board).rectTransform;
-            Place(goal, Vector2.one, Vector2.one, Vector2.one, new Vector2(-20f, -20f), new Vector2(560f, 56f));
-            var goalText = NewText("Text", goal, "", 18f, UITheme.BoardText, TextAlignmentOptions.MidlineRight);
+            Place(goal, Vector2.one, Vector2.one, Vector2.one, new Vector2(-20f, -20f), new Vector2(700f, 84f));
+            var goalText = NewText("Text", goal, "", 19f, UITheme.BoardText, TextAlignmentOptions.MidlineRight);
             Stretch(goalText.rectTransform, 16f, 0f, 18f, 0f);
 
             // 왼쪽 아래: 조작 안내
@@ -1018,9 +1023,9 @@ namespace HorseRanch.EditorTools
             LE(pick, -1f, 64f);
             H(pick, 12f, 16, 16, 8, 8);
             var who = NewText("Label", pick, "먹일 말", 18f, Mute, TextAlignmentOptions.MidlineLeft, true); LE(who, 90f);
-            var prev = Btn("Prev", pick, "◀", UITheme.Panel2, Ink, 22f); LE(prev, 56f);
+            var prev = Btn("Prev", pick, "<", UITheme.Panel2, Ink, 22f); LE(prev, 56f);
             var horse = NewText("Horse", pick, "", 22f, Ink, TextAlignmentOptions.Center); LE(horse, -1f, -1f, 1f);
-            var next = Btn("Next", pick, "▶", UITheme.Panel2, Ink, 22f); LE(next, 56f);
+            var next = Btn("Next", pick, ">", UITheme.Panel2, Ink, 22f); LE(next, 56f);
 
             // 고급 사료 스탯
             var statRow = NewRect("Stats", panel);
@@ -1152,7 +1157,7 @@ namespace HorseRanch.EditorTools
             silk.preserveAspect = true;
             silk.raycastTarget = false;
 
-            var hint = NewText("Hint", screen.transform, "↑↓ 선택 · E / Enter 결정 · 마우스 클릭", 18f, UITheme.White, TextAlignmentOptions.Center);
+            var hint = NewText("Hint", screen.transform, "방향키 위/아래 선택 · E / Enter 결정 · 마우스 클릭", 18f, UITheme.White, TextAlignmentOptions.Center);
             Place(hint.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 14f), new Vector2(700f, 28f));
             hint.outlineWidth = 0.2f;
             hint.outlineColor = new Color32(20, 20, 20, 255);
@@ -1168,6 +1173,35 @@ namespace HorseRanch.EditorTools
             Set(view, "runnerImage", horse);
             SetArr(view, "gallopFrames", new UnityEngine.Object[] { art.gallopA, art.gallopB });
             Set(view, "logo", logo);
+            return view;
+        }
+
+        /// <summary>오프닝 · 엔딩 크레딧 · 게임 오버용 전체 화면 글 + 엔딩 질주 자막</summary>
+        private static CutsceneView BuildCutscene(RectTransform root)
+        {
+            var host = Stretch(NewRect("Cutscene", root));
+            var view = host.gameObject.AddComponent<CutsceneView>();
+            var bg = Img(Stretch(NewRect("Screen", host)), new Color(0.03f, 0.03f, 0.05f, 1f), false, true);
+            var body = NewText("Body", bg.transform, "", 40f, White, TextAlignmentOptions.Center);
+            Place(body.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 20f), new Vector2(1500f, 600f));
+            body.lineSpacing = 18f;
+            var page = NewText("Page", bg.transform, "", 18f, UITheme.BoardMute, TextAlignmentOptions.MidlineRight);
+            Place(page.rectTransform, Vector2.right, Vector2.right, Vector2.right, new Vector2(-40f, 36f), new Vector2(300f, 30f));
+            var hint = NewText("Hint", bg.transform, "", 18f, UITheme.BoardMute, TextAlignmentOptions.Center);
+            Place(hint.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 36f), new Vector2(800f, 30f));
+
+            var cap = Panel("Caption", host, new Color(0f, 0f, 0f, 0.55f)).rectTransform;
+            Place(cap, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -140f), new Vector2(900f, 90f));
+            var capText = NewText("Text", cap, "", 40f, UITheme.BoardFg, TextAlignmentOptions.Center, true);
+            Stretch(capText.rectTransform);
+
+            Set(view, "root", bg.gameObject);
+            Set(view, "background", bg);
+            Set(view, "bodyText", body);
+            Set(view, "hintText", hint);
+            Set(view, "pageText", page);
+            Set(view, "captionRoot", cap.gameObject);
+            Set(view, "captionText", capText);
             return view;
         }
 
@@ -1194,7 +1228,7 @@ namespace HorseRanch.EditorTools
                 H(row, 14f, 24, 20, 10, 10);
                 rowBgs[r] = row;
                 var n = NewText("Name", row.transform, names[r], 24f, Ink, TextAlignmentOptions.MidlineLeft, true); LE(n, 170f);
-                arrows[r * 2] = Btn("Left", row.transform, "◀", UITheme.Panel2, Ink, 22f); LE(arrows[r * 2], 60f, 54f);
+                arrows[r * 2] = Btn("Left", row.transform, "<", UITheme.Panel2, Ink, 22f); LE(arrows[r * 2], 60f, 54f);
                 var mid = NewRect("Value", row.transform);
                 LE(mid, -1f, -1f, 1f);
                 if (r < 2)
@@ -1210,13 +1244,13 @@ namespace HorseRanch.EditorTools
                     Stretch(v.rectTransform);
                     if (r == 2) resText = v; else modeText = v;
                 }
-                arrows[r * 2 + 1] = Btn("Right", row.transform, "▶", UITheme.Panel2, Ink, 22f); LE(arrows[r * 2 + 1], 60f, 54f);
+                arrows[r * 2 + 1] = Btn("Right", row.transform, ">", UITheme.Panel2, Ink, 22f); LE(arrows[r * 2 + 1], 60f, 54f);
             }
             var note = NewText("Note", frame, "", 17f, Mute, TextAlignmentOptions.TopLeft); LE(note, -1f, 54f);
             var bottom = NewRect("Bottom", frame);
             LE(bottom, -1f, 62f);
             H(bottom, 12f, 0, 0, 0, 0, TextAnchor.MiddleRight);
-            var keys = NewText("Keys", bottom, "↑↓ 항목 · ←→ 변경 · E 적용 · Esc 닫기", 16f, Mute); LE(keys, -1f, -1f, 1f);
+            var keys = NewText("Keys", bottom, "위/아래 항목 · 좌/우 변경 · E 적용 · Esc 닫기", 16f, Mute); LE(keys, -1f, -1f, 1f);
             var apply = Btn("Apply", bottom, "적용", UITheme.Turf, White, 22f); LE(apply, 180f);
             var close = Btn("Close", bottom, "닫기", UITheme.Panel2, Ink, 22f); LE(close, 150f);
 
