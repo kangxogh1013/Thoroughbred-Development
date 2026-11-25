@@ -26,6 +26,8 @@ namespace HorseRanch
         Market,      // 시장 상인: 음식 창
         Bank,        // 광장 은행원: 아버지의 빚 확인 · 미리 갚기
         Grave,       // 언덕 위 아버지의 묘 (엔딩 장소)
+        Thicket,     // 북동쪽 가시덤불: 그랑프리 우승 후 깊은 숲으로 (WarpCell)
+        Thunder,     // 깊은 숲의 천둥: 목장으로 데려오기
     }
 
     /// <summary>

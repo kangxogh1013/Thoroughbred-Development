@@ -62,6 +62,28 @@ namespace HorseRanch
             };
         }
 
+        // ===== 후반: 깊은 숲의 천둥 =====
+        public static string Thicket(RanchGame g)
+        {
+            if (g.State.thunderFound) return "덤불 사이로 난 길. 천둥이 있던 숲으로 이어진다.";
+            if (!g.ForestOpen) return "가시덤불이 빽빽하게 엉켜 있다.\n안쪽 어딘가에서… 말 울음소리가 들린 것 같다.";
+            return "그랑프리 이후 소문이 사실이라면, 이 덤불 너머에 " + RanchGame.FatherHorse + "이 있을지도 모른다.";
+        }
+
+        public static string[][] ThunderMeet(RanchGame g)
+        {
+            return new[]
+            {
+                new[] { "", "(숲 한가운데, 야윈 회색 말이 고개를 든다. 이마에 번개 모양 흰 털.)" },
+                new[] { "나", "…" + RanchGame.FatherHorse + "? 정말 너야?" },
+                new[] { "", "(말이 천천히 다가와 코를 비빈다. 아버지가 쓰던 낡은 굴레가 아직 목에 걸려 있다.)" },
+                new[] { "나", "사고 이후로 여기 숨어 있었구나… 아버지 대신 내가 데리러 왔어." },
+                new[] { "나", "이제 달리진 못해도, 네 피를 이은 말들이 다시 결승선을 넘을 거야." },
+            };
+        }
+
+        public const string ThunderHome = "(천둥이 목장으로 돌아왔다. 은퇴마라 경주는 못 하지만, 교배소에서 암말과 짝지으면 '천둥 혈통' 망아지가 태어난다. 스탯 보너스와 더 높은 상한을 가진다.)";
+
         // ===== 게임 오버 =====
         public static string[] GameOver(GameOverReason reason, RanchGame g)
         {
@@ -165,7 +187,8 @@ namespace HorseRanch
                 case "흑철 목장주 도철": return Pick(RivalLines(g), rng);
                 case "마구간지기 박씨":
                     pool.Add("자네 아버지랑 20년을 이 마구간에서 같이 일했지. 말 보는 눈은 아버지를 닮았구먼.");
-                    pool.Add(RanchGame.FatherHorse + "이 떠난 칸은 아직 비워 뒀네. 언젠가 돌아올지도 모르니.");
+                    if (g.State.thunderFound) pool.Add(RanchGame.FatherHorse + "이 돌아왔구먼! 저 녀석 피를 이은 망아지라면 그랑프리 따위 몇 번이고 가져가겠지.");
+                    else pool.Add(RanchGame.FatherHorse + "이 떠난 칸은 아직 비워 뒀네. 언젠가 돌아올지도 모르니.");
                     if (g.FacilityLevel(FacilityId.StableRoom) < g.FacilityMax) pool.Add("마구간이 낡아서 말들이 잘 못 쉬어. 돈이 모이면 개량 공사를 맡겨 주게.");
                     break;
                 case "트레이너 김코치":
@@ -196,6 +219,12 @@ namespace HorseRanch
             if (s.lastResults.Count > 0) yield return "어제 결과 봤어? " + s.lastResults[0] + ". 게시판에 다 붙어 있어.";
             int d = g.DaysToGrandPrix;
             if (!g.StoryCleared && d >= 0) yield return d == 0 ? "오늘 그랑프리야! " + RanchGame.RivalHorse + "도 나온대. 다들 경기장으로 간다던데." : "그랑프리까지 " + d + "일! " + RanchGame.RivalHorse + "이 또 나온대.";
+            if (g.StoryCleared && !s.thunderFound)
+            {
+                yield return "북동쪽 끝 가시덤불 너머에서 회색 말이 뛰는 걸 봤어. 이마에 번개 무늬가 있더라고!";
+                yield return "숲에서 말 울음소리가 들린대. 그랑프리 날부터 더 자주.";
+            }
+            if (s.thunderFound) yield return RanchGame.FatherHorse + "이 돌아왔다며? 동네가 난리야. 그 혈통 망아지 한 마리만 팔아 줘!";
             foreach (var l in TownLore) yield return l;
         }
 
@@ -203,9 +232,16 @@ namespace HorseRanch
         {
             var s = g.State;
             var l = new List<string>();
+            if (s.thunderFound)
+            {
+                l.Add("천둥이 돌아왔다니… 마구간에서 그 녀석 얼굴을 보는데 눈물이 나더라.");
+                l.Add("아버지가 천둥이랑 새벽마다 언덕을 달리던 게 엊그제 같은데.");
+                return l;
+            }
             if (g.StoryCleared)
             {
                 l.Add("네 아버지 꿈을… 네가 이뤘구나. 엄마는 이제 여한이 없다.");
+                l.Add("그러고 보니 요즘 북동쪽 숲에서 회색 말을 봤다는 사람이 있더라. 설마…");
                 l.Add("트로피 보러 언덕에 또 다녀왔니? 아버지가 많이 자랑스러워하실 거야.");
                 return l;
             }
@@ -259,6 +295,7 @@ namespace HorseRanch
                 {
                     "…" + RanchGame.RivalHorse + "이 졌다. 인정하마. 네 아버지도 그 결승선을 넘었어야 했지.",
                     "그날 일은… 나도 가끔 꿈에 나온다. 그만 가 봐라.",
+                    g.State.thunderFound ? RanchGame.FatherHorse + "이 살아 있었다고? …다행이군. 진심이다." : "사고 뒤 " + RanchGame.FatherHorse + "은 숲으로 달아났다더군. 찾아볼 생각이면 북동쪽을 봐라.",
                 };
             var l = new List<string>
             {

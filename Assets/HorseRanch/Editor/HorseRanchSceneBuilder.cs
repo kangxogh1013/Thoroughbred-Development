@@ -95,8 +95,14 @@ namespace HorseRanch.EditorTools
             bgmSrc.playOnAwake = false; bgmSrc.loop = true; sfxSrc.playOnAwake = false;
             Set(audioManager, "bgmSource", bgmSrc);
             Set(audioManager, "sfxSource", sfxSrc);
-            SetArr(audioManager, "bgmClips", new UnityEngine.Object[] { sounds.bgmTitle, sounds.bgmTown, sounds.bgmRace });
-            SetArr(audioManager, "sfxClips", new UnityEngine.Object[] { sounds.click, sounds.coin, sounds.door, sounds.search, sounds.fanfare, sounds.gate, sounds.trash });
+            var ambSrc = new GameObject("Ambience").AddComponent<AudioSource>(); ambSrc.transform.SetParent(audioGo.transform, false);
+            ambSrc.playOnAwake = false; ambSrc.loop = true;
+            Set(audioManager, "ambienceSource", ambSrc);
+            // 순서 = BgmId / SfxId / AmbienceId
+            SetArr(audioManager, "bgmClips", new UnityEngine.Object[] { sounds.bgmTitle, sounds.bgmTown, sounds.bgmRace, sounds.bgmHall, sounds.bgmStadium, sounds.bgmGameOver, sounds.bgmEnding });
+            SetArr(audioManager, "sfxClips", new UnityEngine.Object[] { sounds.click, sounds.coin, sounds.door, sounds.search, sounds.fanfare, sounds.gate, sounds.trash,
+                sounds.cheer, sounds.neigh, sounds.snort, sounds.shout, sounds.boo, sounds.warning });
+            SetArr(audioManager, "ambienceClips", new UnityEngine.Object[] { sounds.ambHall, sounds.ambStadium });
             if (sounds.bgmTown == null) Debug.LogWarning("[HorseRanch] 사운드가 없습니다. Tools > HorseRanch > 전체 자동 생성을 다시 실행하세요.");
 
             // ===== Canvas (해상도 대응: Scale With Screen Size 1920×1080, Match 0.5) =====
@@ -155,6 +161,8 @@ namespace HorseRanch.EditorTools
             Set(rootUI, "guide", world.guide);
             Set(rootUI, "memorial", world.memorial);
             Set(rootUI, "map", world.map);
+            Set(rootUI, "thunderSpot", world.thunder);
+            Set(rootUI, "bubble", world.bubble);
             Set(search, "audioManager", audioManager);
             Set(settings, "audioManager", audioManager);
             Set(title, "runner", runner);

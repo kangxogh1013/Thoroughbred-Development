@@ -14,6 +14,8 @@ namespace HorseRanch.EditorTools
         public WorldRaceView race;
         public NavigationGuide guide;
         public MemorialSite memorial;
+        public SpeechBubble bubble;
+        public ThunderSpot thunder;
     }
 
     /// <summary>
@@ -25,8 +27,9 @@ namespace HorseRanch.EditorTools
         // 구역 원점 (전역 타일)
         static readonly Vector2Int TownO = new Vector2Int(0, 0), HallO = new Vector2Int(200, 0), StadiumO = new Vector2Int(300, 0),
             ShopO = new Vector2Int(500, 0), HomeO = new Vector2Int(600, 0), BarnO = new Vector2Int(700, 0),
-            HouseAO = new Vector2Int(800, 0), HouseBO = new Vector2Int(820, 0), HouseCO = new Vector2Int(840, 0), HouseDO = new Vector2Int(860, 0),
-            MarketO = new Vector2Int(900, 0);
+            HouseAO = new Vector2Int(800, 0), HouseBO = new Vector2Int(900, 0), HouseCO = new Vector2Int(1000, 0), HouseDO = new Vector2Int(1100, 0),
+            MarketO = new Vector2Int(1200, 0), BankO = new Vector2Int(1300, 0), ForestO = new Vector2Int(1400, 0);
+        // 작은 실내도 카메라 화면(가로 약 28칸)보다 훨씬 멀리 떨어뜨려 옆 구역이 비쳐 보이지 않게 한다
 
         static WorldMap map;
         static Transform worldRoot;
@@ -85,6 +88,9 @@ namespace HorseRanch.EditorTools
             BuildBarn();
             BuildResidences();
             BuildMarket();
+            BuildBank();
+            result.thunder = BuildForest();
+            result.bubble = MakeBubble();
 
             UIFactory.SetArr(map, "areas", areas.ToArray());
 
@@ -248,10 +254,14 @@ namespace HorseRanch.EditorTools
             Sign(a.root, "추모 언덕", new Vector3(21.5f, 63.2f, 0f), 2.4f, YSort.Order(62f) + 5, 4.2f);
             BenchAt(a, 18, 59);
 
-            // ===== 광장 은행 출장소: 아버지의 빚 =====
-            Npc(a, "Banker", Looks.Banker, 50, 35, Vector2Int.down, null, InteractKind.Bank, "은행원",
-                "목장 대출 담당입니다. 상환일 아침에 자동으로 출금됩니다.");
-            Sign(a.root, "은행", new Vector3(50.5f, 37.1f, 0f), 1.6f, YSort.Order(35f) + 5, 4.2f);
+            // ===== 은행 (광장 북쪽, 시장과 도박장 사이): 아버지의 빚 =====
+            var bankDoor = BuildingAt(a, "bld_bank", "은행", 48, 40, 7, 5, 3, C(70, 80, 110), C(226, 222, 210), C(200, 170, 80));
+            Door(a, "Door_Bank", bankDoor, BankO + new Vector2Int(8, 1), Vector2Int.up);
+            Fill(a, 51, 37, 51, 39, 'r');
+
+            // ===== 북동쪽 가시덤불: 그랑프리 우승 후 깊은 숲(천둥)으로 =====
+            Prop(a, "Thicket", Thicket("prop_thicket"), 91.5f, 61, true);   // 전용 가시덤불 그림 (일반 나무와 구별)
+            Interact(a, "Thicket", InteractKind.Thicket, "가시덤불", null, new[] { G(a, 91, 61) }, false, ForestO + new Vector2Int(11, 1), Vector2Int.up);
 
             // ===== 쓰레기통 8개 (번호 = BalanceConfig.trashBinValues 인덱스) =====
             int[,] bins = { { 44, 38 }, { 26, 33 }, { 55, 33 }, { 72, 33 }, { 80, 18 }, { 16, 22 }, { 49, 50 }, { 35, 21 } };
@@ -286,7 +296,7 @@ namespace HorseRanch.EditorTools
             Label(a, "집", 9, 46); Label(a, "상점", 21.5f, 46); Label(a, "도박장", 62.5f, 49); Label(a, "경기장", 79.5f, 48);
             Label(a, "목장", 13, 11); Label(a, "마구간", 9.5f, 27); Label(a, "훈련장", 33.5f, 11); Label(a, "교배소", 58.5f, 13);
             Label(a, "광장", 46.5f, 30); Label(a, "공원", 73, 20); Label(a, "연못", 39, 55); Label(a, "시장", 40.5f, 47);
-            Label(a, "추모 언덕", 21, 60); Label(a, "은행", 50.5f, 36);
+            Label(a, "추모 언덕", 21, 60); Label(a, "은행", 51.5f, 46);
 
             result.spawn = G(a, 8, 39);
             Finish(a);
@@ -552,6 +562,81 @@ namespace HorseRanch.EditorTools
             Door(a, "Exit", G(a, 11, 0), TownO + new Vector2Int(42, 39), Vector2Int.down);
             Label(a, "분식 노점", 6, 6); Label(a, "사료 가게", 16, 6); Label(a, "출구", 11, 1.5f);
             Finish(a);
+        }
+
+        // =====================================================================
+        // 은행 (16 × 10): 대출 창구 + 은행원
+        // =====================================================================
+        static void BuildBank()
+        {
+            var a = NewArea("은행", BankO, 16, 10, 'c');
+            Walls(a);
+            Opening(a, 8, 0);
+            Counter(a, "BankCounter", 4, 6, 8, C(214, 190, 140), C(70, 80, 110));
+            BlockRect(a, 4, 6, 11, 8);
+            Interact(a, "BankCounter", InteractKind.Bank, "대출 창구", null, Cells(a, 4, 6, 11, 6), false, Vector2Int.zero, Vector2Int.zero);
+            Npc(a, "Banker", Looks.Banker, 7, 7, Vector2Int.down, null, InteractKind.Bank, "은행원",
+                "목장 대출 담당입니다. 상환일 아침에 자동으로 출금됩니다.");
+            Npc(a, "Teller", Looks.Clerk2, 10, 7, Vector2Int.down, null, InteractKind.Talk, "창구 직원",
+                "미리 갚으시면 다음 상환일에 그만큼 덜 나가요.", "연체가 세 번이면… 저희도 어쩔 수 없답니다.");
+            Sign(a.root, "대출 창구", new Vector3(a.o.x + 8f, 9.2f, 0f), 2.6f, YSort.Order(9f), 4.2f);
+            BenchAt(a, 2, 3); BenchAt(a, 13, 3);
+            Prop(a, "Plant", props["plant"], 1.5f, 1, true); Prop(a, "Plant", props["plant"], 14.5f, 1, true);
+            Npc(a, "BankGuest", Looks.Town(30), 6, 3, Vector2Int.up, new RectInt(BankO.x + 4, 2, 8, 3), InteractKind.Talk, "손님",
+                "대출 이자가 또 올랐대…", "흑철 목장 도철이 여기 단골이야. 남의 땅 사는 데 돈을 쓴다지.");
+            Door(a, "Exit", G(a, 8, 0), TownO + new Vector2Int(51, 39), Vector2Int.down);
+            Label(a, "대출 창구", 8, 5); Label(a, "출구", 8, 1.5f);
+            Finish(a);
+        }
+
+        // =====================================================================
+        // 깊은 숲 (22 × 16): 그랑프리 우승 후 들어갈 수 있다. 아버지의 말 천둥이 숨어 지낸다
+        // =====================================================================
+        static ThunderSpot BuildForest()
+        {
+            var a = NewArea("깊은 숲", ForestO, 22, 16, 'g');
+            for (int x = 0; x < a.w; x++)
+                for (int y = 0; y < a.h; y++)
+                {
+                    bool border = x < 2 || y < 1 || x >= a.w - 2 || y >= a.h - 2;
+                    if (!border || (y == 0 && x >= 10 && x <= 12)) continue;
+                    a.block[x, y] = true;
+                    if ((x + y) % 2 == 0 || y >= a.h - 2) Prop(a, "Tree", props["tree"], x + 0.5f, y, false);
+                }
+            a.block[11, 0] = false;
+            Fill(a, 7, 6, 15, 12, 'k');                       // 들꽃 공터
+            Fill(a, 3, 10, 5, 13, 'v'); BlockRect(a, 3, 10, 5, 13);
+            int[,] trees = { { 4, 4 }, { 17, 5 }, { 16, 12 }, { 6, 8 } };
+            for (int i = 0; i < trees.GetLength(0); i++) Prop(a, "Tree", props["tree"], trees[i, 0] + 0.5f, trees[i, 1], true);
+
+            var go = new GameObject("Thunder");
+            go.transform.SetParent(a.root, false);
+            go.transform.position = new Vector3(a.o.x + 11.5f, 9.1f, 0f);
+            go.transform.localScale = new Vector3(0.85f, 0.85f, 1f);
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = horseArt.gallopA;
+            sr.color = new Color(0.78f, 0.78f, 0.8f);         // 늙은 회색 말
+            sr.sortingOrder = YSort.Order(9f);
+            BlockRect(a, 11, 9, 12, 9);
+            Interact(a, "Thunder", InteractKind.Thunder, "회색 말", null, Cells(a, 11, 9, 12, 9), false, Vector2Int.zero, Vector2Int.zero);
+            var spot = go.AddComponent<ThunderSpot>();
+            spot.EditorSetup(sr, new[] { horseArt.gallopA });
+
+            Door(a, "Exit", G(a, 11, 0), TownO + new Vector2Int(91, 60), Vector2Int.down);
+            Label(a, "공터", 11, 11); Label(a, "출구", 11, 1.5f);
+            Finish(a);
+            return spot;
+        }
+
+        /// <summary>도박장 손님들이 돌려 쓰는 말풍선 하나</summary>
+        static SpeechBubble MakeBubble()
+        {
+            var t = Sign(worldRoot, "말풍선", new Vector3(HallO.x + 10f, 10f, 0f), 3f, 31000, 3.4f);
+            t.color = new Color(0.15f, 0.12f, 0.1f);
+            var plate = t.transform.parent.GetComponent<SpriteRenderer>();
+            var bubble = plate.gameObject.AddComponent<SpeechBubble>();
+            bubble.EditorSetup(plate, t);
+            return bubble;
         }
 
         // =====================================================================

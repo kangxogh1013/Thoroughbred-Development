@@ -232,6 +232,31 @@ namespace HorseRanch
         public void MarkIntroSeen() { State.introSeen = true; RaiseChanged(); }
         public void MarkEndingSeen() { State.endingSeen = true; RaiseChanged(); }
 
+        // ===== 시즌 (상대 말 수준) =====
+        /// <summary>day일차의 시즌 단계 (0부터). npcTierDays마다 1씩 오른다</summary>
+        public int NpcTier(int day) { return B.npcTierDays > 0 ? Math.Max(0, day / B.npcTierDays) : 0; }
+        public int DaysToNextTier { get { return B.npcTierDays > 0 ? B.npcTierDays - State.day % B.npcTierDays : -1; } }
+
+        // ===== 후반 콘텐츠: 아버지의 말 천둥 =====
+        /// <summary>깊은 숲 덤불을 지날 수 있는지 (그랑프리 우승 후)</summary>
+        public bool ForestOpen { get { return State.cleared; } }
+
+        /// <summary>천둥을 목장으로 데려오기. 은퇴마(경주 불가)로 들어오고 교배하면 천둥 혈통 망아지가 태어난다</summary>
+        public bool AdoptThunder()
+        {
+            if (State.thunderFound || !ForestOpen) return false;
+            if (State.horses.Count >= B.maxStable) { RaiseToast("마구간이 가득 찼습니다. 자리를 비우고 다시 오세요"); return false; }
+            var h = new HorseData { id = State.nextId++, name = FatherHorse, male = true, coat = 0, retired = true, thunderBlood = true, condition = 60f };
+            for (int i = 0; i < h.stats.Length; i++) h.stats[i] = B.thunderStat;
+            h.wins = 12; h.races = 20;
+            State.horses.Add(h);
+            State.thunderFound = true;
+            AddLog("아버지의 말 「" + FatherHorse + "」이 목장으로 돌아왔다. 교배소에서 천둥 혈통의 망아지를 얻을 수 있다.");
+            RaiseToast(FatherHorse + "이 목장으로 돌아왔습니다 (교배 전용)");
+            RaiseChanged();
+            return true;
+        }
+
         // ===== 테스트용 =====
         public void DebugClearStory()
         {

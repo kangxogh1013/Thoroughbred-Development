@@ -348,6 +348,24 @@ namespace HorseRanch.EditorTools
             return Save(name, px, new Vector2(0.5f, 0f));
         }
 
+        /// <summary>가시덤불: 낮고 넓은 검붉은 수풀 + 갈색 가시 줄기 + 빨간 열매 (일반 나무와 구별되게)</summary>
+        public static Sprite Thicket(string name)
+        {
+            var px = new Px(T, 30);
+            Color32 dark = C(44, 70, 48), mid = C(62, 96, 58), hi = C(92, 128, 70), thorn = C(120, 72, 48), thornHi = C(168, 110, 70), berry = C(200, 40, 50);
+            px.Ellipse(9, 10, 9f, 8f, dark); px.Ellipse(23, 11, 9f, 8f, dark); px.Ellipse(16, 17, 11f, 9f, dark);   // 덩어리 3개
+            px.Ellipse(9, 12, 6f, 5f, mid); px.Ellipse(23, 13, 6f, 5f, mid); px.Ellipse(16, 19, 7f, 6f, mid);
+            px.Ellipse(14, 22, 3f, 2f, hi); px.Ellipse(24, 16, 2.5f, 2f, hi); px.Ellipse(7, 14, 2.5f, 2f, hi);
+            // 수풀 밖으로 삐져나온 가시 줄기 (사선) + 가시
+            for (int i = 0; i < 9; i++) { px.Set(2 + i, 4 + i / 2, thorn); px.Set(29 - i, 5 + i / 2, thorn); px.Set(12 + i / 3, 24 + i / 3, thorn); }
+            int[,] spikes = { { 3, 6 }, { 6, 7 }, { 27, 7 }, { 24, 8 }, { 13, 26 }, { 15, 27 }, { 1, 3 }, { 30, 4 } };
+            for (int i = 0; i < spikes.GetLength(0); i++) { px.Set(spikes[i, 0], spikes[i, 1], thornHi); px.Set(spikes[i, 0], spikes[i, 1] + 1, thornHi); }
+            int[,] berries = { { 8, 15 }, { 19, 21 }, { 25, 12 }, { 13, 9 }, { 21, 9 } };
+            for (int i = 0; i < berries.GetLength(0); i++) { px.Rect(berries[i, 0], berries[i, 1], 2, 2, berry); px.Set(berries[i, 0], berries[i, 1] + 1, C(240, 120, 120)); }
+            px.Outline(Line);
+            return Save(name, px, new Vector2(0.5f, 0f));
+        }
+
         /// <summary>그랑프리 트로피 (금색 컵 + 손잡이 + 받침)</summary>
         public static Sprite Trophy(string name)
         {

@@ -54,7 +54,7 @@ namespace HorseRanch
             continueInfo.text = hasSave ? s.day + "일차 · " + s.gold.ToString("N0") + "G · 말 " + s.horses.Count + "두" : "저장된 게임이 없습니다";
             selected = hasSave ? 0 : 1;
             Highlight();
-            if (audioManager != null) audioManager.PlayBgm(BgmId.Title);
+            if (audioManager != null) { audioManager.PlayBgm(BgmId.Title); audioManager.PlayAmbience(AmbienceId.None, 0f); }
         }
 
         public void Hide() { root.SetActive(false); }

@@ -100,6 +100,9 @@ namespace HorseRanch
         [Tooltip("하루마다 NPC 스탯 합계 증가량")] public float npcGrowthPerDay = 0.4f;
         [Tooltip("NPC 평균 스탯 합계 상한 (플레이어가 따라잡을 수 있게)")] public float npcMaxTotal = 56f;
         public float npcSpread = 8f;
+        [Tooltip("N일마다 상대 말 수준이 한 단계 오른다 (시즌)")] public int npcTierDays = 10;
+        [Tooltip("시즌마다 상대 말 스탯 합계 +")] public float npcTierBonus = 3f;
+        [Tooltip("시즌마다 상대 말 스탯 합계 상한 +")] public float npcTierCapBonus = 3f;
         [Tooltip("출전 시 경주 관련 스탯 성장량")] public float raceStatGrowth = 0.25f;
         public int retireAt = 15;
 
@@ -149,6 +152,11 @@ namespace HorseRanch
 
         [Header("스토리 그랑프리 라이벌 (흑철 목장 '흑풍')")]
         [Tooltip("라이벌 말 스탯 배율 (같은 날 NPC 평균 대비)")] public float rivalStatMultiplier = 1.18f;
+
+        [Header("후반 콘텐츠: 아버지의 말 '천둥' (그랑프리 우승 후 깊은 숲에서 발견)")]
+        [Tooltip("천둥의 스탯 (전 스탯 같은 값, 은퇴마라 경주는 못 함)")] public float thunderStat = 17f;
+        [Tooltip("천둥 혈통 망아지: 스탯 보너스")] public float thunderFoalBonus = 2f;
+        [Tooltip("천둥 혈통 망아지: 스탯 상한")] public float thunderFoalCap = 18f;
     }
 
     /// <summary>시장에서 파는 음식 1종. forHorse면 고른 말에게 바로 먹인다</summary>
@@ -294,6 +302,7 @@ namespace HorseRanch
         public bool tack;
         public int lastRaceDay = -1;
         public int grandPrixWins;
+        [Tooltip("천둥 혈통 (천둥 본인 또는 그 망아지)")] public bool thunderBlood;
 
         public bool IsNpc { get { return id <= 0; } }
         public bool IsTraining { get { return trainStat >= 0; } }
@@ -441,6 +450,8 @@ namespace HorseRanch
         public int storyClearDay;
         public string storyWinner;                  // 그랑프리를 우승한 내 말 이름
         public bool endingSeen;
+        public bool thunderFound;                   // 깊은 숲에서 천둥을 데려옴
+        public int lastTierNotice;
         public int gameOver;                        // GameOverReason
     }
 

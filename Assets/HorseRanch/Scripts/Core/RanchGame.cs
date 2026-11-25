@@ -204,6 +204,12 @@ namespace HorseRanch
             }
             GenerateDay();
             if (IsGrandPrixDay(State.day)) AddLog("오늘은 대상경주(G1) 개최일입니다! 상금 " + B.grandPrixPrizeMultiplier + "배.");
+            if (B.npcTierDays > 0 && State.day % B.npcTierDays == 0 && State.lastTierNotice != State.day)
+            {
+                State.lastTierNotice = State.day;
+                AddLog("새 시즌 " + (NpcTier(State.day) + 1) + " 시작: 상대 말들의 수준이 올라갔다 (스탯 합계 +" + B.npcTierBonus + ")");
+                RaiseToast("새 시즌! 상대 말들이 더 강해졌습니다");
+            }
             AdvanceTutorial(TutorialStep.Sleep);
             CollectDebt();
             if (IsOver) return;
@@ -288,7 +294,9 @@ namespace HorseRanch
         HorseData MakeNpc(int raceIndex, bool gp, int lane, int day)
         {
             // 날짜에 따라 강해지되 상한에서 멈춤 + 대상경주 보너스
-            float baseTotal = Math.Min(B.npcMaxTotal, B.npcBaseTotal + day * B.npcGrowthPerDay) + (gp ? B.grandPrixNpcBonus : 0f);
+            // 날짜에 따라 강해지되 상한에서 멈춤 + 10일(시즌)마다 수준과 상한이 함께 오름 + 대상경주 보너스
+            int tier = NpcTier(day);
+            float baseTotal = Math.Min(B.npcMaxTotal + tier * B.npcTierCapBonus, B.npcBaseTotal + day * B.npcGrowthPerDay + tier * B.npcTierBonus) + (gp ? B.grandPrixNpcBonus : 0f);
             float total = RngUtil.Clamp(baseTotal + RngUtil.Range(rng, -(int)B.npcSpread, (int)B.npcSpread), 18f, B.statCap * RanchConst.StatCount * 0.9f);
             var w = new float[RanchConst.StatCount];
             for (int i = 0; i < w.Length; i++) w[i] = 0.5f + RngUtil.Next(rng);
@@ -557,14 +565,16 @@ namespace HorseRanch
             if (State.horses.Count >= B.maxStable) { RaiseToast("마구간이 가득 찼습니다"); return false; }
             State.gold -= B.breedFee;
             var f = MakeHorse(null);
+            bool blood = a.thunderBlood || b.thunderBlood;   // 천둥 혈통: 보너스 + 높은 상한, 혈통은 대대로 이어짐
             for (int i = 0; i < RanchConst.StatCount; i++)
             {
-                float v = (a.stats[i] + b.stats[i]) * 0.5f * B.foalInherit + RngUtil.Next(rng) * B.foalRandomMax;
-                f.stats[i] = (float)Math.Round(Math.Min(B.foalStatCap, v) * 10f) / 10f;
+                float v = (a.stats[i] + b.stats[i]) * 0.5f * B.foalInherit + RngUtil.Next(rng) * B.foalRandomMax + (blood ? B.thunderFoalBonus : 0f);
+                f.stats[i] = (float)Math.Round(Math.Min(blood ? B.thunderFoalCap : B.foalStatCap, v) * 10f) / 10f;
             }
+            f.thunderBlood = blood;
             State.horses.Add(f);
             a.lastBreedDay = b.lastBreedDay = State.day;
-            AddLog("「" + a.name + "」×「" + b.name + "」 사이에서 망아지 「" + f.name + "」 탄생 (합계 " + f.Total.ToString("0.0") + ")");
+            AddLog("「" + a.name + "」x「" + b.name + "」 사이에서 망아지 「" + f.name + "」 탄생 (합계 " + f.Total.ToString("0.0") + (blood ? ", 천둥 혈통" : "") + ")");
             CheckMaster();
             RaiseChanged();
             if (FoalBorn != null) FoalBorn(f);

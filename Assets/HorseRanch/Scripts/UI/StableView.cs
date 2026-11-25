@@ -89,7 +89,7 @@ namespace HorseRanch
                 var row = rosterList.Get(i);
                 row.Bind(h.id, OnSelect);
                 row.SetSwatch(0, runner.Database.CoatColor(h.coat));
-                row.SetText(0, h.name + "  <size=70%><color=#566458>" + (h.male ? "수" : "암") + "</color></size>");
+                row.SetText(0, h.name + "  <size=70%><color=#566458>" + (h.male ? "수" : "암") + "</color>" + (h.thunderBlood ? " <color=#B8860B>천둥 혈통</color>" : "") + "</size>");
                 row.SetText(1, Chips(h));
                 row.SetText(2, h.Total.ToString("0"));
                 row.SetBackground(h.id == selectedId ? UITheme.Panel2 : UITheme.Panel);
@@ -102,7 +102,7 @@ namespace HorseRanch
         private void RefreshDetail(HorseData h)
         {
             var b = Data.balance;
-            nameText.text = h.name;
+            nameText.text = h.name + (h.thunderBlood ? "  <size=60%><color=#B8860B>천둥 혈통</color></size>" : "");
             string form = h.RecentForm(5);
             infoText.text = (h.male ? "수말" : "암말") + " · " + runner.Database.CoatName(h.coat) + " · 출전 " + h.races + "/" + b.retireAt
                 + "전 · 우승 " + h.wins + (h.grandPrixWins > 0 ? " (G1 " + h.grandPrixWins + ")" : "") + " · 최근 " + (form.Length > 0 ? form : "기록 없음");

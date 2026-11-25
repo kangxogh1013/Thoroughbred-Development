@@ -35,6 +35,16 @@ namespace HorseRanch
         [SerializeField] private NavigationGuide guide;
         [SerializeField] private MemorialSite memorial;
         [SerializeField] private WorldMap map;
+        [Tooltip("깊은 숲의 천둥 (데려오면 사라짐)")]
+        [SerializeField] private ThunderSpot thunderSpot;
+        [Header("구역 분위기 (도박장 말풍선)")]
+        [SerializeField] private SpeechBubble bubble;
+        [Tooltip("도박장 손님이 소리치는 간격 (초, 최소~최대)")]
+        [SerializeField] private Vector2 hallShoutInterval = new Vector2(2.5f, 6f);
+        [Tooltip("마구간 말 소리 간격 (초, 최소~최대)")]
+        [SerializeField] private Vector2 barnSoundInterval = new Vector2(4f, 9f);
+        [Tooltip("경주 중 관중 함성 간격 (초, 최소~최대)")]
+        [SerializeField] private Vector2 raceCheerInterval = new Vector2(2f, 4f);
 
         [Header("HUD")]
         [SerializeField] private TMP_Text dayText;
@@ -64,6 +74,11 @@ namespace HorseRanch
         private float guideTimer;
         private bool pendingEnding;
         private bool inEnding;
+        private bool gameOverShown;
+        private string currentArea = "";
+        private float ambientTimer = 3f;
+        private bool racing;
+        private List<Interactable> hallGuests;
 
         public ModalView Modal { get { return modal; } }
         public bool IsFading { get { return fadeT >= 0f; } }
@@ -136,14 +151,17 @@ namespace HorseRanch
         public void BeginPlay(bool fresh)
         {
             runner.MarkPlayed();
-            audioManager.PlayBgm(BgmId.Town);
+            gameOverShown = false;
             if (fresh)
             {
                 RestartGame();
+                audioManager.PlayBgm(BgmId.GameOver);   // 오프닝은 쓸쓸한 단조
+                audioManager.PlayAmbience(AmbienceId.None, 0f);
                 // 오프닝: 아버지의 사고와 남겨진 목장 → 튜토리얼 시작 여부
                 cutscene.Play(StoryText.Intro(Game), () =>
                 {
                     Game.MarkIntroSeen();
+                    RefreshAreaAudio();
                     dialogue.Show("안내", "질주마 목장에 오신 것을 환영합니다! 소지금 " + Game.State.gold.ToString("N0") + "G로 시작합니다.\n"
                         + "방향키/WASD 이동 - E 상호작용 - Shift 달리기 - Tab 인벤토리 - J 업적 - M 지도 - Esc 메뉴\n"
                         + "처음이라면 튜토리얼을 추천해요. 머리 위 화살표가 갈 곳을 알려주고, 가게마다 <b>첫 구매 1회 무료</b>예요.",
@@ -154,8 +172,80 @@ namespace HorseRanch
             else
             {
                 RefreshHud();
+                RefreshAreaAudio();
                 toast.Show(Game.State.day + "일차부터 이어합니다", true);
             }
+        }
+
+        // ===== 구역별 소리 =====
+        /// <summary>지금 있는 구역에 맞는 배경음 + 환경음 (도박장 / 경기장 / 깊은 숲 / 그 외 마을)</summary>
+        private void RefreshAreaAudio()
+        {
+            if (title.IsOpen || inEnding || gameOverShown || racing || cutscene.IsOpen) return;
+            switch (currentArea)
+            {
+                case "마권 도박장": audioManager.PlayBgm(BgmId.Hall); audioManager.PlayAmbience(AmbienceId.HallCrowd, 0.7f); break;
+                case "경기장": audioManager.PlayBgm(BgmId.Stadium); audioManager.PlayAmbience(AmbienceId.StadiumCrowd, 0.35f); break;
+                case "깊은 숲": audioManager.PlayBgm(BgmId.Ending); audioManager.PlayAmbience(AmbienceId.None, 0f); break;
+                default: audioManager.PlayBgm(BgmId.Town); audioManager.PlayAmbience(AmbienceId.None, 0f); break;
+            }
+        }
+
+        /// <summary>도박장 고함 · 마구간 말 소리 · 경주 중 함성 (Update에서 호출)</summary>
+        private void UpdateAmbientEvents()
+        {
+            if (title.IsOpen || cutscene.IsOpen || gameOverShown) return;
+            ambientTimer -= Time.deltaTime;
+            if (ambientTimer > 0f) return;
+            if (racing)
+            {
+                audioManager.PlaySfx(SfxId.Cheer, UnityEngine.Random.Range(0.45f, 0.8f));
+                ambientTimer = UnityEngine.Random.Range(raceCheerInterval.x, raceCheerInterval.y);
+                return;
+            }
+            if (inEnding) { ambientTimer = 2f; return; }
+            if (currentArea == "마권 도박장")
+            {
+                HallShout();
+                ambientTimer = UnityEngine.Random.Range(hallShoutInterval.x, hallShoutInterval.y);
+            }
+            else if (currentArea == "마구간")
+            {
+                audioManager.PlaySfx(UnityEngine.Random.value < 0.55f ? SfxId.Neigh : SfxId.Snort, UnityEngine.Random.Range(0.5f, 0.85f));
+                ambientTimer = UnityEngine.Random.Range(barnSoundInterval.x, barnSoundInterval.y);
+            }
+            else ambientTimer = 2f;
+        }
+
+        // 도박장 손님들의 고함 (말풍선 + 소리)
+        private static readonly string[] HallShouts =
+        {
+            "아 진짜! 또 꽝이야!", "이런 젠장, 코 차이로!", "가라 가라 가라!", "누가 7번 찍으래!", "삼쌍승 왔다! 크하하!",
+            "제기랄, 배당이 왜 이래!", "환불해 줘, 환불!", "이번엔 진짜 느낌 온다!", "아이고 내 월급…", "에잇, 다 찢어버려야지!",
+            "또 흑풍이야? 짜고 치는 거 아냐?", "한 판만 더! 딱 한 판만!", "우와아아!", "야! 거기 줄 좀 서!",
+        };
+
+        private void HallShout()
+        {
+            if (hallGuests == null)
+            {
+                hallGuests = new List<Interactable>();
+                for (int i = 0; i < allInteractables.Length; i++)
+                {
+                    var it = allInteractables[i];
+                    if (it.DisplayName == "손님" && it.GetComponent<NpcController>() != null)
+                    {
+                        var ar = map.AreaAt(CellOf(it));
+                        if (ar != null && ar.AreaName == "마권 도박장") hallGuests.Add(it);
+                    }
+                }
+            }
+            string line = HallShouts[UnityEngine.Random.Range(0, HallShouts.Length)];
+            bool happy = line.Contains("왔다") || line.Contains("우와") || line.Contains("느낌");
+            audioManager.PlaySfx(happy ? SfxId.Cheer : UnityEngine.Random.value < 0.4f ? SfxId.Boo : SfxId.Shout, happy ? 0.35f : 0.75f);
+            if (hallGuests.Count == 0) return;
+            var who = hallGuests[UnityEngine.Random.Range(0, hallGuests.Count)];
+            bubble.Show(who.transform.position + new Vector3(0f, 1.9f, 0f), line, 2.2f);
         }
 
         /// <summary>Esc (아무 창도 없을 때): 일시정지 메뉴</summary>
@@ -166,7 +256,7 @@ namespace HorseRanch
             modal.Show("메뉴", Game.State.day + "일차 · " + Game.State.gold.ToString("N0") + "G\n<size=85%><color=#566458>진행 상황은 자동 저장됩니다.</color></size>",
                 new ModalAction("계속하기", null, ModalStyle.Primary),
                 new ModalAction("설정", () => settings.Open(null)),
-                new ModalAction("저장하고 타이틀로", () => { runner.Save(); player.Mover.Stand(); guide.Clear(); title.Show(); }));
+                new ModalAction("저장하고 타이틀로", () => { runner.Save(); player.Mover.Stand(); guide.Clear(); bubble.Hide(); audioManager.PlayAmbience(AmbienceId.None, 0f); title.Show(); }));
         }
 
         public void PlaySfx(SfxId id) { audioManager.PlaySfx(id); }
@@ -174,6 +264,7 @@ namespace HorseRanch
         private void Update()
         {
             UpdateFade();
+            UpdateAmbientEvents();
             guideTimer -= Time.deltaTime;
             if (guideTimer <= 0f) { guideTimer = 0.2f; UpdateGuide(); }
             if (pendingEnding && !IsBusy) { pendingEnding = false; PlayEnding(); return; }
@@ -223,6 +314,7 @@ namespace HorseRanch
             else sb.Append("<size=85%><color=#7FD38A>빚 모두 청산</color></size>");
             goalText.text = sb.ToString();
             if (!inEnding) memorial.ShowTrophy(s.cleared);
+            thunderSpot.Show(!s.thunderFound);
         }
 
         // ===== 튜토리얼 길 안내 =====
@@ -318,7 +410,15 @@ namespace HorseRanch
             return null;
         }
 
-        public void ShowLocation(string name) { locationText.text = name; }
+        public void ShowLocation(string name)
+        {
+            locationText.text = name;
+            if (name == currentArea) return;
+            currentArea = name;
+            bubble.Hide();
+            ambientTimer = 1.5f;
+            RefreshAreaAudio();
+        }
 
         public void SetPrompt(string name)
         {
@@ -377,6 +477,27 @@ namespace HorseRanch
                 case InteractKind.Bank:
                     AskBank(it.DisplayName);
                     break;
+                case InteractKind.Thicket:
+                    if (g.ForestOpen)
+                        dialogue.Show(it.DisplayName, StoryText.Thicket(g),
+                            new ModalAction("덤불을 헤치고 들어가기", () => Warp(it.WarpCell, it.WarpFacing), ModalStyle.Primary),
+                            new ModalAction("그만두기", null));
+                    else { audioManager.PlaySfx(SfxId.Neigh, 0.35f); dialogue.Show(it.DisplayName, StoryText.Thicket(g)); }
+                    break;
+                case InteractKind.Thunder:
+                    if (g.State.thunderFound) { dialogue.Show(it.DisplayName, "(천둥이 쉬던 자리. 풀이 동그랗게 눌려 있다.)"); break; }
+                    audioManager.PlaySfx(SfxId.Neigh);
+                    StoryLines(StoryText.ThunderMeet(g), 0, () =>
+                        dialogue.Show(RanchGame.FatherHorse, "(천둥이 가만히 당신을 바라본다.)",
+                            new ModalAction("목장으로 데려가기", () =>
+                            {
+                                if (!g.AdoptThunder()) return;
+                                thunderSpot.Show(false);
+                                audioManager.PlaySfx(SfxId.Fanfare);
+                                dialogue.Show(RanchGame.FatherHorse, StoryText.ThunderHome);
+                            }, ModalStyle.Primary),
+                            new ModalAction("조금 더 지켜보기", null)));
+                    break;
                 case InteractKind.Grave:
                     dialogue.Show(it.DisplayName, StoryText.Line(it.DisplayName, g, talkRng, null));
                     break;
@@ -422,7 +543,9 @@ namespace HorseRanch
                         new ModalAction("그만두기", null));
                     break;
                 case InteractKind.GambleMaster:
-                    dialogue.Show(it.DisplayName, "허허, 여기까지 찾아오다니. 내 예언 한번 들어볼 텐가? 하루에 한 번이네.",
+                    dialogue.Show(it.DisplayName, (g.ForestOpen && !g.State.thunderFound
+                            ? "그랑프리 봤네, 장하구먼. 하나 알려 주지. 자네 아버지 말 천둥… 북동쪽 끝 가시덤불 너머 깊은 숲에 산다네. 이제 자네라면 길이 보일 걸세.\n"
+                            : "허허, 여기까지 찾아오다니. ") + "내 예언 한번 들어볼 텐가? 하루에 한 번이네.",
                         new ModalAction("예언 듣기", () => dialogue.Show(it.DisplayName, g.AskMaster()), ModalStyle.Primary),
                         new ModalAction("됐어요", null));
                     break;
@@ -654,11 +777,17 @@ namespace HorseRanch
             cameraFollow.SetTarget(race.Focus, true);   // 카메라를 트랙 선두로
             audioManager.PlaySfx(SfxId.Gate);
             audioManager.PlayBgm(BgmId.Race);
+            audioManager.PlayAmbience(AmbienceId.StadiumCrowd, 1.2f);   // 관중 함성 크게
+            audioManager.PlaySfx(SfxId.Cheer);
+            racing = true;
+            ambientTimer = 1.5f;
             race.Play(replay, runner.Database, () =>
             {
+                racing = false;
                 cameraFollow.SetTarget(player.transform, true);
-                audioManager.PlayBgm(BgmId.Town);
+                audioManager.PlaySfx(SfxId.Cheer);
                 audioManager.PlaySfx(SfxId.Fanfare);
+                RefreshAreaAudio();
                 string title = Game.Data.races[replay.raceIndex].displayName + (replay.grandPrix ? " 대상경주(G1)" : "") + " 결과";
                 modal.Show(title, ResultBody(replay.result));
             });
@@ -705,6 +834,7 @@ namespace HorseRanch
 
         private void OnStoryNotice(string head, string body)
         {
+            if (head.StartsWith("연체")) audioManager.PlaySfx(SfxId.Warning);
             modal.Show(head, body, new ModalAction("확인", null, ModalStyle.Primary));
         }
 
@@ -717,7 +847,12 @@ namespace HorseRanch
             dialogue.Close(null);
             guide.Clear();
             pendingEnding = false;
-            audioManager.PlayBgm(BgmId.Title);
+            racing = false;
+            gameOverShown = true;
+            bubble.Hide();
+            audioManager.PlaySfx(SfxId.Warning);
+            audioManager.PlayBgm(BgmId.GameOver);
+            audioManager.PlayAmbience(AmbienceId.None, 0f);
             cutscene.Play(StoryText.GameOver(reason, Game), () =>
                 modal.Show("GAME OVER", reason == GameOverReason.Foreclosure
                         ? "빚을 " + Game.Data.balance.maxMissedPayments + "번 연체해 목장을 잃었습니다.\n<size=85%><color=#566458>상환일 전에 광장 은행원에게 미리 갚거나, 경주 상금 · 마권 · 말 판매로 돈을 모아 두세요.</color></size>"
@@ -733,7 +868,9 @@ namespace HorseRanch
             CloseWindow();
             guide.Clear();
             SetPrompt(null);
-            audioManager.PlayBgm(BgmId.Title);
+            bubble.Hide();
+            audioManager.PlayBgm(BgmId.Ending);
+            audioManager.PlayAmbience(AmbienceId.None, 0f);
             StartFade(() =>
             {
                 player.Mover.Stand();
@@ -743,6 +880,13 @@ namespace HorseRanch
                 memorial.ShowMom(true);
                 GraveLine(StoryText.EndingGrave(Game), 0);
             });
+        }
+
+        /// <summary>(화자, 대사) 목록을 차례로 보여주고 done 실행</summary>
+        private void StoryLines(string[][] lines, int i, Action done)
+        {
+            if (i >= lines.Length) { if (done != null) done(); return; }
+            dialogue.ShowThen(lines[i][0], lines[i][1], () => StoryLines(lines, i + 1, done));
         }
 
         private void GraveLine(string[][] lines, int i)
@@ -757,20 +901,25 @@ namespace HorseRanch
             memorial.ShowMom(false);
             cameraFollow.SetTarget(race.Focus, true);
             audioManager.PlayBgm(BgmId.Race);
+            audioManager.PlayAmbience(AmbienceId.StadiumCrowd, 1.2f);
             audioManager.PlaySfx(SfxId.Gate);
+            audioManager.PlaySfx(SfxId.Cheer);
+            racing = true;
             cutscene.Caption(StoryText.EndingRideCaption, 5f);
             race.Play(EndingReplay(), runner.Database, () =>
                 StartFade(() =>
                 {
+                    racing = false;
                     cameraFollow.SetTarget(player.transform, true);
                     player.WarpTo(spawnCell, Vector2Int.down);
                     cameraFollow.Snap();
-                    audioManager.PlayBgm(BgmId.Title);
+                    audioManager.PlayBgm(BgmId.Ending);
+                    audioManager.PlayAmbience(AmbienceId.None, 0f);
                     cutscene.Play(StoryText.EndingCredits(Game), () =>
                     {
                         inEnding = false;
                         Game.MarkEndingSeen();
-                        audioManager.PlayBgm(BgmId.Town);
+                        RefreshAreaAudio();
                         RefreshHud();
                         modal.Show("엔딩", "아버지의 꿈을 이뤘습니다.\n엔딩 후에도 목장을 계속 키울 수 있어요. 트로피는 언덕 위 아버지의 묘에 놓여 있습니다.",
                             new ModalAction("계속 플레이", null, ModalStyle.Primary),
