@@ -29,7 +29,7 @@ namespace HorseRanch
     /// <summary>주민 의뢰 종류</summary>
     public enum RequestType { Deliver = 0, Trash = 1, ShowHorse = 2, RaceTop3 = 3, BetHit = 4 }
     /// <summary>시계가 넘어간 시점 (GameUI가 연출 처리)</summary>
-    public enum ClockEvent { None = 0, Evening = 1, Closing = 2, Late = 3, PassOut = 4 }
+    public enum ClockEvent { None = 0, Evening = 1, Closing = 2, Late = 3, PassOut = 4, Bedtime = 5 }
 
     public static class RanchConst
     {
@@ -166,6 +166,7 @@ namespace HorseRanch
         [Tooltip("하루 시작 시각")] public int dayStartMinute = 360;
         [Tooltip("저녁 알림 (노을)")] public int eveningMinute = 1080;
         [Tooltip("가게·시장·은행 문 닫는 시각, 남은 경주도 이때 마감")] public int closeMinute = 1200;
+        [Tooltip("취침 시간: 주민이 모두 사라지고 집 말고는 문이 잠김 (1320 = 밤 10시)")] public int bedtimeMinute = 1320;
         [Tooltip("자정 경고")] public int lateMinute = 1440;
         [Tooltip("이 시각이 되면 쓰러져 다음 날 집에서 깸 (26:00 = 새벽 2시)")] public int passOutMinute = 1560;
         [Tooltip("쓰러진 다음 날 일어나는 시각 (늦잠)")] public int oversleepMinute = 480;

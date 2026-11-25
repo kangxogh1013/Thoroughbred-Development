@@ -3,7 +3,7 @@ using UnityEngine;
 namespace HorseRanch
 {
     public enum BgmId { None = -1, Title = 0, Town = 1, Race = 2, Hall = 3, Stadium = 4, GameOver = 5, Ending = 6 }
-    public enum SfxId { Click = 0, Coin = 1, Door = 2, Search = 3, Fanfare = 4, Gate = 5, Trash = 6, Cheer = 7, Neigh = 8, Snort = 9, Shout = 10, Boo = 11, Warning = 12, Step = 13, Hoof = 14, WindowOpen = 15, WindowClose = 16 }
+    public enum SfxId { Click = 0, Coin = 1, Door = 2, Search = 3, Fanfare = 4, Gate = 5, Trash = 6, Cheer = 7, Neigh = 8, Snort = 9, Shout = 10, Boo = 11, Warning = 12, Step = 13, Hoof = 14, WindowOpen = 15, WindowClose = 16, Bell = 17 }
     /// <summary>배경음 위에 겹치는 환경음 (반복)</summary>
     public enum AmbienceId { None = -1, HallCrowd = 0, StadiumCrowd = 1 }
 
@@ -21,7 +21,7 @@ namespace HorseRanch
 
         [Header("배경음 (BgmId 순서: 타이틀, 마을, 경주, 도박장, 경기장, 게임 오버, 엔딩)")]
         [SerializeField] private AudioClip[] bgmClips;
-        [Header("효과음 (SfxId 순서: 클릭, 동전, 문, 뒤지기, 팡파레, 출발 벨, 쓰레기, 함성, 말 울음, 콧김, 고함, 야유, 경고, 발소리, 말발굽, 창 열기, 창 닫기)")]
+        [Header("효과음 (SfxId 순서: 클릭, 동전, 문, 뒤지기, 팡파레, 출발 벨, 쓰레기, 함성, 말 울음, 콧김, 고함, 야유, 경고, 발소리, 말발굽, 창 열기, 창 닫기, 출입문 종)")]
         [SerializeField] private AudioClip[] sfxClips;
         [Header("같은 소리 반복이 기계적으로 들리지 않게: 변형 클립 (기본 클립과 섞어 무작위 재생)")]
         [SerializeField] private AudioClip[] cheerVariants;

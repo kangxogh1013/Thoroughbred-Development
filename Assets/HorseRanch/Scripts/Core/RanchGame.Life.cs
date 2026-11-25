@@ -26,6 +26,8 @@ namespace HorseRanch
         public int ClockMinute { get { return (int)State.clock; } }
         public bool IsEvening { get { return State.clock >= B.eveningMinute; } }
         public bool IsNight { get { return State.clock >= B.closeMinute; } }
+        /// <summary>밤 10시 이후: 집에 가서 자야 하는 시간 (주민 없음, 집 말고 문 잠김)</summary>
+        public bool IsBedtime { get { return State.clock >= B.bedtimeMinute; } }
         /// <summary>튜토리얼 중엔 시계가 멈춘다 (경주 관람 단계를 놓치지 않게)</summary>
         public bool ClockRunning { get { return !InTutorial && State.gameOver == 0; } }
 
@@ -47,6 +49,7 @@ namespace HorseRanch
             State.clock = Math.Min(State.clock + realSeconds * B.minutesPerSecond, B.passOutMinute);
             if (Crossed(before, B.passOutMinute)) return ClockEvent.PassOut;
             if (Crossed(before, B.lateMinute)) return ClockEvent.Late;
+            if (Crossed(before, B.bedtimeMinute)) return ClockEvent.Bedtime;
             if (Crossed(before, B.closeMinute)) { CloseRaces(); return ClockEvent.Closing; }
             if (Crossed(before, B.eveningMinute)) return ClockEvent.Evening;
             return ClockEvent.None;

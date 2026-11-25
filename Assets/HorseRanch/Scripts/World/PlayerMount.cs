@@ -17,9 +17,15 @@ namespace HorseRanch
         [SerializeField] private SpriteRenderer horse;
         [SerializeField] private Sprite[] gallopFrames;
 
-        [Header("모양")]
-        [Tooltip("말 위로 올라가는 높이 (타일)")]
-        [SerializeField] [Range(0f, 1f)] private float riderLift = 0.42f;
+        [Header("모양 (말은 플레이어보다 약 1.5배 크게)")]
+        [Tooltip("말 크기 배율 (1.4 = 폭 약 1.9칸)")]
+        [SerializeField] [Range(0.5f, 2.5f)] private float horseScale = 1.4f;
+        [Tooltip("말 스프라이트 중심 높이 (발이 바닥에 닿게)")]
+        [SerializeField] [Range(0f, 2f)] private float horseCenterY = 0.76f;
+        [Tooltip("말 등 위로 올라가는 플레이어 높이 (타일)")]
+        [SerializeField] [Range(0f, 2f)] private float riderLift = 0.68f;
+        [Tooltip("안장 위치: 말 중심에서 꼬리 쪽으로 (타일)")]
+        [SerializeField] [Range(0f, 0.5f)] private float saddleOffset = 0.14f;
         [Tooltip("걸을 때 말 다리 프레임이 바뀌는 간격 (초)")]
         [SerializeField] [Range(0.05f, 0.5f)] private float gallopFrameTime = 0.12f;
 
@@ -41,7 +47,7 @@ namespace HorseRanch
         {
             rider.enabled = false;
             horse.enabled = false;
-            rider.transform.localPosition = new Vector3(0f, riderLift, 0f);
+            ApplyShape();
         }
 
         /// <summary>말에 오르기 (coat = 털색, speedScale = 이동 속도 배율)</summary>
@@ -52,8 +58,16 @@ namespace HorseRanch
             horse.enabled = rider.enabled = true;
             body.enabled = false;
             mover.SpeedScale = speedScale;
-            rider.transform.localPosition = new Vector3(0f, riderLift, 0f);
+            ApplyShape();
             LateUpdate();
+        }
+
+        /// <summary>인스펙터 값 → 말 크기 · 위치</summary>
+        private void ApplyShape()
+        {
+            horse.transform.localScale = new Vector3(horseScale, horseScale, 1f);
+            horse.transform.localPosition = new Vector3(0f, horseCenterY, 0f);
+            rider.transform.localPosition = new Vector3(faceLeft ? saddleOffset : -saddleOffset, riderLift, 0f);
         }
 
         public void Dismount()
@@ -72,6 +86,8 @@ namespace HorseRanch
             // 말은 옆모습만 있으므로 좌우만 뒤집고, 위·아래를 볼 땐 마지막 좌우 방향 유지
             if (mover.Facing.x != 0) faceLeft = mover.Facing.x < 0;
             horse.flipX = faceLeft;
+            // 말은 오른쪽을 보고 그려져 있음: 안장은 머리 반대쪽
+            rider.transform.localPosition = new Vector3(faceLeft ? saddleOffset : -saddleOffset, riderLift, 0f);
             if (mover.IsMoving)
             {
                 animT += Time.deltaTime;

@@ -22,6 +22,8 @@ namespace HorseRanch
         [SerializeField] private PlayerMount mount;
 
         private int shownClock = -1;
+        private bool npcsAsleep;               // 취침 시간이라 주민을 숨겨 둔 상태
+        private List<GameObject> townNpcs;     // 밤에 숨길 주민 (우리 집 엄마 제외)
         private string overlayArea;
         private bool stepParity;
 
@@ -37,6 +39,10 @@ namespace HorseRanch
         {
             var g = Game;
             if (g == null) return;
+            // 밤 10시 ~ 다음 날 아침: 주민들 사라짐 (자고 나면 다시 돌아다님)
+            bool asleep = g.IsBedtime && !inEnding;
+            if (asleep != npcsAsleep) SetNpcsAsleep(asleep);
+
             bool hidden = title.IsOpen || cutscene.IsOpen || inEnding || gameOverShown;
             if (hidden) { SetOverlay(Color.clear); return; }
 
@@ -94,6 +100,11 @@ namespace HorseRanch
                     toast.Show("밤이 되었다. 가게 · 시장 · 은행 · 교배소 영업 종료", true);
                     while (autoRaceNews.Count > 0) toast.Show(autoRaceNews.Dequeue(), false);
                     break;
+                case ClockEvent.Bedtime:
+                    toast.Show("밤 10시 - 주민들이 모두 잠들었다. 집으로!", true);
+                    dialogue.Show("", "밤이 깊었다. 마을 사람들도 모두 잠자리에 들었다.\n이제 집에 가서 잠을 자야 한다.\n<size=80%><color=#566458>머리 위 화살표가 집 침대를 가리켜요. 새벽 " + (b.passOutMinute / 60 - 24) + "시까지 안 자면 길에서 쓰러집니다.</color></size>");
+                    UpdateGuide();
+                    break;
                 case ClockEvent.Late:
                     audioManager.PlaySfx(SfxId.Warning, 0.6f);
                     toast.Show("자정이 넘었다. 새벽 " + (b.passOutMinute / 60 - 24) + "시 전에 집에 가서 자야 한다!", true);
@@ -120,6 +131,7 @@ namespace HorseRanch
         private bool LifeInteract(Interactable it, PlayerController p)
         {
             var g = Game;
+            if (g.IsBedtime && BedtimeBlock(it)) return true;
             if (g.IsNight && ClosesAtNight(it.Kind))
             {
                 dialogue.Show(it.DisplayName, "오늘 영업은 끝났어요. 내일 아침 6시에 다시 와 주세요.\n<size=80%><color=#566458>밤 8시부터 아침 6시까지 상점 · 시장 · 은행 · 교배소는 문을 닫습니다. 도박장은 밤에도 열려 있어요.</color></size>");
@@ -130,7 +142,7 @@ namespace HorseRanch
                 case InteractKind.StallHorse: AskStallHorse(it.Param); return true;
                 case InteractKind.RequestBoard: AskRequests(it.DisplayName); return true;
                 case InteractKind.Records:
-                    dialogue.Show(it.DisplayName, "역대 우승마의 이름과 기록이 새겨진 트로피가 늘어서 있다.\n<size=80%><color=#566458>K 키로 어디서든 기록실을 열 수 있어요.</color></size>",
+                    dialogue.Show("", "역대 우승마의 이름과 기록이 새겨진 트로피가 늘어서 있다.\n<size=80%><color=#566458>K 키로 어디서든 기록실을 열 수 있어요.</color></size>",
                         new ModalAction("기록 보기", () => OpenWindow(WindowId.Records, "기록실"), ModalStyle.Primary), new ModalAction("나가기", null));
                     return true;
                 case InteractKind.Bench:
@@ -139,6 +151,59 @@ namespace HorseRanch
                     return true;
             }
             return false;
+        }
+
+        // ===== 취침 시간 (밤 10시 ~) =====
+        /// <summary>집 침대와 '마을 · 우리 집'으로 가는 문만 허용. 나머지는 잠김 / 아무것도 없음</summary>
+        private bool BedtimeBlock(Interactable it)
+        {
+            switch (it.Kind)
+            {
+                case InteractKind.Sleep: return false;
+                case InteractKind.Door:
+                    var dest = map.AreaAt(it.WarpCell);
+                    string dn = dest != null ? dest.AreaName : "";
+                    if (dn == "우리 집" || dn == "목장 마을") return false;
+                    audioManager.PlaySfx(SfxId.Door, 0.4f);
+                    dialogue.Show("", "문이 잠겨 있다. 다들 잠든 모양이다.\n<size=80%><color=#566458>밤에는 우리 집에만 들어갈 수 있어요.</color></size>");
+                    return true;
+                case InteractKind.Thicket:
+                    dialogue.Show("", "밤의 숲은 칠흑같이 어둡다. 내일 다시 오자.");
+                    return true;
+                default:
+                    dialogue.Show("", "아무것도 없다. 밤이 깊었다… 이제 집에 가서 자야 한다.");
+                    return true;
+            }
+        }
+
+        /// <summary>밤엔 길 안내 화살표가 집 침대를 가리킨다</summary>
+        private Interactable BedtimeTarget()
+        {
+            var g = Game;
+            if (g == null || !g.IsBedtime || g.InTutorial || allInteractables == null) return null;
+            return FindTarget(InteractKind.Sleep, null);
+        }
+
+        /// <summary>주민 숨기기 / 다시 보이기 (우리 집 엄마는 그대로)</summary>
+        private void SetNpcsAsleep(bool asleep)
+        {
+            if (allInteractables == null) return;
+            npcsAsleep = asleep;
+            if (townNpcs == null)
+            {
+                townNpcs = new List<GameObject>();
+                for (int i = 0; i < allInteractables.Length; i++)
+                {
+                    var it = allInteractables[i];
+                    if (it.GetComponent<NpcController>() == null) continue;
+                    var area = map.AreaAt(CellOf(it));
+                    if (area != null && area.AreaName == "우리 집") continue;
+                    townNpcs.Add(it.gameObject);
+                }
+            }
+            for (int i = 0; i < townNpcs.Count; i++)
+                if (townNpcs[i].activeSelf == asleep) townNpcs[i].SetActive(!asleep);
+            if (asleep) bubble.Hide();
         }
 
         // ===== 마구간 말: 쓰다듬기 · 이름 바꾸기 · 타고 나가기 =====
@@ -157,14 +222,14 @@ namespace HorseRanch
             var list = g.State.horses;
             if (stall < 0 || stall >= list.Count) { dialogue.Show("빈 칸", "아무도 없는 빈 칸이다. 볏짚 냄새가 난다."); return; }
             var h = list[stall];
-            if (h.id == g.State.ridingId) { dialogue.Show(h.name, "지금 타고 있는 말의 칸이다. 말에서 내리면(R) 알아서 돌아온다."); return; }
+            if (h.id == g.State.ridingId) { dialogue.Show("", "지금 타고 있는 말의 칸이다. 말에서 내리면(R) 알아서 돌아온다."); return; }
             var b = g.Data.balance;
             string why;
             bool canRide = g.CanRide(h, out why);
-            string body = "교감 <b>" + h.bond + "/" + b.bondMax + "</b> (" + RanchGame.BondLabel(h.bond) + ")  -  컨디션 " + Mathf.RoundToInt(h.condition) + "  -  피로 " + Mathf.RoundToInt(h.fatigue)
+            string body = "<b>" + h.name + "</b>  교감 <b>" + h.bond + "/" + b.bondMax + "</b> (" + RanchGame.BondLabel(h.bond) + ")  -  컨디션 " + Mathf.RoundToInt(h.condition) + "  -  피로 " + Mathf.RoundToInt(h.fatigue)
                 + "\n<size=80%><color=#566458>하루 한 번 쓰다듬으면 교감 +1, 컨디션 +" + b.petCondition.ToString("0") + ". 교감이 높을수록 컨디션이 잘 유지돼요."
                 + (canRide ? " 타고 나가면 마을을 " + b.rideSpeedScale.ToString("0.0") + "배 빠르게 달립니다." : " " + why + ".") + "</color></size>";
-            dialogue.Show(h.name, body,
+            dialogue.Show("", body,
                 new ModalAction(g.PettedToday(h) ? "쓰다듬기 (오늘 함)" : "쓰다듬기", () => PetHorse(h), ModalStyle.Primary, !g.PettedToday(h)),
                 new ModalAction("이름 바꾸기", () => AskRename(h), ModalStyle.Normal, h.name != RanchGame.FatherHorse),
                 new ModalAction("타고 나가기", () => GetOn(h), ModalStyle.Normal, canRide),
@@ -176,7 +241,7 @@ namespace HorseRanch
             if (!Game.PetHorse(h.id)) return;
             audioManager.PlaySfx(UnityEngine.Random.value < 0.5f ? SfxId.Neigh : SfxId.Snort, 0.7f);
             int i = Mathf.Clamp(h.bond * PetLines.Length / (Game.Data.balance.bondMax + 1), 0, PetLines.Length - 1);
-            dialogue.Show(h.name, PetLines[i] + "\n교감 " + h.bond + " (" + RanchGame.BondLabel(h.bond) + ")");
+            dialogue.Show("", h.name + " " + PetLines[i] + "\n교감 " + h.bond + " (" + RanchGame.BondLabel(h.bond) + ")");
         }
 
         private void AskRename(HorseData h)
@@ -186,10 +251,10 @@ namespace HorseRanch
             for (int i = 0; i < names.Length; i++)
             {
                 string n = names[i];
-                opts.Add(new ModalAction("「" + n + "」", () => { if (Game.RenameHorse(h.id, n)) { audioManager.PlaySfx(SfxId.Coin); dialogue.Show(n, "(새 이름이 마음에 드는지 고개를 끄덕인다.)"); } }));
+                opts.Add(new ModalAction("「" + n + "」", () => { if (Game.RenameHorse(h.id, n)) { audioManager.PlaySfx(SfxId.Coin); dialogue.Show("", "「" + n + "」(이)가 새 이름이 마음에 드는지 고개를 끄덕인다."); } }));
             }
             opts.Add(new ModalAction("그대로 두기", null));
-            dialogue.Show(h.name, "새 이름을 골라 주세요. 마음에 드는 게 없으면 다시 물어보면 새 후보가 나와요.", opts.ToArray());
+            dialogue.Show("", "「" + h.name + "」의 새 이름을 골라 주세요. 마음에 드는 게 없으면 다시 물어보면 새 후보가 나와요.", opts.ToArray());
         }
 
         private void GetOn(HorseData h)

@@ -48,7 +48,11 @@ namespace HorseRanch
         {
             onClosed = null;
             choices = options;
-            nameText.text = speaker;
+            // 화자가 없으면 (침대 · 책장 같은 사물, 혼잣말) 이름표를 숨긴다
+            bool hasName = !string.IsNullOrEmpty(speaker);
+            nameText.text = hasName ? speaker : "";
+            var tag = nameText.transform.parent.gameObject;
+            if (tag.activeSelf != hasName) tag.SetActive(hasName);
             bodyText.text = body;
             total = body.Length;
             visible = 0f;

@@ -104,12 +104,12 @@ namespace HorseRanch.EditorTools
             // 말 타기: 말 스프라이트(아래) + 말 위의 플레이어 사본(위). 평소엔 꺼 둠
             var mountHorse = new GameObject("MountHorse").AddComponent<SpriteRenderer>();
             mountHorse.transform.SetParent(pm.transform, false);
-            mountHorse.transform.localPosition = new Vector3(0f, 0.36f, 0f);
-            mountHorse.transform.localScale = new Vector3(0.6f, 0.6f, 1f);
+            mountHorse.transform.localPosition = new Vector3(0f, 0.76f, 0f);
+            mountHorse.transform.localScale = new Vector3(1.4f, 1.4f, 1f);
             mountHorse.sprite = horseArt.gallopA;
             var rider = new GameObject("Rider").AddComponent<SpriteRenderer>();
             rider.transform.SetParent(pm.transform, false);
-            rider.transform.localPosition = new Vector3(0f, 0.42f, 0f);
+            rider.transform.localPosition = new Vector3(-0.14f, 0.68f, 0f);
             mountHorse.enabled = rider.enabled = false;
             result.mount = pm.gameObject.AddComponent<PlayerMount>();
             result.mount.EditorSetup(pm, pm.GetComponent<SpriteRenderer>(), rider, mountHorse, new[] { horseArt.gallopA, horseArt.gallopB });
@@ -556,7 +556,7 @@ namespace HorseRanch.EditorTools
             Fill(a, 4, 3, 9, 5, 'u');
             PlaceSprite(a.root, "Bed", props["bed"], new Vector3(a.o.x + 1f, 6f, 0f), 6f);
             BlockRect(a, 1, 6, 1, 7);
-            Interact(a, "Bed", InteractKind.Talk, "남의 침대", new[] { "남의 침대에서 잘 수는 없지.", "푹신해 보인다… 하지만 참자." }, Cells(a, 1, 6, 1, 7), false, Vector2Int.zero, Vector2Int.zero);
+            Interact(a, "Bed", InteractKind.Talk, "남의 침대", new[] { "남의 집이다. 여기서 잘 수는 없다." }, Cells(a, 1, 6, 1, 7), false, Vector2Int.zero, Vector2Int.zero);
             Prop(a, "Table", props["table"], 6f, 5f, false, 2, 1); BlockRect(a, 6, 5, 7, 5);
             ShelfAt(a, 10, 7, shelfSecret, BookLines); ShelfAt(a, 11, 7, -1, BookLines);
             Prop(a, "Plant", props["plant"], 12.5f, 1, true);

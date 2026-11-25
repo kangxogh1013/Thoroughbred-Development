@@ -59,6 +59,24 @@ namespace HorseRanch
             if (!started) Teleport(startCell, startFacing);
         }
 
+        // 밤에 NPC를 꺼 두면 칸을 비우고, 다시 켜지면 원래 칸을 차지한다
+        private void OnDisable()
+        {
+            if (!started || map == null) return;
+            map.Release(cell, this);
+            map.Release(prevCell, this);
+            moving = false;
+        }
+
+        private void OnEnable()
+        {
+            if (!started || map == null) return;
+            prevCell = cell;
+            if (map.OccupantAt(cell) == null) map.Occupy(cell, this);
+            transform.position = CellToWorld(cell);
+            UpdateSprite(0);
+        }
+
         public void Teleport(Vector2Int c, Vector2Int face)
         {
             started = true;

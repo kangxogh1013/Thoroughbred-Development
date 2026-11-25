@@ -102,7 +102,7 @@ namespace HorseRanch.EditorTools
             SetArr(audioManager, "bgmClips", new UnityEngine.Object[] { sounds.bgmTitle, sounds.bgmTown, sounds.bgmRace, sounds.bgmHall, sounds.bgmStadium, sounds.bgmGameOver, sounds.bgmEnding });
             SetArr(audioManager, "sfxClips", new UnityEngine.Object[] { sounds.click, sounds.coin, sounds.door, sounds.search, sounds.fanfare, sounds.gate, sounds.trash,
                 sounds.cheer, sounds.neigh, sounds.snort, sounds.shout, sounds.boo, sounds.warning,
-                sounds.step, sounds.hoof, sounds.windowOpen, sounds.windowClose });
+                sounds.step, sounds.hoof, sounds.windowOpen, sounds.windowClose, sounds.bell });
             SetArr(audioManager, "cheerVariants", new UnityEngine.Object[] { sounds.cheer2, sounds.cheer3 });
             SetArr(audioManager, "booVariants", new UnityEngine.Object[] { sounds.boo2 });
             SetArr(audioManager, "shoutVariants", new UnityEngine.Object[] { sounds.shout2, sounds.shout3, sounds.shout4 });

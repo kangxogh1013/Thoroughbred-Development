@@ -51,6 +51,7 @@ namespace HorseRanch.EditorTools
             Write("sfx_hoof", Hoof());
             Write("sfx_window_open", WindowOpen());
             Write("sfx_window_close", WindowClose());
+            Write("sfx_bell", Bell());
             Write("sfx_neigh", Neigh());
             Write("sfx_snort", Snort());
             Write("sfx_warning", Warning());
@@ -72,7 +73,7 @@ namespace HorseRanch.EditorTools
                 ambHall = L("amb_hall"), ambStadium = L("amb_stadium"),
                 cheer = L("sfx_cheer"), boo = L("sfx_boo"), shout = L("sfx_shout"), neigh = L("sfx_neigh"), snort = L("sfx_snort"), warning = L("sfx_warning"),
                 cheer2 = L("sfx_cheer2"), cheer3 = L("sfx_cheer3"), boo2 = L("sfx_boo2"), shout2 = L("sfx_shout2"), shout3 = L("sfx_shout3"), shout4 = L("sfx_shout4"),
-                step = L("sfx_step"), hoof = L("sfx_hoof"), windowOpen = L("sfx_window_open"), windowClose = L("sfx_window_close"),
+                step = L("sfx_step"), hoof = L("sfx_hoof"), windowOpen = L("sfx_window_open"), windowClose = L("sfx_window_close"), bell = L("sfx_bell"),
             };
         }
 
@@ -655,6 +656,29 @@ namespace HorseRanch.EditorTools
             return buf;
         }
 
+        /// <summary>가게 출입문 종 '띠링': 작은 종 두 번 (종 특유의 배음 + 긴 여운)</summary>
+        static float[] Bell()
+        {
+            int n = (int)(1.3f * Rate);
+            var buf = new float[n];
+            float[] ratio = { 1f, 2.76f, 5.4f, 8.93f };      // 작은 종의 비정수 배음
+            float[] amp = { 1f, 0.45f, 0.22f, 0.1f };
+            float[] decay = { 3.2f, 5f, 8f, 12f };
+            foreach (var hit in new[] { new[] { 0f, 1568f, 1f }, new[] { 0.11f, 2093f, 0.85f } })   // 솔 → 도
+            {
+                int start = (int)(hit[0] * Rate);
+                for (int i = 0; start + i < n; i++)
+                {
+                    float t = i / (float)Rate, v = 0f;
+                    for (int k = 0; k < ratio.Length; k++)
+                        v += (float)Math.Sin(2 * Math.PI * hit[1] * ratio[k] * t) * amp[k] * (float)Math.Exp(-decay[k] * t);
+                    buf[start + i] += v * hit[2] * Math.Min(1f, i / 40f);
+                }
+            }
+            Fit(buf, 0.6f);
+            return buf;
+        }
+
         /// <summary>창 닫기: 짧은 '탁' + 내려가는 음</summary>
         static float[] WindowClose()
         {
@@ -873,6 +897,6 @@ namespace HorseRanch.EditorTools
         public AudioClip bgmHall, bgmStadium, bgmGameOver, bgmEnding, ambHall, ambStadium;
         public AudioClip cheer, boo, shout, neigh, snort, warning;
         public AudioClip cheer2, cheer3, boo2, shout2, shout3, shout4;
-        public AudioClip step, hoof, windowOpen, windowClose;
+        public AudioClip step, hoof, windowOpen, windowClose, bell;
     }
 }
