@@ -35,11 +35,22 @@ namespace HorseRanch.EditorTools
             Write("bgm_gameover", GameOverTheme());
             Write("bgm_ending", EndingTheme());
             // 환경음 (반복) · 사람 · 말 소리
-            Write("amb_hall", Walla(8f, 11, 0.18f, new[] { 'a', 'e', 'o', 'u', 'i' }, 95f, 210f, 0.10f, true, 101));
-            Write("amb_stadium", Walla(6f, 22, 0.32f, new[] { 'a', 'o', 'e' }, 120f, 260f, 0.22f, false, 202));
-            Write("sfx_cheer", Cheer());
-            Write("sfx_boo", Boo());
-            Write("sfx_shout", Shout());
+            Write("amb_hall", Walla(10f, 16, 0.16f, new[] { 'a', 'e', 'o', 'u', 'i', 'U' }, 95f, 210f, 0.12f, true, 101));
+            Write("amb_stadium", Walla(8f, 26, 0.22f, new[] { 'a', 'o', 'e', 'u' }, 120f, 260f, 0.3f, false, 202));
+            Write("sfx_cheer", Cheer(7));
+            Write("sfx_cheer2", Cheer(71));
+            Write("sfx_cheer3", Cheer(713));
+            Write("sfx_boo", Boo(11));
+            Write("sfx_boo2", Boo(111));
+            Write("sfx_shout", Shout(0));
+            Write("sfx_shout2", Shout(1));
+            Write("sfx_shout3", Shout(2));
+            Write("sfx_shout4", Shout(3));
+            // 발소리 · 말발굽 · 창 여닫기
+            Write("sfx_step", Step());
+            Write("sfx_hoof", Hoof());
+            Write("sfx_window_open", WindowOpen());
+            Write("sfx_window_close", WindowClose());
             Write("sfx_neigh", Neigh());
             Write("sfx_snort", Snort());
             Write("sfx_warning", Warning());
@@ -60,6 +71,8 @@ namespace HorseRanch.EditorTools
                 bgmHall = L("bgm_hall"), bgmStadium = L("bgm_stadium"), bgmGameOver = L("bgm_gameover"), bgmEnding = L("bgm_ending"),
                 ambHall = L("amb_hall"), ambStadium = L("amb_stadium"),
                 cheer = L("sfx_cheer"), boo = L("sfx_boo"), shout = L("sfx_shout"), neigh = L("sfx_neigh"), snort = L("sfx_snort"), warning = L("sfx_warning"),
+                cheer2 = L("sfx_cheer2"), cheer3 = L("sfx_cheer3"), boo2 = L("sfx_boo2"), shout2 = L("sfx_shout2"), shout3 = L("sfx_shout3"), shout4 = L("sfx_shout4"),
+                step = L("sfx_step"), hoof = L("sfx_hoof"), windowOpen = L("sfx_window_open"), windowClose = L("sfx_window_close"),
             };
         }
 
@@ -289,75 +302,369 @@ namespace HorseRanch.EditorTools
             Bandpass(src, dst, start, fm[2], 9f, vol * 0.3f);
         }
 
-        /// <summary>웅성임 · 관중 소리 (여러 사람이 짧은 음절로 떠듦). 끝과 처음이 이어지게 반복용으로 만든다</summary>
+        // ===== 사람 목소리 2: 자연스러운 합성 =====
+        // 기계음처럼 들리던 원인: 톱니파 + 고정 음높이 + 고정 포먼트 + 똑같은 모양의 목소리 반복.
+        // 개선: 성문 펄스(부드러운 파형) + 음높이 떨림(jitter) · 진폭 떨림(shimmer) · 비브라토,
+        //       사람마다 다른 성도 길이(포먼트 배율), 모음이 미끄러지는 이중모음, 자음(마찰·파열) 시작,
+        //       군중 웅성임 바닥(여러 대역 노이즈를 음절 속도로 흔듦), 공간 잔향(Schroeder 리버브).
+        static readonly Dictionary<char, float[]> Vowels4 = new Dictionary<char, float[]>
+        {
+            { 'a', new[] { 780f, 1250f, 2550f, 3500f } }, { 'e', new[] { 480f, 1850f, 2550f, 3500f } }, { 'i', new[] { 300f, 2250f, 3000f, 3700f } },
+            { 'o', new[] { 480f, 880f, 2450f, 3400f } },  { 'u', new[] { 330f, 820f, 2300f, 3300f } }, { 'U', new[] { 360f, 1400f, 2400f, 3400f } }, // U = ㅡ
+        };
+
+        /// <summary>성문 펄스 음원: 음높이 곡선 f0(t), 숨소리, 거친 정도(rough = 성난 목소리 갈라짐)</summary>
+        static float[] Glottal(int len, Func<float, float> f0, float breath, float rough, System.Random r, float attack, float release)
+        {
+            var src = new float[len];
+            double ph = 0;
+            float jit = 0f, shim = 0f, prev = 0f;
+            int cycle = 0;
+            float vibF = 4.5f + (float)r.NextDouble() * 2f, vibD = 0.006f + (float)r.NextDouble() * 0.012f, vibPh = (float)r.NextDouble() * 6.28f;
+            int atk = Math.Max(1, (int)(attack * Rate)), rel = Math.Max(1, (int)(release * Rate));
+            for (int i = 0; i < len; i++)
+            {
+                float t = i / (float)len;
+                if ((i & 63) == 0)
+                {
+                    jit = (jit + ((float)r.NextDouble() * 2f - 1f) * 0.007f) * 0.95f;
+                    shim = (shim + ((float)r.NextDouble() * 2f - 1f) * 0.05f) * 0.9f;
+                }
+                float f = Math.Max(40f, f0(t) * (1f + jit + vibD * (float)Math.Sin(6.2832f * vibF * i / Rate + vibPh)));
+                ph += f / Rate;
+                if (ph >= 1.0) { ph -= 1.0; cycle++; }
+                float p = (float)ph;
+                float g = p < 0.6f ? 0.5f * (1f - (float)Math.Cos(Math.PI * p / 0.6f)) : p < 0.78f ? (float)Math.Cos(Math.PI * 0.5 * (p - 0.6f) / 0.18f) : 0f;
+                float amp = 1f + shim;
+                if (rough > 0f && (cycle & 1) == 1) amp *= 1f - rough * 0.55f;   // 한 주기씩 약해짐 → 갈라진 목소리
+                float d = (g - prev) * (Rate / f) * 0.25f * amp;
+                prev = g;
+                float asp = ((float)r.NextDouble() * 2f - 1f) * breath * (0.35f + 0.65f * g);
+                float env = i < atk ? Smooth(i / (float)atk) : i > len - rel ? (len - i) / (float)rel : 1f;
+                src[i] = (d + asp) * env;
+            }
+            return src;
+        }
+
+        static float Smooth(float x) { x = Math.Max(0f, Math.Min(1f, x)); return x * x * (3f - 2f * x); }
+
+        /// <summary>시간에 따라 바뀌는 포먼트 4개로 음원을 걸러 dst에 더함 (k = 성도 길이 배율: 여자·아이는 1보다 큼)</summary>
+        static void Formants(float[] src, float[] dst, int start, char v1, char v2, float k, float vol)
+        {
+            var A = Vowels4[v1]; var Bv = Vowels4[v2];
+            float[] qs = { 4f, 6f, 9f, 11f }, gains = { 1f, 0.75f, 0.32f, 0.12f };
+            for (int fi = 0; fi < 4; fi++)
+            {
+                double x1 = 0, x2 = 0, y1 = 0, y2 = 0, b0 = 0, a1 = 0, a2 = 0;
+                for (int i = 0; i < src.Length && start + i < dst.Length; i++)
+                {
+                    if ((i & 15) == 0)
+                    {
+                        float t = Smooth(Math.Min(1f, i / (src.Length * 0.45f)));   // 앞쪽 45% 동안 v1 → v2
+                        float F = (A[fi] + (Bv[fi] - A[fi]) * t) * k;
+                        double w0 = 2 * Math.PI * Math.Min(F, Rate * 0.45f) / Rate, alpha = Math.Sin(w0) / (2 * qs[fi]), a0 = 1 + alpha;
+                        b0 = alpha / a0; a1 = -2 * Math.Cos(w0) / a0; a2 = (1 - alpha) / a0;
+                    }
+                    double x = src[i], y = b0 * x - b0 * x2 - a1 * y1 - a2 * y2;
+                    x2 = x1; x1 = x; y2 = y1; y1 = y;
+                    if (start + i >= 0) dst[start + i] += (float)(y * gains[fi] * vol);
+                }
+            }
+        }
+
+        /// <summary>한 사람의 한 음절: (자음) + 모음 v1→v2</summary>
+        static void Speak(float[] dst, int start, float seconds, Func<float, float> f0, char v1, char v2, float k, float vol, float breath, float rough, System.Random r, float attack = 0.04f, float release = 0.09f)
+        {
+            int len = Math.Max(64, (int)(seconds * Rate));
+            var src = Glottal(len, f0, breath, rough, r, attack, release);
+            Formants(src, dst, start, v1, v2, k, vol);
+        }
+
+        /// <summary>자음 소리: 마찰음(ㅅ·ㅊ·ㅎ) 또는 파열음(ㄱ·ㅌ) = 짧은 대역 노이즈</summary>
+        static void Consonant(float[] dst, int start, float seconds, float center, float q, float vol, bool burst, System.Random r)
+        {
+            int len = Math.Max(32, (int)(seconds * Rate));
+            var nz = new float[len];
+            for (int i = 0; i < len; i++)
+            {
+                float t = i / (float)len;
+                float env = burst ? (float)Math.Exp(-t * 9f) : (float)Math.Sin(Math.PI * t);
+                nz[i] = ((float)r.NextDouble() * 2f - 1f) * env;
+            }
+            Bandpass(nz, dst, start, center, q, vol);
+        }
+
+        /// <summary>군중 바닥 소리: 노이즈를 여러 말소리 대역으로 나누고 각 대역을 음절 속도로 흔든다 (웅성웅성)</summary>
+        static void Babble(float[] dst, float vol, float rate, System.Random r)
+        {
+            float[] centers = { 320f, 560f, 900f, 1400f, 2200f };
+            float[] gains = { 1f, 0.9f, 0.7f, 0.45f, 0.22f };
+            for (int c = 0; c < centers.Length; c++)
+            {
+                var nz = new float[dst.Length];
+                float m = 0f, target = 0f;
+                int hold = 1;
+                for (int i = 0; i < nz.Length; i++)
+                {
+                    if (--hold <= 0) { target = (float)Math.Pow(r.NextDouble(), 1.6); hold = (int)(Rate / (rate * (0.6f + (float)r.NextDouble() * 0.8f))); }
+                    m += (target - m) * 0.0012f;
+                    nz[i] = ((float)r.NextDouble() * 2f - 1f) * m;
+                }
+                Bandpass(nz, dst, 0, centers[c], 1.6f, vol * gains[c]);
+            }
+        }
+
+        /// <summary>공간 잔향 (Freeverb 축소판: 콤 4개 + 올패스 2개). room = 방 크기, wet = 울림 비율</summary>
+        static void Reverb(float[] buf, float room, float wet, float damp)
+        {
+            int[] combLen = { 1116, 1188, 1277, 1356 };
+            int[] apLen = { 556, 441 };
+            var outBuf = new float[buf.Length];
+            for (int c = 0; c < combLen.Length; c++)
+            {
+                int L = Math.Max(8, (int)(combLen[c] * room * Rate / 44100f));
+                var line = new float[L];
+                int idx = 0; float store = 0f, fb = 0.8f;
+                for (int i = 0; i < buf.Length; i++)
+                {
+                    float o = line[idx];
+                    store = o * (1f - damp) + store * damp;
+                    line[idx] = buf[i] * 0.25f + store * fb;
+                    idx = (idx + 1) % L;
+                    outBuf[i] += o;
+                }
+            }
+            for (int a = 0; a < apLen.Length; a++)
+            {
+                int L = Math.Max(8, (int)(apLen[a] * room * Rate / 44100f));
+                var line = new float[L];
+                int idx = 0;
+                for (int i = 0; i < outBuf.Length; i++)
+                {
+                    float bo = line[idx], x = outBuf[i];
+                    line[idx] = x + bo * 0.5f;
+                    outBuf[i] = bo - x * 0.5f;
+                    idx = (idx + 1) % L;
+                }
+            }
+            for (int i = 0; i < buf.Length; i++) buf[i] = buf[i] * (1f - wet) + outBuf[i] * wet;
+        }
+
+        /// <summary>고음 다듬기 (한 극 로우패스)</summary>
+        static void LowPass(float[] buf, float hz)
+        {
+            float a = 1f - (float)Math.Exp(-2 * Math.PI * hz / Rate), y = 0f;
+            for (int i = 0; i < buf.Length; i++) { y += (buf[i] - y) * a; buf[i] = y; }
+        }
+
+        /// <summary>무작위 화자: 남자(성도 1.0, 낮은 목소리) / 여자(성도 1.17, 높은 목소리)</summary>
+        static void Speaker(System.Random r, out float k, out float pitch)
+        {
+            bool woman = r.Next(3) == 0;
+            k = woman ? 1.12f + (float)r.NextDouble() * 0.1f : 0.92f + (float)r.NextDouble() * 0.12f;
+            pitch = woman ? 185f + (float)r.NextDouble() * 70f : 95f + (float)r.NextDouble() * 50f;
+        }
+
+        /// <summary>웅성임 · 관중 소리 (반복용: 끝과 처음을 겹쳐 이음매 없음)</summary>
         static float[] Walla(float seconds, int voices, float syllable, char[] vowels, float fLow, float fHigh, float noise, bool clinks, int seed)
         {
             var r = new System.Random(seed);
-            int n = (int)(seconds * Rate), fadeN = Rate / 3;
+            int n = (int)(seconds * Rate), fadeN = Rate / 2;
             var buf = new float[n + fadeN];
+            Babble(buf, noise * 2.2f, 4.5f, r);
+            const string cons = "sthkcp";
             for (int v = 0; v < voices; v++)
             {
-                float baseF = fLow + (float)r.NextDouble() * (fHigh - fLow);
-                int pos = r.Next(Rate / 2);
+                float k, pitch;
+                Speaker(r, out k, out pitch);
+                pitch *= (fLow + fHigh) / 330f;   // 관중일수록 목소리를 높여 말함
+                int pos = r.Next(Rate);
                 while (pos < buf.Length)
                 {
-                    int len = (int)((syllable * (0.6f + (float)r.NextDouble() * 0.9f)) * Rate);
-                    float f = baseF * (0.85f + (float)r.NextDouble() * 0.3f), slide = (float)(r.NextDouble() - 0.5) * 0.3f;
-                    Voice(buf, pos, len, t => f * (1f + slide * t), vowels[r.Next(vowels.Length)], 0.5f + (float)r.NextDouble() * 0.4f, 0.15f, r);
-                    pos += len + (int)(r.NextDouble() * Rate * 0.35f);
+                    // 한 마디 = 음절 2~6개, 끝으로 갈수록 음이 내려감 (가끔 물음표처럼 올라감)
+                    int syl = 2 + r.Next(5);
+                    bool question = r.Next(5) == 0;
+                    for (int s = 0; s < syl && pos < buf.Length; s++)
+                    {
+                        float len = syllable * (0.55f + (float)r.NextDouble() * 0.8f);
+                        float prog = s / (float)syl, f = pitch * (1.08f - prog * 0.18f + (question && s == syl - 1 ? 0.25f : 0f)) * (0.95f + (float)r.NextDouble() * 0.1f);
+                        if (r.Next(10) < 6)
+                        {
+                            char c = cons[r.Next(cons.Length)];
+                            bool burst = c == 't' || c == 'k' || c == 'p';
+                            Consonant(buf, pos, burst ? 0.02f : 0.05f, c == 's' ? 4200f : c == 'c' ? 3200f : c == 'h' ? 1500f : 2200f, 1.4f, 0.18f, burst, r);
+                            pos += (int)((burst ? 0.015f : 0.04f) * Rate);
+                        }
+                        char v1 = vowels[r.Next(vowels.Length)], v2 = r.Next(3) == 0 ? vowels[r.Next(vowels.Length)] : v1;
+                        float fEnd = f * (0.92f + (float)r.NextDouble() * 0.12f);
+                        Speak(buf, pos, len, t => f + (fEnd - f) * t, v1, v2, k, 0.45f + (float)r.NextDouble() * 0.35f, 0.12f, 0f, r, 0.03f, 0.06f);
+                        pos += (int)(len * Rate * 0.9f);
+                    }
+                    pos += (int)((0.25f + r.NextDouble() * 1.2f) * Rate);   // 숨 고르기
                 }
             }
-            if (noise > 0f) { var nz = new float[buf.Length]; for (int i = 0; i < nz.Length; i++) nz[i] = (float)(r.NextDouble() * 2 - 1); Bandpass(nz, buf, 0, 700f, 0.7f, noise); }
-            if (clinks) for (int k = 0; k < (int)seconds; k++) Tone(buf, r.Next(n), Rate / 5, 2600f + r.Next(1400), 0.12f, Wave.Sine, 0f); // 잔·칩 부딪히는 소리
-            for (int i = 0; i < fadeN; i++) { float k = i / (float)fadeN; buf[i] = buf[i] * k + buf[n + i] * (1f - k); }
+            if (clinks) for (int k2 = 0; k2 < (int)seconds; k2++) Tone(buf, r.Next(n), Rate / 6, 2400f + r.Next(1600), 0.06f, Wave.Sine, 0f); // 잔·칩 부딪히는 소리
+            Reverb(buf, clinks ? 0.9f : 1.5f, clinks ? 0.28f : 0.38f, 0.35f);
+            LowPass(buf, 5200f);
+            for (int i = 0; i < fadeN; i++) { float kk = i / (float)fadeN; buf[i] = buf[i] * kk + buf[n + i] * (1f - kk); }
             Array.Resize(ref buf, n);
             Fit(buf, 0.7f);
             return buf;
         }
 
-        /// <summary>관중 함성 (커졌다가 잦아듦) + 휘파람</summary>
-        static float[] Cheer()
+        /// <summary>관중 함성 "와아아!" (커졌다가 잦아듦) + 박수 + 휘파람</summary>
+        static float[] Cheer(int seed)
         {
-            var r = new System.Random(7);
-            int n = (int)(2.8f * Rate);
+            var r = new System.Random(seed);
+            float secs = 2.6f + (float)r.NextDouble() * 0.6f;
+            int n = (int)(secs * Rate);
             var buf = new float[n];
-            for (int v = 0; v < 26; v++)
+            Babble(buf, 0.9f, 7f, r);
+            int voices = 28 + r.Next(10);
+            for (int v = 0; v < voices; v++)
             {
-                int pos = r.Next(Rate / 3), len = n - pos - r.Next(Rate / 2);
-                float f = 150f + (float)r.NextDouble() * 180f;
-                Voice(buf, pos, len, t => f * (1f + 0.25f * (float)Math.Sin(t * 3.2)), r.Next(3) == 0 ? 'o' : 'a', 0.35f, 0.35f, r);
+                float k, pitch;
+                Speaker(r, out k, out pitch);
+                pitch *= 1.6f + (float)r.NextDouble() * 0.4f;   // 외치는 목소리는 높다
+                int pos = r.Next(Rate / 2);
+                float len = Math.Max(0.4f, (n - pos) / (float)Rate - (float)r.NextDouble() * 0.9f);
+                float peak = 1.1f + (float)r.NextDouble() * 0.15f;
+                char v2 = r.Next(4) == 0 ? 'o' : r.Next(5) == 0 ? 'e' : 'a';
+                Speak(buf, pos, len, t => pitch * (t < 0.2f ? 0.82f + (peak - 0.82f) * t / 0.2f : peak - (peak - 0.9f) * (t - 0.2f) / 0.8f), 'u', v2, k, 0.3f + (float)r.NextDouble() * 0.25f, 0.28f, 0.15f, r, 0.08f, 0.5f);
             }
-            for (int w = 0; w < 3; w++) { int p = r.Next(n / 2); var tmp = new float[Rate / 2]; Sweep(tmp, 0, tmp.Length, 1700f + w * 300f, 2600f + w * 200f, 0.25f); for (int i = 0; i < tmp.Length && p + i < n; i++) buf[p + i] += tmp[i] * 0.5f; }
-            for (int i = 0; i < n; i++) { float t = i / (float)n; buf[i] *= t < 0.25f ? t / 0.25f : 1f - (t - 0.25f) / 0.75f * 0.85f; }
+            // 휘파람 (손가락 휘파람: 올라가는 사인 + 떨림)
+            for (int w = 0; w < 2 + r.Next(2); w++)
+            {
+                int p = r.Next(n / 2), wl = (int)(0.45f * Rate);
+                float f1 = 1600f + r.Next(500), f2 = f1 + 700f + r.Next(500);
+                double ph = 0;
+                for (int i = 0; i < wl && p + i < n; i++)
+                {
+                    float t = i / (float)wl, f = f1 + (f2 - f1) * Smooth(t * 1.6f) + 25f * (float)Math.Sin(i * 0.004f);
+                    ph += f / Rate;
+                    buf[p + i] += (float)Math.Sin(ph * 6.2832) * 0.14f * (float)Math.Sin(Math.PI * t);
+                }
+            }
+            // 박수 (짧은 노이즈 딱딱)
+            for (int c = 0; c < 70; c++) Consonant(buf, r.Next(n - Rate / 10), 0.012f, 1400f + r.Next(1200), 1.2f, 0.12f, true, r);
+            for (int i = 0; i < n; i++) { float t = i / (float)n; buf[i] *= t < 0.18f ? Smooth(t / 0.18f) : 1f - (t - 0.18f) / 0.82f * 0.8f; }
+            Reverb(buf, 1.6f, 0.32f, 0.3f);
+            LowPass(buf, 6000f);
             Fit(buf, 0.85f);
             return buf;
         }
 
-        /// <summary>야유 (우우우~)</summary>
-        static float[] Boo()
+        /// <summary>야유 "우우우~" (여럿이 낮게 끌다가 내려감)</summary>
+        static float[] Boo(int seed)
         {
-            var r = new System.Random(11);
-            int n = (int)(1.6f * Rate);
+            var r = new System.Random(seed);
+            int n = (int)(1.8f * Rate);
             var buf = new float[n];
-            for (int v = 0; v < 14; v++)
+            Babble(buf, 0.35f, 3f, r);
+            for (int v = 0; v < 16; v++)
             {
-                float f = 105f + (float)r.NextDouble() * 60f;
-                int pos = r.Next(Rate / 6);
-                Voice(buf, pos, n - pos, t => f * (1f - 0.18f * t), 'u', 0.5f, 0.1f, r);
+                float k, pitch;
+                Speaker(r, out k, out pitch);
+                pitch *= 1.15f;
+                int pos = r.Next(Rate / 4);
+                float len = (n - pos) / (float)Rate - (float)r.NextDouble() * 0.4f;
+                float dip = 0.12f + (float)r.NextDouble() * 0.12f;
+                Speak(buf, pos, len, t => pitch * (1.04f - dip * t), 'u', r.Next(3) == 0 ? 'o' : 'u', k, 0.5f, 0.18f, 0.1f, r, 0.12f, 0.35f);
             }
+            Reverb(buf, 1.1f, 0.3f, 0.4f);
+            LowPass(buf, 4000f);
             Fit(buf, 0.85f);
             return buf;
         }
 
-        /// <summary>한 사람의 고함 (아악!)</summary>
-        static float[] Shout()
+        /// <summary>한 사람의 성난 고함 4종: 0 "야아!" 1 "아악!" 2 "에잇!" 3 "으아아!"</summary>
+        static float[] Shout(int kind)
         {
-            var r = new System.Random(13);
-            int n = (int)(0.55f * Rate);
+            var r = new System.Random(130 + kind * 7);
+            float k = 0.95f + (float)r.NextDouble() * 0.1f, f = 150f + (float)r.NextDouble() * 40f;
+            float secs = kind == 3 ? 0.95f : kind == 2 ? 0.5f : 0.65f;
+            int n = (int)((secs + 0.35f) * Rate);   // 뒤에 잔향 여유
             var buf = new float[n];
-            Voice(buf, 0, n, t => 230f - 80f * t + 25f * (float)Math.Sin(t * 40), 'a', 1f, 0.25f, r);
-            Voice(buf, Rate / 40, n - Rate / 40, t => 115f - 40f * t, 'a', 0.5f, 0.3f, r);
+            int pos = (int)(0.01f * Rate);
+            switch (kind)
+            {
+                case 0: // 야아! : 이 → 아로 미끄러지며 음이 솟았다가 떨어짐
+                    Speak(buf, pos, secs, t => f * (t < 0.25f ? 1.2f + 0.6f * t / 0.25f : 1.8f - 0.5f * (t - 0.25f) / 0.75f), 'i', 'a', k, 1f, 0.22f, 0.35f, r, 0.02f, 0.12f);
+                    break;
+                case 1: // 아악! : 강하게 시작해 목이 막히듯 끊김 + 'ㄱ'
+                    Consonant(buf, 0, 0.03f, 1200f, 1f, 0.35f, false, r);
+                    Speak(buf, pos, secs * 0.85f, t => f * (1.7f + 0.25f * (float)Math.Sin(t * 3f) - 0.3f * t), 'a', 'a', k, 1f, 0.3f, 0.55f, r, 0.015f, 0.02f);
+                    Consonant(buf, pos + (int)(secs * 0.85f * Rate), 0.03f, 2300f, 2f, 0.4f, true, r);
+                    break;
+                case 2: // 에잇! : 에 → 이, 끝에 'ㅅ' 숨
+                    Speak(buf, pos, secs * 0.8f, t => f * (1.6f - 0.35f * t), 'e', 'i', k, 1f, 0.2f, 0.3f, r, 0.02f, 0.04f);
+                    Consonant(buf, pos + (int)(secs * 0.8f * Rate), 0.12f, 4300f, 1.5f, 0.3f, false, r);
+                    break;
+                default: // 으아아! : 낮게 으르렁거리다 크게 터짐
+                    Speak(buf, pos, secs, t => f * (t < 0.3f ? 1.05f + 0.15f * t / 0.3f : 1.2f + 0.55f * Smooth((t - 0.3f) / 0.3f) - 0.35f * Math.Max(0f, t - 0.7f) / 0.3f), 'U', 'a', k, 1f, 0.25f, 0.6f, r, 0.06f, 0.15f);
+                    break;
+            }
+            Reverb(buf, 0.8f, 0.2f, 0.35f);
+            LowPass(buf, 5500f);
             Fit(buf, 0.85f);
+            return buf;
+        }
+
+        // ===== 발소리 · 말발굽 · 창 여닫기 =====
+        /// <summary>걷는 소리: 낮은 '툭' (흙·나무 바닥 사이)</summary>
+        static float[] Step()
+        {
+            var r = new System.Random(23);
+            int n = (int)(0.09f * Rate);
+            var buf = new float[n];
+            Consonant(buf, 0, 0.06f, 260f, 1.4f, 1f, true, r);
+            Consonant(buf, 0, 0.03f, 1500f, 1.2f, 0.25f, true, r);   // 신발 밑창 스침
+            LowPass(buf, 2500f);
+            Fit(buf, 0.75f);
+            return buf;
+        }
+
+        /// <summary>말발굽 '따각': 단단한 나무를 두드리는 울림 두 번</summary>
+        static float[] Hoof()
+        {
+            var r = new System.Random(29);
+            int n = (int)(0.22f * Rate);
+            var buf = new float[n];
+            int second = (int)(0.085f * Rate);
+            foreach (int at in new[] { 0, second })
+            {
+                float g = at == 0 ? 1f : 0.75f;
+                Consonant(buf, at, 0.05f, 950f, 6f, g, true, r);
+                Consonant(buf, at, 0.035f, 1900f, 8f, g * 0.5f, true, r);
+                Consonant(buf, at, 0.06f, 220f, 2f, g * 0.6f, true, r);
+            }
+            Fit(buf, 0.8f);
+            return buf;
+        }
+
+        /// <summary>창 열기: 종이가 펼쳐지는 '샥' + 올라가는 맑은 음</summary>
+        static float[] WindowOpen()
+        {
+            var r = new System.Random(31);
+            int n = (int)(0.16f * Rate);
+            var buf = new float[n];
+            Consonant(buf, 0, 0.1f, 2600f, 1.2f, 0.35f, false, r);
+            double ph = 0;
+            for (int i = 0; i < n; i++) { float t = i / (float)n; ph += (880f + 520f * t) / Rate; buf[i] += (float)Math.Sin(ph * 6.2832) * 0.28f * (float)Math.Exp(-t * 4f) * Smooth(t * 12f); }
+            Fit(buf, 0.6f);
+            return buf;
+        }
+
+        /// <summary>창 닫기: 짧은 '탁' + 내려가는 음</summary>
+        static float[] WindowClose()
+        {
+            var r = new System.Random(37);
+            int n = (int)(0.13f * Rate);
+            var buf = new float[n];
+            Consonant(buf, 0, 0.03f, 1100f, 1.5f, 0.5f, true, r);
+            double ph = 0;
+            for (int i = 0; i < n; i++) { float t = i / (float)n; ph += (1100f - 450f * t) / Rate; buf[i] += (float)Math.Sin(ph * 6.2832) * 0.22f * (float)Math.Exp(-t * 6f); }
+            Fit(buf, 0.55f);
             return buf;
         }
 
@@ -565,5 +872,7 @@ namespace HorseRanch.EditorTools
         public AudioClip click, coin, door, search, fanfare, gate, trash;
         public AudioClip bgmHall, bgmStadium, bgmGameOver, bgmEnding, ambHall, ambStadium;
         public AudioClip cheer, boo, shout, neigh, snort, warning;
+        public AudioClip cheer2, cheer3, boo2, shout2, shout3, shout4;
+        public AudioClip step, hoof, windowOpen, windowClose;
     }
 }

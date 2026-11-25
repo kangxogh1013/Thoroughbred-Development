@@ -28,9 +28,11 @@ namespace HorseRanch
         private void Sync()
         {
             var list = runner.Game.State.horses;
+            int riding = runner.Game.State.ridingId;
             for (int i = 0; i < horses.Length; i++)
             {
-                bool on = i < list.Count;
+                bool out_ = i < list.Count && list[i].id == riding;   // 타고 나간 말은 칸에서 숨김
+                bool on = i < list.Count && !out_;
                 if (horses[i].gameObject.activeSelf != on) horses[i].gameObject.SetActive(on);
                 if (on)
                 {
@@ -38,7 +40,7 @@ namespace HorseRanch
                     horses[i].color = runner.Database.CoatColor(h.coat);
                     nameplates[i].text = h.name + (h.retired ? "\n(은퇴)" : h.IsTraining ? "\n(훈련 중)" : h.injury > 0 ? "\n(부상)" : "");
                 }
-                else nameplates[i].text = "빈 칸";
+                else nameplates[i].text = out_ ? list[i].name + "\n(외출 중)" : "빈 칸";
             }
         }
 

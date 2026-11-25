@@ -49,6 +49,8 @@ namespace HorseRanch
             GenerateDay();
             EnsureTownState();
             EnsureStoryState();
+            EnsureLifeState();
+            RefreshRequests();
             AddLog("아버지의 목장을 물려받았다. 남은 건 말 「새싹」과 빚 " + Gold(B.startDebt) + ".");
             RaiseChanged();
         }
@@ -72,6 +74,9 @@ namespace HorseRanch
             if (State.races == null || State.races.Count != Data.races.Length) GenerateDay();
             EnsureTownState();
             EnsureStoryState();
+            EnsureLifeState();
+            State.ridingId = 0;   // 불러오면 말에서 내린 상태로 시작
+            if (State.requests.Count == 0) RefreshRequests();
             // 스토리 이전 버전 세이브: 튜토리얼은 건너뛴 것으로
             if (!State.introSeen && State.day > 1) { State.introSeen = true; State.tutorialStep = (int)TutorialStep.Done; }
             RaiseChanged();
@@ -191,7 +196,7 @@ namespace HorseRanch
                 }
                 else h.fatigue = Math.Max(0f, h.fatigue - (h.retired ? B.retiredRecovery : B.restRecovery) - RoomRecoveryBonus);
 
-                h.condition = RngUtil.Clamp(h.condition + (70f - h.condition) * 0.2f + RngUtil.Range(rng, -6, 6) + PastureBonus, 20f, 100f);
+                h.condition = RngUtil.Clamp(h.condition + (70f + h.bond * B.bondConditionBonus - h.condition) * 0.2f + RngUtil.Range(rng, -6, 6) + PastureBonus, 20f, 100f);
 
                 if (h.injury > 0)
                 {
@@ -764,6 +769,7 @@ namespace HorseRanch
                 }
             }
             int collapseIdx;
+            int myPos = 0;
             var res = SimulateSeeded(run, def.distance, mi, me, seed, true, out collapseIdx);
             var result = new RaceResultData();
             for (int p = 0; p < res.order.Length; p++)
@@ -843,6 +849,8 @@ namespace HorseRanch
                         notes.Add(new NoticeData(me.name + "이(가) " + B.retireAt + "전을 채우고 은퇴했습니다. 교배소에서 교배할 수 있습니다.", NoticeTone.Normal));
                     }
                     AddLog(raceName + " 출전 「" + me.name + "」 " + pos + "착");
+                    RecordPersonalBest(me, raceIndex, res.times[mi]);
+                    myPos = pos;
                     CheckMaster();
                 }
             }
@@ -879,6 +887,9 @@ namespace HorseRanch
             rs.done = true;
             rs.result = result;
             AddLog(raceName + " 결과: 1착 " + fin[0] + "번 " + run[fin[0] - 1].name);
+            // 기록실 + 의뢰 진행
+            RecordRace(raceIndex, rs.grandPrix, run[fin[0] - 1].name, res.times[fin[0] - 1], me, myPos, fin[0] - 1 == mi, notes);
+            NotifyRequests(myPos, got > 0);
 
             var replay = new RaceReplay
             {

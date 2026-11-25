@@ -7,7 +7,7 @@ namespace HorseRanch
 {
     /// <summary>
     /// 키 입력을 한 곳에 모은 정적 래퍼. New Input System이 있으면 Keyboard.current, 없으면 레거시 Input.
-    /// 이동: WASD/방향키, 달리기: Shift, 상호작용: E/Space/Enter, 취소: Esc, 인벤토리: Tab/I, 업적: J, 지도: M, 메뉴 이동: 방향키
+    /// 이동: WASD/방향키, 달리기: Shift, 상호작용: E/Space/Enter, 취소: Esc, 인벤토리: Tab/I, 업적: J, 지도: M, 기록실: K, 말에서 내리기: R, 메뉴 이동: 방향키
     /// </summary>
     public static class GameInput
     {
@@ -34,6 +34,8 @@ namespace HorseRanch
         public static bool Inventory { get { return K != null && (K.tabKey.wasPressedThisFrame || K.iKey.wasPressedThisFrame); } }
         public static bool Achievements { get { return K != null && K.jKey.wasPressedThisFrame; } }
         public static bool Map { get { return K != null && K.mKey.wasPressedThisFrame; } }
+        public static bool Records { get { return K != null && K.kKey.wasPressedThisFrame; } }
+        public static bool Dismount { get { return K != null && K.rKey.wasPressedThisFrame; } }
         // 메뉴 이동 (타이틀·설정 창)
         public static bool MenuUp { get { return K != null && (K.upArrowKey.wasPressedThisFrame || K.wKey.wasPressedThisFrame); } }
         public static bool MenuDown { get { return K != null && (K.downArrowKey.wasPressedThisFrame || K.sKey.wasPressedThisFrame); } }
@@ -70,6 +72,8 @@ namespace HorseRanch
         public static bool Inventory { get { return Input.GetKeyDown(KeyCode.Tab) || Input.GetKeyDown(KeyCode.I); } }
         public static bool Achievements { get { return Input.GetKeyDown(KeyCode.J); } }
         public static bool Map { get { return Input.GetKeyDown(KeyCode.M); } }
+        public static bool Records { get { return Input.GetKeyDown(KeyCode.K); } }
+        public static bool Dismount { get { return Input.GetKeyDown(KeyCode.R); } }
         public static bool MenuUp { get { return Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W); } }
         public static bool MenuDown { get { return Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S); } }
         public static bool MenuLeft { get { return Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A); } }

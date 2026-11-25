@@ -101,7 +101,11 @@ namespace HorseRanch.EditorTools
             // 순서 = BgmId / SfxId / AmbienceId
             SetArr(audioManager, "bgmClips", new UnityEngine.Object[] { sounds.bgmTitle, sounds.bgmTown, sounds.bgmRace, sounds.bgmHall, sounds.bgmStadium, sounds.bgmGameOver, sounds.bgmEnding });
             SetArr(audioManager, "sfxClips", new UnityEngine.Object[] { sounds.click, sounds.coin, sounds.door, sounds.search, sounds.fanfare, sounds.gate, sounds.trash,
-                sounds.cheer, sounds.neigh, sounds.snort, sounds.shout, sounds.boo, sounds.warning });
+                sounds.cheer, sounds.neigh, sounds.snort, sounds.shout, sounds.boo, sounds.warning,
+                sounds.step, sounds.hoof, sounds.windowOpen, sounds.windowClose });
+            SetArr(audioManager, "cheerVariants", new UnityEngine.Object[] { sounds.cheer2, sounds.cheer3 });
+            SetArr(audioManager, "booVariants", new UnityEngine.Object[] { sounds.boo2 });
+            SetArr(audioManager, "shoutVariants", new UnityEngine.Object[] { sounds.shout2, sounds.shout3, sounds.shout4 });
             SetArr(audioManager, "ambienceClips", new UnityEngine.Object[] { sounds.ambHall, sounds.ambStadium });
             if (sounds.bgmTown == null) Debug.LogWarning("[HorseRanch] 사운드가 없습니다. Tools > HorseRanch > 전체 자동 생성을 다시 실행하세요.");
 
@@ -119,10 +123,14 @@ namespace HorseRanch.EditorTools
             var root = (RectTransform)canvasGo.transform;
             rootUI = canvasGo.AddComponent<GameUI>();
 
+            // 시간대 색 덮개: 가장 먼저 만들어 HUD · 창보다 아래에 그린다 (클릭은 통과)
+            var overlay = Img(Stretch(NewRect("NightOverlay", root)), new Color(0f, 0f, 0f, 0f), false, false);
+            Set(rootUI, "nightOverlay", overlay);
+
             BuildHud(root);
 
             // 기능 창 (WindowId 순서)
-            var windows = new WindowView[11];
+            var windows = new WindowView[12];
             RectTransform c;
             windows[(int)WindowId.Stable] = Window(root, "Stable", "마구간", new Vector2(1720f, 920f), out c); BuildStable(c);
             windows[(int)WindowId.Shop] = Window(root, "Shop", "상점", new Vector2(1720f, 640f), out c); BuildShop(c);
@@ -135,6 +143,7 @@ namespace HorseRanch.EditorTools
             windows[(int)WindowId.Bulletin] = Window(root, "Bulletin", "게시판", new Vector2(1600f, 900f), out c); BuildBulletin(c);
             windows[(int)WindowId.Map] = Window(root, "Map", "지도", new Vector2(1600f, 920f), out c); BuildMap(c, world);
             windows[(int)WindowId.Market] = Window(root, "Market", "시장", new Vector2(1500f, 900f), out c); BuildMarket(c);
+            windows[(int)WindowId.Records] = Window(root, "Records", "기록실", new Vector2(1700f, 900f), out c); BuildRecords(c);
 
             var search = BuildSearch(root);
             var dialogue = BuildDialogue(root);
@@ -163,6 +172,7 @@ namespace HorseRanch.EditorTools
             Set(rootUI, "map", world.map);
             Set(rootUI, "thunderSpot", world.thunder);
             Set(rootUI, "bubble", world.bubble);
+            Set(rootUI, "mount", world.mount);
             Set(search, "audioManager", audioManager);
             Set(settings, "audioManager", audioManager);
             Set(title, "runner", runner);
@@ -841,6 +851,13 @@ namespace HorseRanch.EditorTools
             var locText = NewText("Text", loc, "목장 마을", 22f, White, TextAlignmentOptions.Center, true);
             Stretch(locText.rectTransform);
 
+            // 가운데 위 (위치 아래): 시계
+            var clock = Panel("HUD_Clock", root, UITheme.Board).rectTransform;
+            Place(clock, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -78f), new Vector2(300f, 42f));
+            var clockText = NewText("Text", clock, "오전 6:00", 19f, UITheme.BoardText, TextAlignmentOptions.Center, true);
+            Stretch(clockText.rectTransform);
+            Set(rootUI, "clockText", clockText);
+
             // 오른쪽 위: 목표
             var goal = Panel("HUD_Goal", root, UITheme.Board).rectTransform;
             Place(goal, Vector2.one, Vector2.one, Vector2.one, new Vector2(-20f, -20f), new Vector2(700f, 84f));
@@ -849,8 +866,8 @@ namespace HorseRanch.EditorTools
 
             // 왼쪽 아래: 조작 안내
             var keys = Panel("HUD_Keys", root, new Color(0.08f, 0.1f, 0.08f, 0.75f)).rectTransform;
-            Place(keys, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(20f, 20f), new Vector2(940f, 40f));
-            var keyText = NewText("Text", keys, "WASD/방향키 이동 · Shift 달리기 · E 상호작용 · Tab 인벤토리 · J 업적 · M 지도 · Esc 닫기", 16f, UITheme.BoardText, TextAlignmentOptions.Center);
+            Place(keys, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(20f, 20f), new Vector2(1180f, 40f));
+            var keyText = NewText("Text", keys, "WASD/방향키 이동 - Shift 달리기 - E 상호작용 - Tab 인벤토리 - J 업적 - M 지도 - K 기록실 - R 말에서 내리기 - Esc 닫기", 16f, UITheme.BoardText, TextAlignmentOptions.Center);
             Stretch(keyText.rectTransform, 12f, 0f, 12f, 0f);
 
             // 가운데 아래: 상호작용 안내
@@ -1344,6 +1361,28 @@ namespace HorseRanch.EditorTools
             Set(view, "itemsText", items);
             Set(view, "ticketList", list);
             Set(view, "emptyText", empty);
+            return panel.gameObject;
+        }
+
+        /// <summary>기록실: 왼쪽 트랙 레코드 · 최근 우승마, 오른쪽 내 말 기록 · 목장 연대기</summary>
+        private static GameObject BuildRecords(RectTransform content)
+        {
+            var panel = Stretch(NewRect("Panel_Records", content));
+            H(panel, 16f, 0, 0, 0, 0, TextAnchor.UpperLeft);
+            var view = panel.gameObject.AddComponent<RecordsView>();
+            WireView(view);
+            var left = Panel("Races", panel, UITheme.Panel).rectTransform;
+            LE(left, -1f, -1f, 1.2f, 1f);
+            var races = NewText("Text", left, "", 17f, Ink, TextAlignmentOptions.TopLeft);
+            races.overflowMode = TextOverflowModes.Truncate;
+            Stretch(races.rectTransform, 22f, 18f, 22f, 18f);
+            var right = Panel("Horses", panel, UITheme.Panel).rectTransform;
+            LE(right, -1f, -1f, 1f, 1f);
+            var horses = NewText("Text", right, "", 17f, Ink, TextAlignmentOptions.TopLeft);
+            horses.overflowMode = TextOverflowModes.Truncate;
+            Stretch(horses.rectTransform, 22f, 18f, 22f, 18f);
+            Set(view, "recordsText", races);
+            Set(view, "horsesText", horses);
             return panel.gameObject;
         }
 

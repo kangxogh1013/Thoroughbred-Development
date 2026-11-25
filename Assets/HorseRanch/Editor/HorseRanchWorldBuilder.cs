@@ -16,6 +16,7 @@ namespace HorseRanch.EditorTools
         public MemorialSite memorial;
         public SpeechBubble bubble;
         public ThunderSpot thunder;
+        public PlayerMount mount;
     }
 
     /// <summary>
@@ -99,6 +100,19 @@ namespace HorseRanch.EditorTools
             pm.transform.SetParent(worldRoot, true);
             var pc = pm.gameObject.AddComponent<PlayerController>();
             pc.EditorSetup(pm, map);
+
+            // 말 타기: 말 스프라이트(아래) + 말 위의 플레이어 사본(위). 평소엔 꺼 둠
+            var mountHorse = new GameObject("MountHorse").AddComponent<SpriteRenderer>();
+            mountHorse.transform.SetParent(pm.transform, false);
+            mountHorse.transform.localPosition = new Vector3(0f, 0.36f, 0f);
+            mountHorse.transform.localScale = new Vector3(0.6f, 0.6f, 1f);
+            mountHorse.sprite = horseArt.gallopA;
+            var rider = new GameObject("Rider").AddComponent<SpriteRenderer>();
+            rider.transform.SetParent(pm.transform, false);
+            rider.transform.localPosition = new Vector3(0f, 0.42f, 0f);
+            mountHorse.enabled = rider.enabled = false;
+            result.mount = pm.gameObject.AddComponent<PlayerMount>();
+            result.mount.EditorSetup(pm, pm.GetComponent<SpriteRenderer>(), rider, mountHorse, new[] { horseArt.gallopA, horseArt.gallopB });
 
             // 튜토리얼 길 안내: 머리 위 화살표 + 목표 표식 (가장 위에 그림)
             var guideGo = new GameObject("NavigationGuide");
@@ -233,6 +247,11 @@ namespace HorseRanch.EditorTools
             var board = Prop(a, "Bulletin", props["board"], 42.5f, 35, true);
             Interact(a, "Bulletin", InteractKind.Bulletin, "마을 게시판", null, new[] { G(a, 42, 35) }, false, Vector2Int.zero, Vector2Int.zero);
             Sign(a.root, "게시판", new Vector3(42.5f, 36.75f, 0f), 1.6f, board.sortingOrder + 2, 4.2f);
+            // 주민 의뢰 게시판 (마을 생활 2)
+            var reqBoard = Prop(a, "RequestBoard", props["board"], 50.5f, 35, true);
+            Interact(a, "RequestBoard", InteractKind.RequestBoard, "의뢰 게시판", null, new[] { G(a, 50, 35) }, false, Vector2Int.zero, Vector2Int.zero);
+            Sign(a.root, "의뢰", new Vector3(50.5f, 36.75f, 0f), 1.4f, reqBoard.sortingOrder + 2, 4.2f);
+            Label(a, "의뢰", 50, 37);
             foreach (var p in new[] { new Vector2Int(40, 25), new Vector2Int(53, 25), new Vector2Int(40, 36), new Vector2Int(53, 36) })
                 Prop(a, "Lamp", props["lamp"], p.x + 0.5f, p.y, true);
             BenchAt(a, 43, 26); BenchAt(a, 50, 26);
@@ -397,6 +416,13 @@ namespace HorseRanch.EditorTools
             var bb = Prop(a, "Bulletin", props["board"], 62.5f, 7, true);
             Interact(a, "Bulletin", InteractKind.Bulletin, "경기 게시판", null, new[] { G(a, 62, 7) }, false, Vector2Int.zero, Vector2Int.zero);
             Sign(a.root, "게시판", new Vector3(a.o.x + 62.5f, 8.75f, 0f), 1.6f, bb.sortingOrder + 2, 4.2f);
+            // 기록실: 트로피 진열장 (K 키로도 열림)
+            Prop(a, "RecordShelf", props["shelf"], 24f, 7, true);
+            var cup = PlaceSprite(a.root, "RecordTrophy", props["trophy"], new Vector3(a.o.x + 24.5f, 8.7f, 0f), 6.9f);
+            cup.transform.localScale = new Vector3(0.8f, 0.8f, 1f);
+            Interact(a, "Records", InteractKind.Records, "기록실 (트로피 진열장)", null, new[] { G(a, 24, 7) }, false, Vector2Int.zero, Vector2Int.zero);
+            Sign(a.root, "기록실", new Vector3(a.o.x + 24.5f, 10.1f, 0f), 1.8f, YSort.Order(9f), 4.2f);
+            Label(a, "기록실", 24, 8.5f);
             for (int x = 68; x <= 92; x += 3) { BenchAt(a, x, 3); BenchAt(a, x, 6); }
             for (int x = 18; x <= 40; x += 4) BenchAt(a, x, 3);
 
@@ -489,6 +515,12 @@ namespace HorseRanch.EditorTools
                 horses[i].sprite = horseArt.gallopA;
                 horses[i].sortingOrder = YSort.Order(6.5f);
                 plates[i] = Sign(a.root, "빈 칸", new Vector3(a.o.x + 3f + i * 2f, 5.5f, 0f), 1.9f, YSort.Order(5f), 2.4f);
+            }
+            // 칸마다 상호작용: 내 말 쓰다듬기 · 이름 바꾸기 · 타고 나가기 (아래 줄에서 위를 보고 E)
+            for (int i = 0; i < 8; i++)
+            {
+                var st = Interact(a, "Stall_" + i, InteractKind.StallHorse, "말 돌보기 (" + (i + 1) + "번 칸)", null, Cells(a, 2 + i * 2, 6, 3 + i * 2, 6), false, Vector2Int.zero, Vector2Int.zero);
+                st.EditorSetParam(i);
             }
             var stalls = a.root.gameObject.AddComponent<StallHorses>();
             stalls.EditorSetup(runner, horses, plates, new[] { horseArt.gallopA, horseArt.gallopB });

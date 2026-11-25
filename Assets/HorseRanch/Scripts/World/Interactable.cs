@@ -28,6 +28,9 @@ namespace HorseRanch
         Grave,       // 언덕 위 아버지의 묘 (엔딩 장소)
         Thicket,     // 북동쪽 가시덤불: 그랑프리 우승 후 깊은 숲으로 (WarpCell)
         Thunder,     // 깊은 숲의 천둥: 목장으로 데려오기
+        StallHorse,  // 마구간 칸의 내 말: 쓰다듬기 · 이름 바꾸기 · 타고 나가기 (param = 칸 번호)
+        RequestBoard,// 광장 의뢰 게시판: 주민 의뢰 수락 · 보고
+        Records,     // 경기장 기록실 (트로피 진열장)
     }
 
     /// <summary>

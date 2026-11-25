@@ -7,13 +7,13 @@ using UnityEngine.UI;
 
 namespace HorseRanch
 {
-    public enum WindowId { Stable = 0, Shop = 1, Breed = 2, Achievements = 3, Inventory = 4, Bet = 5, Exchange = 6, Entry = 7, Bulletin = 8, Map = 9, Market = 10 }
+    public enum WindowId { Stable = 0, Shop = 1, Breed = 2, Achievements = 3, Inventory = 4, Bet = 5, Exchange = 6, Entry = 7, Bulletin = 8, Map = 9, Market = 10, Records = 11 }
 
     /// <summary>
     /// 마을 탐험형 UI 총괄: HUD, 상호작용 안내, 대화창, 기능 창, 경주 관람, 화면 전환(페이드), 게임 이벤트 연결.
     /// 창이나 대화가 열려 있는 동안(IsBusy) 플레이어는 움직이지 않는다.
     /// </summary>
-    public class GameUI : MonoBehaviour
+    public partial class GameUI : MonoBehaviour
     {
         [Header("참조")]
         [SerializeField] private RanchGameRunner runner;
@@ -265,6 +265,7 @@ namespace HorseRanch
         {
             UpdateFade();
             UpdateAmbientEvents();
+            UpdateLife();
             guideTimer -= Time.deltaTime;
             if (guideTimer <= 0f) { guideTimer = 0.2f; UpdateGuide(); }
             if (pendingEnding && !IsBusy) { pendingEnding = false; PlayEnding(); return; }
@@ -277,6 +278,7 @@ namespace HorseRanch
                 else if (GameInput.Inventory && openWindow == (int)WindowId.Inventory) CloseWindow();
                 else if (GameInput.Achievements && openWindow == (int)WindowId.Achievements) CloseWindow();
                 else if (GameInput.Map && openWindow == (int)WindowId.Map) CloseWindow();
+                else if (GameInput.Records && openWindow == (int)WindowId.Records) CloseWindow();
                 return;
             }
             // 같은 Esc로 다른 창을 닫은 직후에는 메뉴를 열지 않음
@@ -284,6 +286,8 @@ namespace HorseRanch
             else if (GameInput.Inventory) OpenWindow(WindowId.Inventory, null);
             else if (GameInput.Achievements) OpenWindow(WindowId.Achievements, null);
             else if (GameInput.Map) OpenWindow(WindowId.Map, null);
+            else if (GameInput.Records) OpenWindow(WindowId.Records, null);
+            else if (GameInput.Dismount && Game.RidingHorse != null) GetOff(true);
         }
 
         // ===== HUD =====
@@ -315,6 +319,7 @@ namespace HorseRanch
             goalText.text = sb.ToString();
             if (!inEnding) memorial.ShowTrophy(s.cleared);
             thunderSpot.Show(!s.thunderFound);
+            SyncMount();
         }
 
         // ===== 튜토리얼 길 안내 =====
@@ -434,7 +439,7 @@ namespace HorseRanch
             CloseWindow();
             openWindow = (int)id;
             windows[openWindow].Open(title);
-            audioManager.PlaySfx(SfxId.Click);
+            audioManager.PlaySfx(SfxId.WindowOpen);
             SetPrompt(null);
         }
 
@@ -443,6 +448,7 @@ namespace HorseRanch
             if (openWindow < 0) return;
             windows[openWindow].Close();
             openWindow = -1;
+            audioManager.PlaySfx(SfxId.WindowClose, 0.8f);
         }
 
         // ===== 상호작용 =====
@@ -452,6 +458,7 @@ namespace HorseRanch
             if (npc != null) npc.TalkTo(p.Mover.Cell, 4f);
             if (it.Kind != InteractKind.Door) audioManager.PlaySfx(SfxId.Click);
             var g = Game;
+            if (LifeInteract(it, p)) return;   // 밤 영업 종료 · 마구간 말 · 의뢰 게시판 · 기록실 · 말 탄 채 벤치
             string tipKey = TipKey(it.Kind);
             if (tipKey != null && g.MarkTipSeen(tipKey))
             {
@@ -718,14 +725,19 @@ namespace HorseRanch
         public void Warp(Vector2Int cell, Vector2Int facing)
         {
             audioManager.PlaySfx(SfxId.Door);
-            StartFade(() => { player.WarpTo(cell, facing); cameraFollow.Snap(); });
+            StartFade(() => { player.WarpTo(cell, facing); cameraFollow.Snap(); AfterWarpRide(); });
         }
 
-        private void Sleep(Vector2Int wakeCell)
+        private void Sleep(Vector2Int wakeCell) { Sleep(wakeCell, -1); }
+
+        /// <summary>잠자기 → 다음 날. wakeMinute가 있으면 그 시각에 일어남 (밤샘 후 늦잠)</summary>
+        private void Sleep(Vector2Int wakeCell, int wakeMinute)
         {
+            if (Game.RidingHorse != null) GetOff(false);
             StartFade(() =>
             {
                 Game.NextDay();
+                if (wakeMinute > 0) Game.SetClock(wakeMinute);
                 player.WarpTo(wakeCell, Vector2Int.down);
                 cameraFollow.Snap();
                 toast.Show(Game.State.day + "일차 아침이 밝았습니다", true);
@@ -962,6 +974,7 @@ namespace HorseRanch
             CloseWindow();
             dialogue.Close(null);
             runner.RestartGame();
+            mount.Dismount();
             player.WarpTo(spawnCell, Vector2Int.down);
             cameraFollow.Snap();
         }

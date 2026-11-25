@@ -29,6 +29,10 @@ namespace HorseRanch
             EnsureTownState();
             Array.Clear(State.binUses, 0, State.binUses.Length);
             Array.Clear(State.foodBought, 0, State.foodBought.Length);
+            // 마을 생활 2: 아침 6시로 + 게시판 의뢰 교체
+            EnsureLifeState();
+            State.clock = B.dayStartMinute;
+            RefreshRequests();
         }
 
         // ===== 쓰레기통 =====

@@ -27,6 +27,9 @@ namespace HorseRanch
 
         public event Action<Vector2Int> Arrived;
 
+        /// <summary>이동 속도 배율 (말을 타면 PlayerMount가 올림)</summary>
+        public float SpeedScale { get; set; } = 1f;
+
         public Vector2Int Cell { get { return cell; } }
         public Vector2Int Facing { get { return facing; } }
         public bool IsMoving { get { return moving; } }
@@ -111,7 +114,7 @@ namespace HorseRanch
             from = transform.position;
             to = CellToWorld(next);
             t = 0f;
-            speed = run ? runSpeed : walkSpeed;
+            speed = (run ? runSpeed : walkSpeed) * SpeedScale;
             moving = true;
             stepParity = !stepParity;
             return true;

@@ -56,6 +56,7 @@ namespace HorseRanch
 
         private void OnArrived(Vector2Int cell)
         {
+            ui.OnPlayerStep();   // 발소리 / 말발굽 소리
             var it = map.InteractableAt(cell);
             if (it != null && it.TriggerOnStep) { ui.Interact(it, this); return; }
             if (ui.IsBusy) return;
@@ -81,6 +82,9 @@ namespace HorseRanch
             currentArea = a;
             if (a != null) ui.ShowLocation(a.AreaName);
         }
+
+        /// <summary>지금 서 있는 구역 이름</summary>
+        public string AreaName { get { var a = map.AreaAt(mover.Cell); return a != null ? a.AreaName : ""; } }
 
         public void WarpTo(Vector2Int cell, Vector2Int facing)
         {

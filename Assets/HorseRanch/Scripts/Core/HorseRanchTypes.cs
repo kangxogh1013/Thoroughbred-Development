@@ -26,6 +26,10 @@ namespace HorseRanch
     public enum FacilityId { TrainingGear = 0, StableRoom = 1, Pasture = 2 }
     /// <summary>게임 오버 사유</summary>
     public enum GameOverReason { None = 0, Foreclosure = 1, Bankrupt = 2 }
+    /// <summary>주민 의뢰 종류</summary>
+    public enum RequestType { Deliver = 0, Trash = 1, ShowHorse = 2, RaceTop3 = 3, BetHit = 4 }
+    /// <summary>시계가 넘어간 시점 (GameUI가 연출 처리)</summary>
+    public enum ClockEvent { None = 0, Evening = 1, Closing = 2, Late = 3, PassOut = 4 }
 
     public static class RanchConst
     {
@@ -157,6 +161,28 @@ namespace HorseRanch
         [Tooltip("천둥의 스탯 (전 스탯 같은 값, 은퇴마라 경주는 못 함)")] public float thunderStat = 17f;
         [Tooltip("천둥 혈통 망아지: 스탯 보너스")] public float thunderFoalBonus = 2f;
         [Tooltip("천둥 혈통 망아지: 스탯 상한")] public float thunderFoalCap = 18f;
+
+        [Header("시간대 (분 단위, 360 = 오전 6시)")]
+        [Tooltip("하루 시작 시각")] public int dayStartMinute = 360;
+        [Tooltip("저녁 알림 (노을)")] public int eveningMinute = 1080;
+        [Tooltip("가게·시장·은행 문 닫는 시각, 남은 경주도 이때 마감")] public int closeMinute = 1200;
+        [Tooltip("자정 경고")] public int lateMinute = 1440;
+        [Tooltip("이 시각이 되면 쓰러져 다음 날 집에서 깸 (26:00 = 새벽 2시)")] public int passOutMinute = 1560;
+        [Tooltip("쓰러진 다음 날 일어나는 시각 (늦잠)")] public int oversleepMinute = 480;
+        [Tooltip("실제 1초당 흐르는 게임 분 (2 = 하루 약 10분)")] [Range(0.5f, 10f)] public float minutesPerSecond = 2f;
+
+        [Header("주민 의뢰")]
+        [Tooltip("게시판에 매일 붙는 의뢰 수")] public int requestOffers = 3;
+        [Tooltip("동시에 맡을 수 있는 의뢰 수")] public int requestMaxActive = 2;
+        [Tooltip("수락 후 기한 (일)")] public int requestDays = 3;
+        [Tooltip("기본 보상")] public int requestBaseReward = 300;
+        [Tooltip("날짜가 지날수록 보상 +")] public int requestRewardPerDay = 25;
+
+        [Header("말과의 교감")]
+        [Tooltip("교감 최대치")] public int bondMax = 10;
+        [Tooltip("쓰다듬기: 컨디션 +")] public float petCondition = 5f;
+        [Tooltip("교감 1당 매일 컨디션이 돌아가는 기준값 +")] public float bondConditionBonus = 1.5f;
+        [Tooltip("말을 타면 이동 속도 배율")] [Range(1f, 3f)] public float rideSpeedScale = 1.8f;
     }
 
     /// <summary>시장에서 파는 음식 1종. forHorse면 고른 말에게 바로 먹인다</summary>
@@ -303,6 +329,9 @@ namespace HorseRanch
         public int lastRaceDay = -1;
         public int grandPrixWins;
         [Tooltip("천둥 혈통 (천둥 본인 또는 그 망아지)")] public bool thunderBlood;
+        [Tooltip("교감 (쓰다듬을 때마다 +1)")] public int bond;
+        [Tooltip("마지막으로 쓰다듬은 날")] public int petDay = -1;
+        [Tooltip("경주별 개인 최고 기록 (초, 0 = 없음)")] public float[] best = new float[0];
 
         public bool IsNpc { get { return id <= 0; } }
         public bool IsTraining { get { return trainStat >= 0; } }
@@ -453,6 +482,47 @@ namespace HorseRanch
         public bool thunderFound;                   // 깊은 숲에서 천둥을 데려옴
         public int lastTierNotice;
         public int gameOver;                        // GameOverReason
+
+        [Header("마을 생활 2: 시간 · 의뢰 · 기록")]
+        [Tooltip("지금 시각 (분, 360 = 06:00, 1440 넘으면 다음 날 새벽)")] public float clock = 360f;
+        public List<RequestData> requests = new List<RequestData>();
+        public int nextRequestId = 1;
+        public int requestsDone;
+        [Tooltip("지금 타고 있는 말 id (0 = 걷는 중, 저장 후 불러오면 내림)")] public int ridingId;
+        [Tooltip("역대 경주 결과 (최근 60개)")] public List<RaceRecord> records = new List<RaceRecord>();
+        [Tooltip("경주별 트랙 레코드")] public List<RaceRecord> trackRecords = new List<RaceRecord>();
+    }
+
+    /// <summary>주민 의뢰 1건 (게시판 제안 + 수락한 것)</summary>
+    [Serializable]
+    public class RequestData
+    {
+        public int id;
+        public int type;                // RequestType
+        public string giver;
+        public string story;            // 의뢰 사연 한 줄
+        public int param = -1;          // 배달: ItemType / 말 보여주기: 스탯 (-1 = 능력 총합)
+        public int amount;              // 개수 / 기준치
+        public int progress;
+        public int baseline;            // 쓰레기: 수락할 때의 누적 버린 수
+        public int reward;
+        public int rewardItem = -1;     // 보상 아이템 (ItemType, -1 = 없음)
+        public int deadline;            // 이 날까지 (포함)
+        public bool accepted;
+    }
+
+    /// <summary>경주 1회 기록 (기록실)</summary>
+    [Serializable]
+    public class RaceRecord
+    {
+        public int day;
+        public int raceIndex;
+        public bool grandPrix;
+        public string winner;
+        public float time;
+        public bool mineWon;
+        public string mine;             // 내 출전마 이름 (없으면 빈 문자열)
+        public int myPos;
     }
 
     /// <summary>경주 재생용 데이터 (저장하지 않음)</summary>
