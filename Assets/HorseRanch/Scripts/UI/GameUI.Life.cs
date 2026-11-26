@@ -15,15 +15,35 @@ namespace HorseRanch
         [Tooltip("화면 전체를 덮는 색 (노을 · 밤). HUD보다 아래에 그려야 한다")]
         [SerializeField] private Image nightOverlay;
         [SerializeField] private TMP_Text clockText;
-        [Tooltip("실내에서는 밤 색을 이만큼만 (0~1)")]
-        [SerializeField] [Range(0f, 1f)] private float indoorDarkness = 0.35f;
+        [Tooltip("가로등 자리만 밝은 밤 어둠 + 가로등 · 창문 불빛")]
+        [SerializeField] private NightLighting lighting;
+        [Tooltip("밤이 가장 깊을 때 어둠 (0~1, 클수록 어두움)")]
+        [SerializeField] [Range(0f, 1f)] private float maxDarkness = 0.86f;
+
+        [Header("도박장 말풍선 (여러 개 동시에)")]
+        [SerializeField] private SpeechBubble[] extraBubbles;
+
+        [Header("저녁 귀가")]
+        [Tooltip("밤에도 바깥에 남는 주민 비율 (산책 · 야간 경비 등)")]
+        [SerializeField] [Range(0f, 1f)] private float nightOwlRatio = 0.25f;
 
         [Header("말 타기")]
         [SerializeField] private PlayerMount mount;
 
         private int shownClock = -1;
-        private bool npcsAsleep;               // 취침 시간이라 주민을 숨겨 둔 상태
-        private List<GameObject> townNpcs;     // 밤에 숨길 주민 (우리 집 엄마 제외)
+        // 주민 하루 일정: 저녁 6시 반 ~ 9시 50분 사이 한 명씩 가까운 문으로 걸어 들어감
+        private class NpcPlan
+        {
+            public NpcController npc;
+            public WorldArea area;
+            public bool outdoor, owl, home;
+            public int leaveMinute;
+            public int state;   // 0 밖에 있음, 1 집으로 가는 중, 2 들어감
+        }
+        private List<NpcPlan> npcPlans;
+        private int plannedDay = -1;
+        private float scheduleTimer;
+        private static readonly HashSet<string> OutdoorAreas = new HashSet<string> { "목장 마을", "경기장", "깊은 숲" };
         private string overlayArea;
         private bool stepParity;
 
@@ -39,12 +59,12 @@ namespace HorseRanch
         {
             var g = Game;
             if (g == null) return;
-            // 밤 10시 ~ 다음 날 아침: 주민들 사라짐 (자고 나면 다시 돌아다님)
-            bool asleep = g.IsBedtime && !inEnding;
-            if (asleep != npcsAsleep) SetNpcsAsleep(asleep);
+            // 주민 일정 (저녁 귀가 · 다음 날 복귀): 0.25초마다
+            scheduleTimer -= Time.deltaTime;
+            if (scheduleTimer <= 0f && !inEnding) { scheduleTimer = 0.25f; UpdateNpcSchedule(); }
 
             bool hidden = title.IsOpen || cutscene.IsOpen || inEnding || gameOverShown;
-            if (hidden) { SetOverlay(Color.clear); return; }
+            if (hidden) { SetOverlay(Color.clear); if (lighting != null) lighting.Apply(0f, false); shownClock = -1; return; }
 
             // 창 · 대화 · 경주 · 페이드 중엔 시간이 멈춘다 (벤치에 앉아 있으면 흐름)
             if (!IsBusy)
@@ -61,8 +81,10 @@ namespace HorseRanch
                 clockText.text = (g.ClockRunning ? "" : "<color=#8B927F>") + RanchGame.ClockLabel(m / 10 * 10) + (g.ClockRunning ? "" : " (멈춤)</color>")
                     + (g.IsNight ? "  <color=#8FA8E0>밤</color>" : g.IsEvening ? "  <color=#F0A050>저녁</color>" : "");
                 var c = SkyTint(m);
-                if (!RideAreas.Contains(currentArea) || currentArea == "마구간") c.a *= indoorDarkness;
+                if (!OutdoorAreas.Contains(currentArea)) c.a *= 0.4f;
                 SetOverlay(c);
+                // 어둠 + 가로등: 저녁 6시에 불이 켜짐
+                if (lighting != null) lighting.Apply(Darkness(m) * maxDarkness, m >= g.Data.balance.eveningMinute);
             }
         }
 
@@ -74,18 +96,26 @@ namespace HorseRanch
             if (nightOverlay.enabled != on) nightOverlay.enabled = on;
         }
 
-        /// <summary>시각별 화면 색: 새벽 푸르스름 → 낮 없음 → 노을 주황 → 밤 남색</summary>
+        /// <summary>화면 전체 색조: 새벽 푸르스름, 노을 주황 (밤 어둠은 NightLighting이 가로등 자리만 빼고 덮음)</summary>
         private static Color SkyTint(int minute)
         {
-            var dawn = new Color(0.45f, 0.55f, 0.85f, 0.18f);
-            var dusk = new Color(1f, 0.5f, 0.18f, 0.22f);
-            var night = new Color(0.04f, 0.07f, 0.24f, 0.5f);
-            var deep = new Color(0.02f, 0.03f, 0.14f, 0.6f);
+            var dawn = new Color(0.45f, 0.55f, 0.85f, 0.16f);
+            var dusk = new Color(1f, 0.5f, 0.18f, 0.2f);
+            var night = new Color(0.1f, 0.12f, 0.35f, 0.08f);
             if (minute < 420) return Color.Lerp(dawn, Color.clear, (minute - 360) / 60f);            // 06~07시
             if (minute < 1020) return Color.clear;                                                     // 낮
             if (minute < 1140) return Color.Lerp(Color.clear, dusk, (minute - 1020) / 120f);          // 17~19시 노을
             if (minute < 1260) return Color.Lerp(dusk, night, (minute - 1140) / 120f);                // 19~21시
-            return Color.Lerp(night, deep, Mathf.Clamp01((minute - 1260) / 240f));                    // 21시~
+            return night;
+        }
+
+        /// <summary>밤 깊이 0~1: 6시 해 짐 시작 → 8시 0.75 → 10시 이후 1, 새벽 6~7시 걷힘</summary>
+        private static float Darkness(int minute)
+        {
+            if (minute < 420) return Mathf.Lerp(0.55f, 0f, (minute - 360) / 60f);
+            if (minute < 1080) return 0f;
+            if (minute < 1200) return Mathf.Lerp(0f, 0.75f, (minute - 1080) / 120f);
+            return Mathf.Lerp(0.75f, 1f, Mathf.Clamp01((minute - 1200) / 120f));
         }
 
         private void OnClockEvent(ClockEvent ev)
@@ -141,6 +171,7 @@ namespace HorseRanch
             {
                 case InteractKind.StallHorse: AskStallHorse(it.Param); return true;
                 case InteractKind.RequestBoard: AskRequests(it.DisplayName); return true;
+                case InteractKind.SlotMachine: OpenWindow(WindowId.Slot, "슬롯머신"); return true;
                 case InteractKind.Records:
                     dialogue.Show("", "역대 우승마의 이름과 기록이 새겨진 트로피가 늘어서 있다.\n<size=80%><color=#566458>K 키로 어디서든 기록실을 열 수 있어요.</color></size>",
                         new ModalAction("기록 보기", () => OpenWindow(WindowId.Records, "기록실"), ModalStyle.Primary), new ModalAction("나가기", null));
@@ -171,7 +202,9 @@ namespace HorseRanch
                     dialogue.Show("", "밤의 숲은 칠흑같이 어둡다. 내일 다시 오자.");
                     return true;
                 default:
-                    dialogue.Show("", "아무것도 없다. 밤이 깊었다… 이제 집에 가서 자야 한다.");
+                    if (it.GetComponent<NpcController>() != null)   // 밤에 남아 있는 주민
+                        dialogue.Show(it.DisplayName, OwlLines[UnityEngine.Random.Range(0, OwlLines.Length)]);
+                    else dialogue.Show("", "아무것도 없다. 밤이 깊었다… 이제 집에 가서 자야 한다.");
                     return true;
             }
         }
@@ -184,27 +217,120 @@ namespace HorseRanch
             return FindTarget(InteractKind.Sleep, null);
         }
 
-        /// <summary>주민 숨기기 / 다시 보이기 (우리 집 엄마는 그대로)</summary>
-        private void SetNpcsAsleep(bool asleep)
+        // ===== 주민 하루 일정 =====
+        private void BuildNpcPlans()
         {
-            if (allInteractables == null) return;
-            npcsAsleep = asleep;
-            if (townNpcs == null)
+            npcPlans = new List<NpcPlan>();
+            int n = 0;
+            for (int i = 0; i < allInteractables.Length; i++)
             {
-                townNpcs = new List<GameObject>();
-                for (int i = 0; i < allInteractables.Length; i++)
+                var it = allInteractables[i];
+                var npc = it.GetComponent<NpcController>();
+                if (npc == null) continue;
+                var area = map.AreaAt(npc.Mover.StartCell);
+                if (area == null) continue;
+                var p = new NpcPlan { npc = npc, area = area, outdoor = OutdoorAreas.Contains(area.AreaName), home = area.AreaName == "우리 집" };
+                // 바깥 주민 일부는 밤에도 남음 (번호 기준으로 고르게)
+                if (p.outdoor) { p.owl = (n * 0.37f) % 1f < nightOwlRatio; n++; }
+                npcPlans.Add(p);
+            }
+        }
+
+        /// <summary>날이 바뀌면 모두 제자리로, 저녁엔 바깥 주민이 하나씩 문으로 걸어 들어가고, 밤 10시엔 실내 주민도 퇴근</summary>
+        private void UpdateNpcSchedule()
+        {
+            var g = Game;
+            if (g == null || allInteractables == null) return;
+            if (npcPlans == null) BuildNpcPlans();
+            var b = g.Data.balance;
+            int minute = g.ClockMinute;
+            if (plannedDay != g.State.day)
+            {
+                plannedDay = g.State.day;
+                var rng = new System.Random(g.State.day * 7919);
+                for (int i = 0; i < npcPlans.Count; i++)
                 {
-                    var it = allInteractables[i];
-                    if (it.GetComponent<NpcController>() == null) continue;
-                    var area = map.AreaAt(CellOf(it));
-                    if (area != null && area.AreaName == "우리 집") continue;
-                    townNpcs.Add(it.gameObject);
+                    var p = npcPlans[i];
+                    p.leaveMinute = b.eveningMinute + 30 + rng.Next(Mathf.Max(1, b.bedtimeMinute - b.eveningMinute - 40));
+                    if (p.state != 0) RestoreNpc(p);
                 }
             }
-            for (int i = 0; i < townNpcs.Count; i++)
-                if (townNpcs[i].activeSelf == asleep) townNpcs[i].SetActive(!asleep);
-            if (asleep) bubble.Hide();
+            var playerArea = map.AreaAt(player.Mover.Cell);
+            for (int i = 0; i < npcPlans.Count; i++)
+            {
+                var p = npcPlans[i];
+                if (p.home || p.state != 0) continue;
+                if (p.outdoor)
+                {
+                    if (p.owl || minute < p.leaveMinute) continue;
+                    // 플레이어가 보고 있으면 걸어서 들어가고, 안 보거나 한참 지났으면 바로 들어간 것으로
+                    if (playerArea != p.area || minute - p.leaveMinute > 40) { HideNpc(p); continue; }
+                    var path = PathToDoor(p.npc.Mover.Cell, p.area);
+                    if (path == null) { HideNpc(p); continue; }
+                    p.state = 1;
+                    var plan = p;
+                    p.npc.FollowRoute(path, () => HideNpc(plan));
+                }
+                else if (g.IsBedtime && playerArea != p.area) HideNpc(p);   // 가게 주인 등은 밤 10시 퇴근 (보는 앞에서는 안 사라짐)
+            }
         }
+
+        private void HideNpc(NpcPlan p)
+        {
+            p.state = 2;
+            p.npc.CancelRoute();
+            p.npc.gameObject.SetActive(false);
+        }
+
+        private void RestoreNpc(NpcPlan p)
+        {
+            p.state = 0;
+            p.npc.CancelRoute();
+            if (!p.npc.gameObject.activeSelf) p.npc.gameObject.SetActive(true);
+            p.npc.Mover.Teleport(p.npc.Mover.StartCell, p.npc.Mover.StartFacing);
+        }
+
+        /// <summary>같은 구역의 가장 가까운 건물 문까지 경로 (BFS, 다른 사람은 무시)</summary>
+        private List<Vector2Int> PathToDoor(Vector2Int from, WorldArea area)
+        {
+            var doors = new HashSet<Vector2Int>();
+            for (int i = 0; i < allInteractables.Length; i++)
+            {
+                var d = allInteractables[i];
+                if (d.Kind == InteractKind.Door && map.AreaAt(d.FirstCell) == area) doors.Add(d.FirstCell);
+            }
+            if (doors.Count == 0) return null;
+            var prev = new Dictionary<Vector2Int, Vector2Int>();
+            var q = new Queue<Vector2Int>();
+            q.Enqueue(from); prev[from] = from;
+            Vector2Int[] dirs = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+            while (q.Count > 0)
+            {
+                var c = q.Dequeue();
+                if (doors.Contains(c))
+                {
+                    var path = new List<Vector2Int>();
+                    for (var k = c; k != from; k = prev[k]) path.Add(k);
+                    path.Reverse();
+                    return path;
+                }
+                if (prev.Count > 5000) break;
+                for (int i = 0; i < 4; i++)
+                {
+                    var nb = c + dirs[i];
+                    if (prev.ContainsKey(nb) || !map.IsWalkable(nb) || map.AreaAt(nb) != area) continue;
+                    prev[nb] = c;
+                    q.Enqueue(nb);
+                }
+            }
+            return null;
+        }
+
+        private static readonly string[] OwlLines =
+        {
+            "이 시간까지 안 자고 뭐 해? 얼른 들어가.", "밤 산책은 좋지. 별이 참 많네.", "야간 순찰 중이야. 수상한 사람은 없겠지?",
+            "잠이 안 와서 나왔어. 내일 경주 생각에…", "늦었어. 가로등 밑으로 다녀, 어두워서 넘어진다.",
+        };
 
         // ===== 마구간 말: 쓰다듬기 · 이름 바꾸기 · 타고 나가기 =====
         private static readonly string[] PetLines =

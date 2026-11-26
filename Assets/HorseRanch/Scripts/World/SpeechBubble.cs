@@ -14,11 +14,24 @@ namespace HorseRanch
         [SerializeField] private float widthPerChar = 0.42f;
 
         private float timer;
+        private Transform follow;
+        private Vector3 followOffset;
+
+        public bool IsShowing { get { return timer > 0f; } }
+        public Transform Target { get { return follow; } }
+
+        /// <summary>움직이는 사람 머리 위에 따라 붙는 말풍선</summary>
+        public void ShowOn(Transform target, Vector3 offset, string message, float seconds)
+        {
+            Show(target.position + offset, message, seconds);
+            follow = target; followOffset = offset;
+        }
 
         private void Awake() { SetVisible(false); }
 
         public void Show(Vector3 worldPos, string message, float seconds)
         {
+            follow = null;
             transform.position = worldPos;
             text.text = message;
             float w = Mathf.Max(2f, message.Length * widthPerChar + 0.8f);
@@ -28,7 +41,16 @@ namespace HorseRanch
             SetVisible(true);
         }
 
-        public void Hide() { timer = 0f; SetVisible(false); }
+        public void Hide() { timer = 0f; follow = null; SetVisible(false); }
+
+        private void LateUpdate()
+        {
+            if (timer > 0f && follow != null)
+            {
+                if (!follow.gameObject.activeInHierarchy) { Hide(); return; }
+                transform.position = follow.position + followOffset;
+            }
+        }
 
         private void Update()
         {

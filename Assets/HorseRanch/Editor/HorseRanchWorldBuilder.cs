@@ -17,6 +17,8 @@ namespace HorseRanch.EditorTools
         public SpeechBubble bubble;
         public ThunderSpot thunder;
         public PlayerMount mount;
+        public NightLighting lighting;
+        public SpeechBubble[] extraBubbles;
     }
 
     /// <summary>
@@ -54,18 +56,25 @@ namespace HorseRanch.EditorTools
             public readonly List<KeyValuePairRect> buildings = new List<KeyValuePairRect>();
             public readonly List<string> labels = new List<string>();
             public readonly List<Vector2> labelCells = new List<Vector2>();
+            public readonly List<Vector3> lights = new List<Vector3>();          // 밤 불빛 (로컬 x, y, 반경)
+            public readonly HashSet<Vector2Int> reserved = new HashSet<Vector2Int>(); // 상호작용 칸 주변 (가로등 자동 배치 금지)
         }
+
+        static readonly List<Area> builtAreas = new List<Area>();
+        static readonly List<SpriteRenderer> nightGlows = new List<SpriteRenderer>();
 
         public static WorldBuildResult Build(RanchGameRunner gameRunner, HorseRanchArt art, TMP_FontAsset tmpFont)
         {
             runner = gameRunner; horseArt = art; font = tmpFont;
-            areas.Clear(); props.Clear(); placedNpcs.Clear(); npcCount = 0;
+            areas.Clear(); props.Clear(); placedNpcs.Clear(); npcCount = 0; builtAreas.Clear(); nightGlows.Clear();
             worldRoot = new GameObject("World").transform;
             map = worldRoot.gameObject.AddComponent<WorldMap>();
 
             // 공용 소품 스프라이트
             props["tree"] = Tree("prop_tree");
             props["lamp"] = Lamp("prop_lamp");
+            props["glow"] = Glow("fx_glow", 64);
+            props["slot"] = SlotMachine("prop_slot");
             props["board"] = Board("prop_board");
             props["fountain"] = Fountain("prop_fountain");
             props["bench"] = Bench("prop_bench");
@@ -92,6 +101,9 @@ namespace HorseRanch.EditorTools
             BuildBank();
             result.thunder = BuildForest();
             result.bubble = MakeBubble();
+            result.extraBubbles = new SpeechBubble[4];
+            for (int i = 0; i < result.extraBubbles.Length; i++) result.extraBubbles[i] = MakeBubble();
+            result.lighting = BuildNightLighting();
 
             UIFactory.SetArr(map, "areas", areas.ToArray());
 
@@ -160,6 +172,7 @@ namespace HorseRanch.EditorTools
                     bool border = x < 2 || y < 2 || x >= a.w - 2 || y >= a.h - 2;
                     if (!border) continue;
                     a.block[x, y] = true;
+                    if ((x == 46 || x == 47) && y >= a.h - 2) continue;   // 북쪽 큰길 끝: 숲으로 이어지는 덤불 길
                     bool inner = x == 1 || y == 1 || x == a.w - 2 || y == a.h - 2;
                     if (inner || (x + y) % 2 == 0) Prop(a, "Tree", props["tree"], x + 0.5f, y, false);
                 }
@@ -230,7 +243,7 @@ namespace HorseRanch.EditorTools
             Fill(a, 66, 18, 68, 20, 'k'); Fill(a, 79, 5, 81, 7, 'k');
             Pond(a, 70, 10, 76, 14, new Vector2Int(-1, -1));
             BenchAt(a, 68, 8); BenchAt(a, 78, 16); BenchAt(a, 72, 18);
-            Prop(a, "Lamp", props["lamp"], 80.5f, 12, true); Prop(a, "Lamp", props["lamp"], 66.5f, 14, true);
+            LampAt(a, 80.5f, 12); LampAt(a, 66.5f, 14);
 
             // 숨은 공터: 나무 울타리로 막혀 있고, 나무 하나가 통과되는 비밀 길
             for (int y = 2; y <= 12; y++) { a.block[84, y] = true; Prop(a, "Tree", props["tree"], 84.5f, y, false); }
@@ -253,7 +266,7 @@ namespace HorseRanch.EditorTools
             Sign(a.root, "의뢰", new Vector3(50.5f, 36.75f, 0f), 1.4f, reqBoard.sortingOrder + 2, 4.2f);
             Label(a, "의뢰", 50, 37);
             foreach (var p in new[] { new Vector2Int(40, 25), new Vector2Int(53, 25), new Vector2Int(40, 36), new Vector2Int(53, 36) })
-                Prop(a, "Lamp", props["lamp"], p.x + 0.5f, p.y, true);
+                LampAt(a, p.x + 0.5f, p.y);
             BenchAt(a, 43, 26); BenchAt(a, 50, 26);
 
             // ===== 추모 언덕 (북서쪽): 아버지의 묘. 엔딩 때 트로피가 놓인다 =====
@@ -278,9 +291,14 @@ namespace HorseRanch.EditorTools
             Door(a, "Door_Bank", bankDoor, BankO + new Vector2Int(8, 1), Vector2Int.up);
             Fill(a, 51, 37, 51, 39, 'r');
 
-            // ===== 북동쪽 가시덤불: 그랑프리 우승 후 깊은 숲(천둥)으로 =====
-            Prop(a, "Thicket", Thicket("prop_thicket"), 91.5f, 61, true);   // 전용 가시덤불 그림 (일반 나무와 구별)
-            Interact(a, "Thicket", InteractKind.Thicket, "가시덤불", null, new[] { G(a, 91, 61) }, false, ForestO + new Vector2Int(11, 1), Vector2Int.up);
+            // ===== 북쪽 큰길 끝 가시덤불: 길이 숲으로 이어지다 덤불에 막힘. 그랑프리 우승 후 깊은 숲(천둥)으로 =====
+            Fill(a, 46, 64, 47, 65, 'r');
+            var thicket = Thicket("prop_thicket");
+            Prop(a, "Thicket", thicket, 46.5f, 64, true); Prop(a, "Thicket", thicket, 47.5f, 64, true);
+            Prop(a, "Thicket", thicket, 46.5f, 65, false); Prop(a, "Thicket", thicket, 47.5f, 65, false);
+            Interact(a, "Thicket", InteractKind.Thicket, "가시덤불", null, Cells(a, 46, 64, 47, 64), false, ForestO + new Vector2Int(11, 1), Vector2Int.up);
+            Sign(a.root, "깊은 숲", new Vector3(49.6f, 63.4f, 0f), 1.9f, YSort.Order(63f) + 5, 4.2f);
+            Label(a, "덤불", 47, 62);
 
             // ===== 쓰레기통 8개 (번호 = BalanceConfig.trashBinValues 인덱스) =====
             int[,] bins = { { 44, 38 }, { 26, 33 }, { 55, 33 }, { 72, 33 }, { 80, 18 }, { 16, 22 }, { 49, 50 }, { 35, 21 } };
@@ -289,7 +307,7 @@ namespace HorseRanch.EditorTools
             // ===== 주민 =====
             string[] chatter =
             {
-                "오늘 경주 마권 샀어? 도박장은 북쪽 보라색 지붕 건물이야.",
+                "오늘 경주 마권 샀어? 도박장은 북쪽에 전구 간판이 번쩍이는 건물이야.",
                 "적중한 마권은 도박장 교환소에서 돈으로 바꿔줘. 잊지 마!",
                 "삼쌍승식 맞추면 대박이래. 근데 336가지 중 하나라니…",
                 "말이 피곤하면 경주에서 느려진다더라. 마구간에서 쉬게 해.",
@@ -317,6 +335,7 @@ namespace HorseRanch.EditorTools
             Label(a, "광장", 46.5f, 30); Label(a, "공원", 73, 20); Label(a, "연못", 39, 55); Label(a, "시장", 40.5f, 47);
             Label(a, "추모 언덕", 21, 60); Label(a, "은행", 51.5f, 46);
 
+            RoadLamps(a, 8f);
             result.spawn = G(a, 8, 39);
             Finish(a);
         }
@@ -364,7 +383,17 @@ namespace HorseRanch.EditorTools
                 "적중 마권은 교환소에서 바꿔야 돈이 돼. 주머니에 넣어 두면 그냥 종이야.",
                 "숲속 고수 영감 말은 셋 중 하나만 맞는다더라. 어느 게 맞는지는 모르고.",
             };
-            for (int i = 0; i < 6; i++) Npc(a, "Gambler", Looks.Town(20 + i), 4 + i * 5, 3 + (i % 3) * 3, Vector2Int.up, new RectInt(HallO.x + 2, 2, 32, 10), InteractKind.Talk, "손님", gamblers);
+            for (int i = 0; i < 10; i++) Npc(a, "Gambler", Looks.Town(20 + i), 4 + i * 3, 2 + (i % 3) * 3, Vector2Int.up, new RectInt(HallO.x + 2, 2, 32, 8), InteractKind.Talk, "손님", gamblers);
+
+            // 슬롯머신: 왼쪽 5대 · 오른쪽 5대 (아래에서 위를 보고 E)
+            foreach (int x in new[] { 3, 4, 5, 6, 7, 28, 29, 30, 31, 32 })
+            {
+                Prop(a, "Slot", props["slot"], x + 0.5f, 11, true);
+                Interact(a, "Slot_" + x, InteractKind.SlotMachine, "슬롯머신", null, new[] { G(a, x, 11) }, false, Vector2Int.zero, Vector2Int.zero);
+            }
+            Npc(a, "SlotPlayer", Looks.Town(30), 4, 10, Vector2Int.up, null, InteractKind.Talk, "슬롯 손님", "잠깐, 지금 느낌이 왔어. 말 시키지 마!", "옆 기계가 비었어. 너도 한 판 해 봐.");
+            Npc(a, "SlotPlayer", Looks.Town(31), 31, 10, Vector2Int.up, null, InteractKind.Talk, "슬롯 손님", "체리 두 개면 본전 조금 넘게 나와.", "7 세 개는 150배래. 평생 한 번 볼까 말까지.");
+            Label(a, "슬롯머신", 5, 12.5f); Label(a, "슬롯머신", 30, 12.5f);
 
             Door(a, "Exit", G(a, 18, 0), TownO + new Vector2Int(62, 39), Vector2Int.down);
             Door(a, "ToStadium", G(a, 35, 9), StadiumO + new Vector2Int(1, 6), Vector2Int.right);
@@ -442,6 +471,8 @@ namespace HorseRanch.EditorTools
             Door(a, "ToHall", G(a, 0, 6), HallO + new Vector2Int(34, 9), Vector2Int.left);
             Sign(a.root, "< 도박장", new Vector3(a.o.x + 1.6f, 7.4f, 0f), 2f, 200, 4.2f);
             Label(a, "트랙", 50, 15); Label(a, "진행요원", 50, 5); Label(a, "출전 접수", 11, 5); Label(a, "출발", 5, 20); Label(a, "결승", 94, 20); Label(a, "도박장 통로", 2, 6);
+            // 밤: 관중석 조명탑이 트랙과 통로를 비춤
+            for (int x = 8; x < 100; x += 18) { a.lights.Add(new Vector3(x, 5f, 5f)); a.lights.Add(new Vector3(x + 9, 18f, 7f)); }
             Finish(a);
             return race;
         }
@@ -654,7 +685,7 @@ namespace HorseRanch.EditorTools
             var spot = go.AddComponent<ThunderSpot>();
             spot.EditorSetup(sr, new[] { horseArt.gallopA });
 
-            Door(a, "Exit", G(a, 11, 0), TownO + new Vector2Int(91, 60), Vector2Int.down);
+            Door(a, "Exit", G(a, 11, 0), TownO + new Vector2Int(46, 63), Vector2Int.down);
             Label(a, "공터", 11, 11); Label(a, "출구", 11, 1.5f);
             Finish(a);
             return spot;
@@ -842,6 +873,7 @@ namespace HorseRanch.EditorTools
         static void Finish(Area a)
         {
             FixNpcStarts(a);
+            builtAreas.Add(a);
             var sprite = BakeGround("ground_" + areas.Count, a.tiles);
             var sr = PlaceSprite(a.root, "Ground", sprite, new Vector3(a.o.x, a.o.y, 0f), 0f);
             sr.sortingOrder = YSort.GroundOrder;
@@ -882,14 +914,93 @@ namespace HorseRanch.EditorTools
         /// <summary>건물: 스프라이트 + 발자국 막기 + 간판 + 지도 표시. 문 칸은 통과 가능하게 남기고 그 전역 좌표를 반환</summary>
         static Vector2Int BuildingAt(Area a, string id, string label, int x0, int y0, int w, int h, int doorX, Color32 roof, Color32 wall, Color32 trim)
         {
-            var s = Building(id, w, h, doorX, roof, wall, trim);
-            PlaceSprite(a.root, id, s, new Vector3(a.o.x + x0, a.o.y + y0, 0f), a.o.y + y0);
+            Sprite nightSprite;
+            var s = Facade(id, w, h, doorX, roof, wall, trim, out nightSprite);
+            var bsr = PlaceSprite(a.root, id, s, new Vector3(a.o.x + x0, a.o.y + y0, 0f), a.o.y + y0);
+            // 밤에 켜지는 창문 · 전구 (건물 바로 위, 앞을 지나는 사람보다는 아래)
+            var nsr = PlaceSprite(a.root, id + "_Night", nightSprite, new Vector3(a.o.x + x0, a.o.y + y0, 0f), a.o.y + y0);
+            nsr.sortingOrder = bsr.sortingOrder + 1;
+            nightGlows.Add(nsr);
+            // 문 앞 불빛 (도박장 · 경기장은 크게)
+            float fx = x0 + (doorX >= 0 ? doorX + 0.5f : w * 0.5f);
+            float lr = id == "bld_hall" ? 6f : id == "bld_stadium" ? 4.5f : 2.8f;
+            a.lights.Add(new Vector3(fx, y0 + 0.6f, lr));
+            if (id == "bld_hall") { a.lights.Add(new Vector3(x0 + 2f, y0 + 1f, 3.5f)); a.lights.Add(new Vector3(x0 + w - 2f, y0 + 1f, 3.5f)); }
+            if (id == "bld_stadium") { a.lights.Add(new Vector3(x0 + 0.5f, y0 + h, 4f)); a.lights.Add(new Vector3(x0 + w - 0.5f, y0 + h, 4f)); }
             BlockRect(a, x0, y0, x0 + w - 1, y0 + h - 1);
             a.buildings.Add(new KeyValuePairRect(new RectInt(x0, y0, w, h), roof));
             Sign(a.root, label, new Vector3(a.o.x + x0 + w * 0.5f, a.o.y + y0 + 2.45f, 0f), Mathf.Min(w - 0.4f, label.Length * 0.5f + 0.8f), YSort.Order(a.o.y + y0) + 5, 4.2f);
             if (doorX < 0) return new Vector2Int(-999, -999);
             a.block[x0 + doorX, y0] = false;
             return G(a, x0 + doorX, y0);
+        }
+
+        /// <summary>가로등: 등 소품 + 밤 어둠 구멍 + 땅에 퍼지는 불빛 + 등 머리 불빛</summary>
+        static void LampAt(Area a, float lx, int ly)
+        {
+            Prop(a, "Lamp", props["lamp"], lx, ly, true);
+            a.lights.Add(new Vector3(lx, ly + 0.4f, 4f));
+            var pool = PlaceSprite(a.root, "LampLight", props["glow"], new Vector3(a.o.x + lx, a.o.y + ly + 0.4f, 0f), 0f);
+            pool.transform.localScale = new Vector3(6.5f, 5f, 1f);
+            pool.color = new Color(1f, 0.82f, 0.5f, 0.22f);
+            pool.sortingOrder = 30600;
+            var head = PlaceSprite(a.root, "LampBulb", props["glow"], new Vector3(a.o.x + lx, a.o.y + ly + 1.55f, 0f), 0f);
+            head.transform.localScale = new Vector3(1.3f, 1.3f, 1f);
+            head.color = new Color(1f, 0.92f, 0.65f, 0.95f);
+            head.sortingOrder = 30610;
+            nightGlows.Add(pool); nightGlows.Add(head);
+        }
+
+        /// <summary>길 옆 풀밭에 일정 간격으로 가로등 자동 배치 (문 앞 · 상호작용 주변 · 건물 바로 앞은 피함)</summary>
+        static void RoadLamps(Area a, float spacing)
+        {
+            var placed = new List<Vector2>();
+            foreach (var l in a.lights) placed.Add(new Vector2(l.x, l.y));
+            var near = new HashSet<Vector2Int>();
+            foreach (var b in a.buildings)
+                for (int x = b.rect.xMin - 1; x <= b.rect.xMax; x++) for (int y = b.rect.yMin - 2; y <= b.rect.yMax; y++) near.Add(new Vector2Int(x, y));
+            Vector2Int[] dirs = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+            for (int y = 3; y < a.h - 3; y++)
+                for (int x = 3; x < a.w - 3; x++)
+                {
+                    if (a.tiles[x, y] != 'r') continue;
+                    foreach (var d in dirs)
+                    {
+                        var c = new Vector2Int(x, y) + d;
+                        if (a.block[c.x, c.y] || (a.tiles[c.x, c.y] != 'g' && a.tiles[c.x, c.y] != 'k')) continue;
+                        if (a.reserved.Contains(c) || near.Contains(c)) continue;
+                        // 막다른 통로가 되지 않게: 길 반대편이 막혀 있으면 패스
+                        var back = c + d;
+                        if (back.x < 0 || back.y < 0 || back.x >= a.w || back.y >= a.h || a.block[back.x, back.y]) continue;
+                        var p = new Vector2(c.x + 0.5f, c.y);
+                        bool far = true;
+                        foreach (var q in placed) if ((q - p).sqrMagnitude < spacing * spacing) { far = false; break; }
+                        if (!far) continue;
+                        LampAt(a, c.x + 0.5f, c.y);
+                        placed.Add(p);
+                    }
+                }
+        }
+
+        /// <summary>구역마다 어둠 덮개(가로등 자리 구멍) + NightLighting 연결</summary>
+        static NightLighting BuildNightLighting()
+        {
+            const int margin = 14;
+            var shades = new List<SpriteRenderer>();
+            var scales = new List<float>();
+            foreach (var a in builtAreas)
+            {
+                var sprite = NightShade("night_" + a.o.x, a.w, a.h, margin, a.lights);
+                var sr = PlaceSprite(a.root, "NightShade", sprite, new Vector3(a.o.x - margin, a.o.y - margin, 0f), 0f);
+                sr.sortingOrder = 30500;
+                sr.enabled = false;
+                shades.Add(sr);
+                // 실외는 진하게, 숲은 달빛, 도박장은 불야성, 다른 실내는 불이 켜져 있어 약하게
+                scales.Add(a.name == "목장 마을" || a.name == "경기장" ? 1f : a.name == "깊은 숲" ? 0.8f : a.name == "마권 도박장" ? 0.12f : 0.3f);
+            }
+            var nl = worldRoot.gameObject.AddComponent<NightLighting>();
+            nl.EditorSetup(shades.ToArray(), scales.ToArray(), nightGlows.ToArray());
+            return nl;
         }
 
         static void Door(Area a, string name, Vector2Int cell, Vector2Int target, Vector2Int face)
@@ -902,6 +1013,8 @@ namespace HorseRanch.EditorTools
         {
             var go = new GameObject("Interact_" + name);
             go.transform.SetParent(a.root, false);
+            foreach (var c in cells)
+                for (int dx = -1; dx <= 1; dx++) for (int dy = -1; dy <= 1; dy++) a.reserved.Add(new Vector2Int(c.x - a.o.x + dx, c.y - a.o.y + dy));
             var it = go.AddComponent<Interactable>();
             it.EditorSetup(map, kind, display, lines ?? new string[0], cells, onStep, warp, face);
             return it;

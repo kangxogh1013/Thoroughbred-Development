@@ -221,7 +221,7 @@ namespace HorseRanch
             if (!g.StoryCleared && d >= 0) yield return d == 0 ? "오늘 그랑프리야! " + RanchGame.RivalHorse + "도 나온대. 다들 경기장으로 간다던데." : "그랑프리까지 " + d + "일! " + RanchGame.RivalHorse + "이 또 나온대.";
             if (g.StoryCleared && !s.thunderFound)
             {
-                yield return "북동쪽 끝 가시덤불 너머에서 회색 말이 뛰는 걸 봤어. 이마에 번개 무늬가 있더라고!";
+                yield return "마을 북쪽 큰길 끝, 가시덤불 너머에서 회색 말이 뛰는 걸 봤어. 이마에 번개 무늬가 있더라고!";
                 yield return "숲에서 말 울음소리가 들린대. 그랑프리 날부터 더 자주.";
             }
             if (s.thunderFound) yield return RanchGame.FatherHorse + "이 돌아왔다며? 동네가 난리야. 그 혈통 망아지 한 마리만 팔아 줘!";
@@ -241,7 +241,7 @@ namespace HorseRanch
             if (g.StoryCleared)
             {
                 l.Add("네 아버지 꿈을… 네가 이뤘구나. 엄마는 이제 여한이 없다.");
-                l.Add("그러고 보니 요즘 북동쪽 숲에서 회색 말을 봤다는 사람이 있더라. 설마…");
+                l.Add("그러고 보니 요즘 북쪽 큰길 끝 숲에서 회색 말을 봤다는 사람이 있더라. 설마…");
                 l.Add("트로피 보러 언덕에 또 다녀왔니? 아버지가 많이 자랑스러워하실 거야.");
                 return l;
             }
@@ -295,7 +295,7 @@ namespace HorseRanch
                 {
                     "…" + RanchGame.RivalHorse + "이 졌다. 인정하마. 네 아버지도 그 결승선을 넘었어야 했지.",
                     "그날 일은… 나도 가끔 꿈에 나온다. 그만 가 봐라.",
-                    g.State.thunderFound ? RanchGame.FatherHorse + "이 살아 있었다고? …다행이군. 진심이다." : "사고 뒤 " + RanchGame.FatherHorse + "은 숲으로 달아났다더군. 찾아볼 생각이면 북동쪽을 봐라.",
+                    g.State.thunderFound ? RanchGame.FatherHorse + "이 살아 있었다고? …다행이군. 진심이다." : "사고 뒤 " + RanchGame.FatherHorse + "은 숲으로 달아났다더군. 찾아볼 생각이면 마을 북쪽 큰길 끝을 봐라.",
                 };
             var l = new List<string>
             {

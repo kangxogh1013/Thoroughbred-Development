@@ -130,7 +130,7 @@ namespace HorseRanch.EditorTools
             BuildHud(root);
 
             // 기능 창 (WindowId 순서)
-            var windows = new WindowView[12];
+            var windows = new WindowView[13];
             RectTransform c;
             windows[(int)WindowId.Stable] = Window(root, "Stable", "마구간", new Vector2(1720f, 920f), out c); BuildStable(c);
             windows[(int)WindowId.Shop] = Window(root, "Shop", "상점", new Vector2(1720f, 640f), out c); BuildShop(c);
@@ -144,6 +144,7 @@ namespace HorseRanch.EditorTools
             windows[(int)WindowId.Map] = Window(root, "Map", "지도", new Vector2(1600f, 920f), out c); BuildMap(c, world);
             windows[(int)WindowId.Market] = Window(root, "Market", "시장", new Vector2(1500f, 900f), out c); BuildMarket(c);
             windows[(int)WindowId.Records] = Window(root, "Records", "기록실", new Vector2(1700f, 900f), out c); BuildRecords(c);
+            windows[(int)WindowId.Slot] = Window(root, "Slot", "슬롯머신", new Vector2(1200f, 760f), out c); slotPanel = BuildSlot(c);
 
             var search = BuildSearch(root);
             var dialogue = BuildDialogue(root);
@@ -173,6 +174,9 @@ namespace HorseRanch.EditorTools
             Set(rootUI, "thunderSpot", world.thunder);
             Set(rootUI, "bubble", world.bubble);
             Set(rootUI, "mount", world.mount);
+            Set(rootUI, "lighting", world.lighting);
+            SetArr(rootUI, "extraBubbles", world.extraBubbles);
+            Set(slotPanel.GetComponent<SlotView>(), "audioManager", audioManager);
             Set(search, "audioManager", audioManager);
             Set(settings, "audioManager", audioManager);
             Set(title, "runner", runner);
@@ -1361,6 +1365,66 @@ namespace HorseRanch.EditorTools
             Set(view, "itemsText", items);
             Set(view, "ticketList", list);
             Set(view, "emptyText", empty);
+            return panel.gameObject;
+        }
+
+        private static GameObject slotPanel;
+
+        /// <summary>슬롯머신: 위 릴 3개 + 결과, 아래 판돈 버튼 · 돌리기, 오른쪽 배당표</summary>
+        private static GameObject BuildSlot(RectTransform content)
+        {
+            var panel = Stretch(NewRect("Panel_Slot", content));
+            H(panel, 18f, 0, 0, 0, 0, TextAnchor.UpperLeft);
+            var view = panel.gameObject.AddComponent<SlotView>();
+            WireView(view);
+
+            var left = NewRect("Machine", panel);
+            LE(left, -1f, -1f, 1.4f, 1f);
+            V(left, 14f);
+            var cabinet = Panel("Cabinet", left, new Color(0.45f, 0.08f, 0.12f)).rectTransform;
+            LE(cabinet, -1f, 260f);
+            H(cabinet, 14f, 22, 22, 22, 22, TextAnchor.MiddleCenter);
+            var reelTexts = new TMP_Text[3];
+            var reelBacks = new Image[3];
+            for (int i = 0; i < 3; i++)
+            {
+                var back = Panel("Reel" + i, cabinet, Color.white);
+                LE(back.rectTransform, -1f, -1f, 1f, 1f);
+                var t = NewText("Symbol", back.rectTransform, "", 54f, Ink, TextAlignmentOptions.Center, true);
+                Stretch(t.rectTransform);
+                reelTexts[i] = t; reelBacks[i] = back;
+            }
+            var result = NewText("Result", left, "판돈을 고르고 돌리기를 누르세요.", 26f, Ink, TextAlignmentOptions.Center, true);
+            LE(result, -1f, 50f);
+            var bets = NewRect("Bets", left);
+            LE(bets, -1f, 64f);
+            H(bets, 12f, 0, 0, 0, 0, TextAnchor.MiddleCenter);
+            var betButtons = new Button[3];
+            var betLabels = new TMP_Text[3];
+            for (int i = 0; i < 3; i++)
+            {
+                TextMeshProUGUI bl;
+                betButtons[i] = Btn("Bet" + i, bets, "판돈", UITheme.Panel2, Ink, 20f, out bl);
+                LE(betButtons[i], -1f, -1f, 1f, 1f);
+                betLabels[i] = bl;
+            }
+            TextMeshProUGUI sl;
+            var spin = Btn("Spin", left, "돌리기", UITheme.Turf, White, 26f, out sl);
+            LE(spin, -1f, 80f);
+
+            var right = Panel("PayTable", panel, UITheme.Panel).rectTransform;
+            LE(right, -1f, -1f, 1f, 1f);
+            var pay = NewText("Text", right, "", 20f, Ink, TextAlignmentOptions.TopLeft);
+            Stretch(pay.rectTransform, 22f, 18f, 22f, 18f);
+
+            SetArr(view, "reelTexts", reelTexts);
+            SetArr(view, "reelBacks", reelBacks);
+            SetArr(view, "betButtons", betButtons);
+            SetArr(view, "betLabels", betLabels);
+            Set(view, "spinButton", spin);
+            Set(view, "spinLabel", sl);
+            Set(view, "resultText", result);
+            Set(view, "payTableText", pay);
             return panel.gameObject;
         }
 

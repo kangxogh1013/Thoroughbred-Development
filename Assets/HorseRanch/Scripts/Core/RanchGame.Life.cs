@@ -357,6 +357,42 @@ namespace HorseRanch
         }
 
         // =====================================================================
+        // 슬롯머신
+        // =====================================================================
+        public static readonly string[] SlotSymbols = { "체리", "말굽", "종", "BAR", "말", "7" };
+
+        /// <summary>판돈을 걸고 릴 3개를 돌린다. 결과 그림은 reels, 돌려받는 금액 반환 (0 = 꽝, -1 = 돈 부족)</summary>
+        public int SpinSlot(int bet, int[] reels)
+        {
+            if (bet <= 0 || State.gold < bet) { RaiseToast("판돈이 부족합니다"); return -1; }
+            State.gold -= bet;
+            State.slotSpins++;
+            int total = 0;
+            for (int i = 0; i < B.slotWeights.Length; i++) total += B.slotWeights[i];
+            for (int r = 0; r < 3; r++)
+            {
+                int roll = rng.Next(total), s = 0;
+                while (roll >= B.slotWeights[s]) { roll -= B.slotWeights[s]; s++; }
+                reels[r] = s;
+            }
+            int win = SlotPayout(reels, bet);
+            State.gold += win;
+            if (win > State.slotBestWin) State.slotBestWin = win;
+            if (win >= bet * 20) AddLog("슬롯머신 대박! " + SlotSymbols[reels[0]] + " 3개로 " + Gold(win) + " 획득");
+            RaiseChanged();
+            return win;
+        }
+
+        public int SlotPayout(int[] reels, int bet)
+        {
+            if (reels[0] == reels[1] && reels[1] == reels[2]) return bet * B.slotTriple[reels[0]];
+            int cherries = 0;
+            for (int i = 0; i < 3; i++) if (reels[i] == 0) cherries++;
+            if (cherries == 2) return (int)(bet * B.slotCherryPair);
+            return 0;
+        }
+
+        // =====================================================================
         // 기록실
         // =====================================================================
         void RecordRace(int raceIndex, bool gp, string winner, float time, HorseData me, int myPos, bool mineWon, List<NoticeData> notes)

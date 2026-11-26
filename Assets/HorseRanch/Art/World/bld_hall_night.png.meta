@@ -1,0 +1,3107 @@
+fileFormatVersion: 2
+guid: 1fcb45081ac49694b8c1c91049607bb6
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 121577765749006041
+    second: bld_hall_night_0
+  - first:
+      213: -2331900203239679710
+    second: bld_hall_night_1
+  - first:
+      213: 5073676003776309233
+    second: bld_hall_night_2
+  - first:
+      213: -6670329932652420897
+    second: bld_hall_night_3
+  - first:
+      213: 294886449696106328
+    second: bld_hall_night_4
+  - first:
+      213: -7743893039628799814
+    second: bld_hall_night_5
+  - first:
+      213: 2365516820109018706
+    second: bld_hall_night_6
+  - first:
+      213: 1121582042639791647
+    second: bld_hall_night_7
+  - first:
+      213: -515920364513481985
+    second: bld_hall_night_8
+  - first:
+      213: 5011408921160759123
+    second: bld_hall_night_9
+  - first:
+      213: 4393447130138568883
+    second: bld_hall_night_10
+  - first:
+      213: 7038422309770231810
+    second: bld_hall_night_11
+  - first:
+      213: -689668541760248932
+    second: bld_hall_night_12
+  - first:
+      213: -1229616503350492035
+    second: bld_hall_night_13
+  - first:
+      213: 1040617433335648828
+    second: bld_hall_night_14
+  - first:
+      213: 6472542170349627537
+    second: bld_hall_night_15
+  - first:
+      213: -2415116364829629037
+    second: bld_hall_night_16
+  - first:
+      213: 7703703317317294353
+    second: bld_hall_night_17
+  - first:
+      213: 9026067590657529797
+    second: bld_hall_night_18
+  - first:
+      213: -5887557580168829839
+    second: bld_hall_night_19
+  - first:
+      213: 8103943369859308836
+    second: bld_hall_night_20
+  - first:
+      213: -5855858560996071699
+    second: bld_hall_night_21
+  - first:
+      213: -7083622390860560286
+    second: bld_hall_night_22
+  - first:
+      213: 7006793110261319568
+    second: bld_hall_night_23
+  - first:
+      213: 7331741680106895419
+    second: bld_hall_night_24
+  - first:
+      213: 5322500365695704281
+    second: bld_hall_night_25
+  - first:
+      213: 6873667568021370637
+    second: bld_hall_night_26
+  - first:
+      213: 4707138816204653913
+    second: bld_hall_night_27
+  - first:
+      213: -7620747879026535084
+    second: bld_hall_night_28
+  - first:
+      213: 755140335158219091
+    second: bld_hall_night_29
+  - first:
+      213: 3642907172386916567
+    second: bld_hall_night_30
+  - first:
+      213: -5546784406717611051
+    second: bld_hall_night_31
+  - first:
+      213: 8750274302432197182
+    second: bld_hall_night_32
+  - first:
+      213: -808830434304563163
+    second: bld_hall_night_33
+  - first:
+      213: -5303621736860475231
+    second: bld_hall_night_34
+  - first:
+      213: -1988489565081967928
+    second: bld_hall_night_35
+  - first:
+      213: -7352968308722337722
+    second: bld_hall_night_36
+  - first:
+      213: 7565779306667190095
+    second: bld_hall_night_37
+  - first:
+      213: -1184418381819121802
+    second: bld_hall_night_38
+  - first:
+      213: 6866110279649442235
+    second: bld_hall_night_39
+  - first:
+      213: 9009370659283597610
+    second: bld_hall_night_40
+  - first:
+      213: 1896197104118690154
+    second: bld_hall_night_41
+  - first:
+      213: -899478888358708285
+    second: bld_hall_night_42
+  - first:
+      213: 4822719156233269732
+    second: bld_hall_night_43
+  - first:
+      213: -2392999067368598280
+    second: bld_hall_night_44
+  - first:
+      213: -8732887671407467520
+    second: bld_hall_night_45
+  - first:
+      213: -4848178280758473381
+    second: bld_hall_night_46
+  - first:
+      213: 8602969225290634641
+    second: bld_hall_night_47
+  - first:
+      213: -5981106860918435913
+    second: bld_hall_night_48
+  - first:
+      213: -957145386527678348
+    second: bld_hall_night_49
+  - first:
+      213: -1873379648616740185
+    second: bld_hall_night_50
+  - first:
+      213: -6582682513328085919
+    second: bld_hall_night_51
+  - first:
+      213: -43359816303700744
+    second: bld_hall_night_52
+  - first:
+      213: 5692794671967334351
+    second: bld_hall_night_53
+  - first:
+      213: 6566177115609161203
+    second: bld_hall_night_54
+  - first:
+      213: 6050653931755644665
+    second: bld_hall_night_55
+  - first:
+      213: -8771985894178375525
+    second: bld_hall_night_56
+  - first:
+      213: -2718828112140464125
+    second: bld_hall_night_57
+  - first:
+      213: -6294193498261734186
+    second: bld_hall_night_58
+  - first:
+      213: -7605843954617851460
+    second: bld_hall_night_59
+  - first:
+      213: 7872851804409310723
+    second: bld_hall_night_60
+  - first:
+      213: -5122393967667951322
+    second: bld_hall_night_61
+  - first:
+      213: 2443615489380891306
+    second: bld_hall_night_62
+  - first:
+      213: 4149141248342154322
+    second: bld_hall_night_63
+  - first:
+      213: -8315991990967951097
+    second: bld_hall_night_64
+  - first:
+      213: 2905828461868091689
+    second: bld_hall_night_65
+  - first:
+      213: 5210185046511800634
+    second: bld_hall_night_66
+  - first:
+      213: 7951194384932680555
+    second: bld_hall_night_67
+  - first:
+      213: -6387008504452906524
+    second: bld_hall_night_68
+  - first:
+      213: -4815971985851194132
+    second: bld_hall_night_69
+  - first:
+      213: 141845979717423669
+    second: bld_hall_night_70
+  - first:
+      213: 8359495953361338457
+    second: bld_hall_night_71
+  - first:
+      213: -8932916449349305230
+    second: bld_hall_night_72
+  - first:
+      213: -2651134996712393223
+    second: bld_hall_night_73
+  - first:
+      213: -752878878102781263
+    second: bld_hall_night_74
+  - first:
+      213: -8891636315823562355
+    second: bld_hall_night_75
+  - first:
+      213: 8014816167511511982
+    second: bld_hall_night_76
+  - first:
+      213: -4229120669843401302
+    second: bld_hall_night_77
+  - first:
+      213: 5852525013109975166
+    second: bld_hall_night_78
+  - first:
+      213: 2344842786066785232
+    second: bld_hall_night_79
+  - first:
+      213: -7994420524709609756
+    second: bld_hall_night_80
+  - first:
+      213: 7426718592750171999
+    second: bld_hall_night_81
+  - first:
+      213: 2023077322986548494
+    second: bld_hall_night_82
+  - first:
+      213: -97034659506504134
+    second: bld_hall_night_83
+  - first:
+      213: 4114759001312467309
+    second: bld_hall_night_84
+  - first:
+      213: 6030385190170861459
+    second: bld_hall_night_85
+  - first:
+      213: -7750268960153716222
+    second: bld_hall_night_86
+  - first:
+      213: -2175842545702123776
+    second: bld_hall_night_87
+  - first:
+      213: 4584241705742836156
+    second: bld_hall_night_88
+  - first:
+      213: 7496227660742897501
+    second: bld_hall_night_89
+  - first:
+      213: -2852790081846516473
+    second: bld_hall_night_90
+  - first:
+      213: -2449009990255793473
+    second: bld_hall_night_91
+  - first:
+      213: 2639981003990923688
+    second: bld_hall_night_92
+  - first:
+      213: 7533951642387303022
+    second: bld_hall_night_93
+  - first:
+      213: -7404478373013328653
+    second: bld_hall_night_94
+  - first:
+      213: -5815763423594670867
+    second: bld_hall_night_95
+  - first:
+      213: -2182143561608369758
+    second: bld_hall_night_96
+  - first:
+      213: -2343540673413247506
+    second: bld_hall_night_97
+  - first:
+      213: -2894628090587953839
+    second: bld_hall_night_98
+  - first:
+      213: -2308164944606088707
+    second: bld_hall_night_99
+  - first:
+      213: -2024401640448575721
+    second: bld_hall_night_100
+  - first:
+      213: -1869053749690767369
+    second: bld_hall_night_101
+  - first:
+      213: -1887184806745872893
+    second: bld_hall_night_102
+  - first:
+      213: -421389434841618732
+    second: bld_hall_night_103
+  - first:
+      213: 6187578098333019383
+    second: bld_hall_night_104
+  - first:
+      213: 156574467449180912
+    second: bld_hall_night_105
+  - first:
+      213: -3914302908219151389
+    second: bld_hall_night_106
+  - first:
+      213: 5659334687003584644
+    second: bld_hall_night_107
+  - first:
+      213: 8283348731892750907
+    second: bld_hall_night_108
+  - first:
+      213: 2298216341983550537
+    second: bld_hall_night_109
+  - first:
+      213: -1688207792710434856
+    second: bld_hall_night_110
+  - first:
+      213: 5228778068618591798
+    second: bld_hall_night_111
+  - first:
+      213: 7816336393831279276
+    second: bld_hall_night_112
+  - first:
+      213: 4428985250010571359
+    second: bld_hall_night_113
+  - first:
+      213: 3588765811880482093
+    second: bld_hall_night_114
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 9
+  spritePivot: {x: 0, y: 0}
+  spritePixelsToUnits: 32
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: bld_hall_night_0
+      rect:
+        serializedVersion: 2
+        x: 31
+        y: 243
+        width: 16
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9de1e04755eefa100800000000000000
+      internalID: 121577765749006041
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_1
+      rect:
+        serializedVersion: 2
+        x: 48
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 229dc3ebe1d63afd0800000000000000
+      internalID: -2331900203239679710
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_2
+      rect:
+        serializedVersion: 2
+        x: 58
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1f7a286a171596640800000000000000
+      internalID: 5073676003776309233
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_3
+      rect:
+        serializedVersion: 2
+        x: 68
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fd0e895644a3e63a0800000000000000
+      internalID: -6670329932652420897
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_4
+      rect:
+        serializedVersion: 2
+        x: 78
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8576633e9a5a71400800000000000000
+      internalID: 294886449696106328
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_5
+      rect:
+        serializedVersion: 2
+        x: 88
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ab03e423f4a288490800000000000000
+      internalID: -7743893039628799814
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_6
+      rect:
+        serializedVersion: 2
+        x: 98
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2564fccc30104d020800000000000000
+      internalID: 2365516820109018706
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_7
+      rect:
+        serializedVersion: 2
+        x: 108
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f167006ece8a09f00800000000000000
+      internalID: 1121582042639791647
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_8
+      rect:
+        serializedVersion: 2
+        x: 118
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ffaa8c4792517d8f0800000000000000
+      internalID: -515920364513481985
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_9
+      rect:
+        serializedVersion: 2
+        x: 128
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 357b20abcd91c8540800000000000000
+      internalID: 5011408921160759123
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_10
+      rect:
+        serializedVersion: 2
+        x: 138
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3b86e5b23e8a8fc30800000000000000
+      internalID: 4393447130138568883
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_11
+      rect:
+        serializedVersion: 2
+        x: 148
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2000a01bccf7da160800000000000000
+      internalID: 7038422309770231810
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_12
+      rect:
+        serializedVersion: 2
+        x: 158
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c936e938d1ecd66f0800000000000000
+      internalID: -689668541760248932
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_13
+      rect:
+        serializedVersion: 2
+        x: 168
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d7406d31e468feee0800000000000000
+      internalID: -1229616503350492035
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_14
+      rect:
+        serializedVersion: 2
+        x: 178
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c32dc0dca04017e00800000000000000
+      internalID: 1040617433335648828
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_15
+      rect:
+        serializedVersion: 2
+        x: 188
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 198ec699fc613d950800000000000000
+      internalID: 6472542170349627537
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_16
+      rect:
+        serializedVersion: 2
+        x: 198
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 395e8174678cb7ed0800000000000000
+      internalID: -2415116364829629037
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_17
+      rect:
+        serializedVersion: 2
+        x: 208
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 11912b3e95d09ea60800000000000000
+      internalID: 7703703317317294353
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_18
+      rect:
+        serializedVersion: 2
+        x: 218
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5c7decbc6a8034d70800000000000000
+      internalID: 9026067590657529797
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_19
+      rect:
+        serializedVersion: 2
+        x: 228
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 174e06f03913b4ea0800000000000000
+      internalID: -5887557580168829839
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_20
+      rect:
+        serializedVersion: 2
+        x: 238
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 42d9850fe8df67070800000000000000
+      internalID: 8103943369859308836
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_21
+      rect:
+        serializedVersion: 2
+        x: 248
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: de626e81aafcbbea0800000000000000
+      internalID: -5855858560996071699
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_22
+      rect:
+        serializedVersion: 2
+        x: 258
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 268c0c557fae1bd90800000000000000
+      internalID: -7083622390860560286
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_23
+      rect:
+        serializedVersion: 2
+        x: 268
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 097c7cfc5312d3160800000000000000
+      internalID: 7006793110261319568
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_24
+      rect:
+        serializedVersion: 2
+        x: 278
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b3872bb76349fb560800000000000000
+      internalID: 7331741680106895419
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_25
+      rect:
+        serializedVersion: 2
+        x: 288
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9dcdd2ef1e15dd940800000000000000
+      internalID: 5322500365695704281
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_26
+      rect:
+        serializedVersion: 2
+        x: 298
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d0779002c3c246f50800000000000000
+      internalID: 6873667568021370637
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_27
+      rect:
+        serializedVersion: 2
+        x: 308
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 955c45850dd135140800000000000000
+      internalID: 4707138816204653913
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_28
+      rect:
+        serializedVersion: 2
+        x: 318
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 455dfc33e2aad3690800000000000000
+      internalID: -7620747879026535084
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_29
+      rect:
+        serializedVersion: 2
+        x: 328
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 351dca8422cca7a00800000000000000
+      internalID: 755140335158219091
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_30
+      rect:
+        serializedVersion: 2
+        x: 338
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7d848d7b5c43e8230800000000000000
+      internalID: 3642907172386916567
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_31
+      rect:
+        serializedVersion: 2
+        x: 348
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5d3cbef58fcd503b0800000000000000
+      internalID: -5546784406717611051
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_32
+      rect:
+        serializedVersion: 2
+        x: 358
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e3a33bbfd183f6970800000000000000
+      internalID: 8750274302432197182
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_33
+      rect:
+        serializedVersion: 2
+        x: 368
+        y: 248
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 52860cf510576c4f0800000000000000
+      internalID: -808830434304563163
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_34
+      rect:
+        serializedVersion: 2
+        x: 376
+        y: 243
+        width: 11
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1a0246f4120c566b0800000000000000
+      internalID: -5303621736860475231
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_35
+      rect:
+        serializedVersion: 2
+        x: 31
+        y: 233
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8c2e7b9a6477764e0800000000000000
+      internalID: -1988489565081967928
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_36
+      rect:
+        serializedVersion: 2
+        x: 376
+        y: 233
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 64876e9e74205f990800000000000000
+      internalID: -7352968308722337722
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_37
+      rect:
+        serializedVersion: 2
+        x: 31
+        y: 223
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f4726e6b13c0ff860800000000000000
+      internalID: 7565779306667190095
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_38
+      rect:
+        serializedVersion: 2
+        x: 376
+        y: 223
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 67f6a3ec1c9109fe0800000000000000
+      internalID: -1184418381819121802
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_39
+      rect:
+        serializedVersion: 2
+        x: 31
+        y: 213
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bb9b92fcbe2594f50800000000000000
+      internalID: 6866110279649442235
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_40
+      rect:
+        serializedVersion: 2
+        x: 376
+        y: 213
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a29fc6481e6b70d70800000000000000
+      internalID: 9009370659283597610
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_41
+      rect:
+        serializedVersion: 2
+        x: 31
+        y: 203
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a617e1f3835a05a10800000000000000
+      internalID: 1896197104118690154
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_42
+      rect:
+        serializedVersion: 2
+        x: 376
+        y: 203
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3cb7a6877b86483f0800000000000000
+      internalID: -899478888358708285
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_43
+      rect:
+        serializedVersion: 2
+        x: 31
+        y: 193
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4e171ce458dbde240800000000000000
+      internalID: 4822719156233269732
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_44
+      rect:
+        serializedVersion: 2
+        x: 187
+        y: 179
+        width: 42
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8f457a1e60c5aced0800000000000000
+      internalID: -2392999067368598280
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_45
+      rect:
+        serializedVersion: 2
+        x: 376
+        y: 193
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 004ae528eec8ec680800000000000000
+      internalID: -8732887671407467520
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_46
+      rect:
+        serializedVersion: 2
+        x: 31
+        y: 183
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b5d80a75a8fc7bcb0800000000000000
+      internalID: -4848178280758473381
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_47
+      rect:
+        serializedVersion: 2
+        x: 376
+        y: 183
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 195d01f0ee2e36770800000000000000
+      internalID: 8602969225290634641
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_48
+      rect:
+        serializedVersion: 2
+        x: 31
+        y: 173
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7bf0e4fcff6defca0800000000000000
+      internalID: -5981106860918435913
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_49
+      rect:
+        serializedVersion: 2
+        x: 376
+        y: 173
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4702d95975987b2f0800000000000000
+      internalID: -957145386527678348
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_50
+      rect:
+        serializedVersion: 2
+        x: 31
+        y: 163
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7aac0ca922b6006e0800000000000000
+      internalID: -1873379648616740185
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_51
+      rect:
+        serializedVersion: 2
+        x: 376
+        y: 163
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 16467e3712d95a4a0800000000000000
+      internalID: -6582682513328085919
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_52
+      rect:
+        serializedVersion: 2
+        x: 31
+        y: 153
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8f411bf0a74f56ff0800000000000000
+      internalID: -43359816303700744
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_53
+      rect:
+        serializedVersion: 2
+        x: 33
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fcf69d9a79ed00f40800000000000000
+      internalID: 5692794671967334351
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_54
+      rect:
+        serializedVersion: 2
+        x: 43
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3fdde2c2c4fbf1b50800000000000000
+      internalID: 6566177115609161203
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_55
+      rect:
+        serializedVersion: 2
+        x: 53
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9f6ad1571bd38f350800000000000000
+      internalID: 6050653931755644665
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_56
+      rect:
+        serializedVersion: 2
+        x: 63
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b98b2c22e45a34680800000000000000
+      internalID: -8771985894178375525
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_57
+      rect:
+        serializedVersion: 2
+        x: 73
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 300958aac38c44ad0800000000000000
+      internalID: -2718828112140464125
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_58
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6dc39848c5886a8a0800000000000000
+      internalID: -6294193498261734186
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_59
+      rect:
+        serializedVersion: 2
+        x: 93
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cb163f3883d927690800000000000000
+      internalID: -7605843954617851460
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_60
+      rect:
+        serializedVersion: 2
+        x: 103
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 30e2c13010df14d60800000000000000
+      internalID: 7872851804409310723
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_61
+      rect:
+        serializedVersion: 2
+        x: 113
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6294c8573d999e8b0800000000000000
+      internalID: -5122393967667951322
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_62
+      rect:
+        serializedVersion: 2
+        x: 123
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aaab03c375779e120800000000000000
+      internalID: 2443615489380891306
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_63
+      rect:
+        serializedVersion: 2
+        x: 133
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 25cda567bf5b49930800000000000000
+      internalID: 4149141248342154322
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_64
+      rect:
+        serializedVersion: 2
+        x: 143
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 701ac5f1859a79c80800000000000000
+      internalID: -8315991990967951097
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_65
+      rect:
+        serializedVersion: 2
+        x: 153
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9290edf1793935820800000000000000
+      internalID: 2905828461868091689
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_66
+      rect:
+        serializedVersion: 2
+        x: 163
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a31536fe1bb4e4840800000000000000
+      internalID: 5210185046511800634
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_67
+      rect:
+        serializedVersion: 2
+        x: 173
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b633ef57a21585e60800000000000000
+      internalID: 7951194384932680555
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_68
+      rect:
+        serializedVersion: 2
+        x: 183
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4e18fa2ea99cc57a0800000000000000
+      internalID: -6387008504452906524
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_69
+      rect:
+        serializedVersion: 2
+        x: 193
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ce46b17befa3a2db0800000000000000
+      internalID: -4815971985851194132
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_70
+      rect:
+        serializedVersion: 2
+        x: 203
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 532dfd1ca20f7f100800000000000000
+      internalID: 141845979717423669
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_71
+      rect:
+        serializedVersion: 2
+        x: 213
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9500b617745e20470800000000000000
+      internalID: 8359495953361338457
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_72
+      rect:
+        serializedVersion: 2
+        x: 223
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 27c7a4461d7e70480800000000000000
+      internalID: -8932916449349305230
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_73
+      rect:
+        serializedVersion: 2
+        x: 233
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9f5f95d44c6453bd0800000000000000
+      internalID: -2651134996712393223
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_74
+      rect:
+        serializedVersion: 2
+        x: 243
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1b20ac736ac3d85f0800000000000000
+      internalID: -752878878102781263
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_75
+      rect:
+        serializedVersion: 2
+        x: 253
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d81af5371ef8a9480800000000000000
+      internalID: -8891636315823562355
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_76
+      rect:
+        serializedVersion: 2
+        x: 263
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ea3d49c07d85a3f60800000000000000
+      internalID: 8014816167511511982
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_77
+      rect:
+        serializedVersion: 2
+        x: 273
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aa5d8b958252f45c0800000000000000
+      internalID: -4229120669843401302
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_78
+      rect:
+        serializedVersion: 2
+        x: 283
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e78228dcd78583150800000000000000
+      internalID: 5852525013109975166
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_79
+      rect:
+        serializedVersion: 2
+        x: 293
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0d3e5a5271e8a8020800000000000000
+      internalID: 2344842786066785232
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_80
+      rect:
+        serializedVersion: 2
+        x: 303
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4ee779793ec1e0190800000000000000
+      internalID: -7994420524709609756
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_81
+      rect:
+        serializedVersion: 2
+        x: 313
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f57b9af2631011760800000000000000
+      internalID: 7426718592750171999
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_82
+      rect:
+        serializedVersion: 2
+        x: 323
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e0de2c54b1a631c10800000000000000
+      internalID: 2023077322986548494
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_83
+      rect:
+        serializedVersion: 2
+        x: 333
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a3eb635cd7347aef0800000000000000
+      internalID: -97034659506504134
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_84
+      rect:
+        serializedVersion: 2
+        x: 343
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d691291c28f8a1930800000000000000
+      internalID: 4114759001312467309
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_85
+      rect:
+        serializedVersion: 2
+        x: 353
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 39f19ee416b30b350800000000000000
+      internalID: 6030385190170861459
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_86
+      rect:
+        serializedVersion: 2
+        x: 363
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 20a3d448173817490800000000000000
+      internalID: -7750268960153716222
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_87
+      rect:
+        serializedVersion: 2
+        x: 373
+        y: 145
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0074e389bbaddc1e0800000000000000
+      internalID: -2175842545702123776
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_88
+      rect:
+        serializedVersion: 2
+        x: 376
+        y: 153
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cb125530b8f7e9f30800000000000000
+      internalID: 4584241705742836156
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_89
+      rect:
+        serializedVersion: 2
+        x: 5
+        y: 7
+        width: 16
+        height: 142
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d5fa90a3753f70860800000000000000
+      internalID: 7496227660742897501
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_90
+      rect:
+        serializedVersion: 2
+        x: 34
+        y: 26
+        width: 28
+        height: 41
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 705e7c8098ad868d0800000000000000
+      internalID: -2852790081846516473
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_91
+      rect:
+        serializedVersion: 2
+        x: 66
+        y: 26
+        width: 28
+        height: 41
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fbaab67a36e530ed0800000000000000
+      internalID: -2449009990255793473
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_92
+      rect:
+        serializedVersion: 2
+        x: 98
+        y: 26
+        width: 28
+        height: 41
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8a978a46cb813a420800000000000000
+      internalID: 2639981003990923688
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_93
+      rect:
+        serializedVersion: 2
+        x: 139
+        y: 57
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e6a47772a19fd8860800000000000000
+      internalID: 7533951642387303022
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_94
+      rect:
+        serializedVersion: 2
+        x: 147
+        y: 57
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3fc6a7d76220e3990800000000000000
+      internalID: -7404478373013328653
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_95
+      rect:
+        serializedVersion: 2
+        x: 155
+        y: 57
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: de41eeebaf14a4fa0800000000000000
+      internalID: -5815763423594670867
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_96
+      rect:
+        serializedVersion: 2
+        x: 163
+        y: 57
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2a96d610ef777b1e0800000000000000
+      internalID: -2182143561608369758
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_97
+      rect:
+        serializedVersion: 2
+        x: 171
+        y: 57
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: eed06849c221a7fd0800000000000000
+      internalID: -2343540673413247506
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_98
+      rect:
+        serializedVersion: 2
+        x: 179
+        y: 57
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 15543a7861734d7d0800000000000000
+      internalID: -2894628090587953839
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_99
+      rect:
+        serializedVersion: 2
+        x: 187
+        y: 57
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: df1beb94630c7ffd0800000000000000
+      internalID: -2308164944606088707
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_100
+      rect:
+        serializedVersion: 2
+        x: 195
+        y: 57
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 717385a0f61e7e3e0800000000000000
+      internalID: -2024401640448575721
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_101
+      rect:
+        serializedVersion: 2
+        x: 203
+        y: 57
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7f7e19f6489cf06e0800000000000000
+      internalID: -1869053749690767369
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_102
+      rect:
+        serializedVersion: 2
+        x: 211
+        y: 57
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 306e560ca6f5fc5e0800000000000000
+      internalID: -1887184806745872893
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_103
+      rect:
+        serializedVersion: 2
+        x: 219
+        y: 57
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4d6a928aa8ce62af0800000000000000
+      internalID: -421389434841618732
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_104
+      rect:
+        serializedVersion: 2
+        x: 227
+        y: 57
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7fc602b4f71bed550800000000000000
+      internalID: 6187578098333019383
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_105
+      rect:
+        serializedVersion: 2
+        x: 235
+        y: 57
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0f2543906a34c2200800000000000000
+      internalID: 156574467449180912
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_106
+      rect:
+        serializedVersion: 2
+        x: 243
+        y: 57
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3eba15c6e3a9da9c0800000000000000
+      internalID: -3914302908219151389
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_107
+      rect:
+        serializedVersion: 2
+        x: 251
+        y: 57
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 48825e3d9eef98e40800000000000000
+      internalID: 5659334687003584644
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_108
+      rect:
+        serializedVersion: 2
+        x: 259
+        y: 57
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b3a562bd8cd54f270800000000000000
+      internalID: 8283348731892750907
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_109
+      rect:
+        serializedVersion: 2
+        x: 267
+        y: 57
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 94c5de82697e4ef10800000000000000
+      internalID: 2298216341983550537
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_110
+      rect:
+        serializedVersion: 2
+        x: 290
+        y: 26
+        width: 28
+        height: 41
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8dfb27005f74298e0800000000000000
+      internalID: -1688207792710434856
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_111
+      rect:
+        serializedVersion: 2
+        x: 322
+        y: 26
+        width: 28
+        height: 41
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 63e3d5d33f9509840800000000000000
+      internalID: 5228778068618591798
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_112
+      rect:
+        serializedVersion: 2
+        x: 354
+        y: 26
+        width: 28
+        height: 41
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: caa65479984397c60800000000000000
+      internalID: 7816336393831279276
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_113
+      rect:
+        serializedVersion: 2
+        x: 395
+        y: 7
+        width: 16
+        height: 142
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f52235e7e9ae67d30800000000000000
+      internalID: 4428985250010571359
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bld_hall_night_114
+      rect:
+        serializedVersion: 2
+        x: 188
+        y: 0
+        width: 40
+        height: 49
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d25d337ed7bddc130800000000000000
+      internalID: 3588765811880482093
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      bld_hall_night_0: 121577765749006041
+      bld_hall_night_1: -2331900203239679710
+      bld_hall_night_10: 4393447130138568883
+      bld_hall_night_100: -2024401640448575721
+      bld_hall_night_101: -1869053749690767369
+      bld_hall_night_102: -1887184806745872893
+      bld_hall_night_103: -421389434841618732
+      bld_hall_night_104: 6187578098333019383
+      bld_hall_night_105: 156574467449180912
+      bld_hall_night_106: -3914302908219151389
+      bld_hall_night_107: 5659334687003584644
+      bld_hall_night_108: 8283348731892750907
+      bld_hall_night_109: 2298216341983550537
+      bld_hall_night_11: 7038422309770231810
+      bld_hall_night_110: -1688207792710434856
+      bld_hall_night_111: 5228778068618591798
+      bld_hall_night_112: 7816336393831279276
+      bld_hall_night_113: 4428985250010571359
+      bld_hall_night_114: 3588765811880482093
+      bld_hall_night_12: -689668541760248932
+      bld_hall_night_13: -1229616503350492035
+      bld_hall_night_14: 1040617433335648828
+      bld_hall_night_15: 6472542170349627537
+      bld_hall_night_16: -2415116364829629037
+      bld_hall_night_17: 7703703317317294353
+      bld_hall_night_18: 9026067590657529797
+      bld_hall_night_19: -5887557580168829839
+      bld_hall_night_2: 5073676003776309233
+      bld_hall_night_20: 8103943369859308836
+      bld_hall_night_21: -5855858560996071699
+      bld_hall_night_22: -7083622390860560286
+      bld_hall_night_23: 7006793110261319568
+      bld_hall_night_24: 7331741680106895419
+      bld_hall_night_25: 5322500365695704281
+      bld_hall_night_26: 6873667568021370637
+      bld_hall_night_27: 4707138816204653913
+      bld_hall_night_28: -7620747879026535084
+      bld_hall_night_29: 755140335158219091
+      bld_hall_night_3: -6670329932652420897
+      bld_hall_night_30: 3642907172386916567
+      bld_hall_night_31: -5546784406717611051
+      bld_hall_night_32: 8750274302432197182
+      bld_hall_night_33: -808830434304563163
+      bld_hall_night_34: -5303621736860475231
+      bld_hall_night_35: -1988489565081967928
+      bld_hall_night_36: -7352968308722337722
+      bld_hall_night_37: 7565779306667190095
+      bld_hall_night_38: -1184418381819121802
+      bld_hall_night_39: 6866110279649442235
+      bld_hall_night_4: 294886449696106328
+      bld_hall_night_40: 9009370659283597610
+      bld_hall_night_41: 1896197104118690154
+      bld_hall_night_42: -899478888358708285
+      bld_hall_night_43: 4822719156233269732
+      bld_hall_night_44: -2392999067368598280
+      bld_hall_night_45: -8732887671407467520
+      bld_hall_night_46: -4848178280758473381
+      bld_hall_night_47: 8602969225290634641
+      bld_hall_night_48: -5981106860918435913
+      bld_hall_night_49: -957145386527678348
+      bld_hall_night_5: -7743893039628799814
+      bld_hall_night_50: -1873379648616740185
+      bld_hall_night_51: -6582682513328085919
+      bld_hall_night_52: -43359816303700744
+      bld_hall_night_53: 5692794671967334351
+      bld_hall_night_54: 6566177115609161203
+      bld_hall_night_55: 6050653931755644665
+      bld_hall_night_56: -8771985894178375525
+      bld_hall_night_57: -2718828112140464125
+      bld_hall_night_58: -6294193498261734186
+      bld_hall_night_59: -7605843954617851460
+      bld_hall_night_6: 2365516820109018706
+      bld_hall_night_60: 7872851804409310723
+      bld_hall_night_61: -5122393967667951322
+      bld_hall_night_62: 2443615489380891306
+      bld_hall_night_63: 4149141248342154322
+      bld_hall_night_64: -8315991990967951097
+      bld_hall_night_65: 2905828461868091689
+      bld_hall_night_66: 5210185046511800634
+      bld_hall_night_67: 7951194384932680555
+      bld_hall_night_68: -6387008504452906524
+      bld_hall_night_69: -4815971985851194132
+      bld_hall_night_7: 1121582042639791647
+      bld_hall_night_70: 141845979717423669
+      bld_hall_night_71: 8359495953361338457
+      bld_hall_night_72: -8932916449349305230
+      bld_hall_night_73: -2651134996712393223
+      bld_hall_night_74: -752878878102781263
+      bld_hall_night_75: -8891636315823562355
+      bld_hall_night_76: 8014816167511511982
+      bld_hall_night_77: -4229120669843401302
+      bld_hall_night_78: 5852525013109975166
+      bld_hall_night_79: 2344842786066785232
+      bld_hall_night_8: -515920364513481985
+      bld_hall_night_80: -7994420524709609756
+      bld_hall_night_81: 7426718592750171999
+      bld_hall_night_82: 2023077322986548494
+      bld_hall_night_83: -97034659506504134
+      bld_hall_night_84: 4114759001312467309
+      bld_hall_night_85: 6030385190170861459
+      bld_hall_night_86: -7750268960153716222
+      bld_hall_night_87: -2175842545702123776
+      bld_hall_night_88: 4584241705742836156
+      bld_hall_night_89: 7496227660742897501
+      bld_hall_night_9: 5011408921160759123
+      bld_hall_night_90: -2852790081846516473
+      bld_hall_night_91: -2449009990255793473
+      bld_hall_night_92: 2639981003990923688
+      bld_hall_night_93: 7533951642387303022
+      bld_hall_night_94: -7404478373013328653
+      bld_hall_night_95: -5815763423594670867
+      bld_hall_night_96: -2182143561608369758
+      bld_hall_night_97: -2343540673413247506
+      bld_hall_night_98: -2894628090587953839
+      bld_hall_night_99: -2308164944606088707
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

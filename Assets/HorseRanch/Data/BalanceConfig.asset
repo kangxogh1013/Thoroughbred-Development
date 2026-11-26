@@ -18,6 +18,8 @@ MonoBehaviour:
     statCap: 20
     trainDays: 2
     trainBaseGain: 1.6
+    trainCostBase: 200
+    trainCostPerStat: 40
     fatigueOnTrain: 14
     fatigueOnRace: 20
     restRecovery: 20
@@ -45,6 +47,11 @@ MonoBehaviour:
     takeRate: 0.25
     minBet: 100
     maxBetPerTicket: 50000
+    maxTickets: 40
+    tipPrice: 300
+    coinPrice: 100
+    luckChance: 0.33333334
+    masterTruthChance: 0.33333334
     marketSimulations: 200
     npcPool:
     - 120000
@@ -57,6 +64,9 @@ MonoBehaviour:
     npcGrowthPerDay: 0.4
     npcMaxTotal: 56
     npcSpread: 8
+    npcTierDays: 10
+    npcTierBonus: 3
+    npcTierCapBonus: 3
     raceStatGrowth: 0.25
     retireAt: 15
     grandPrixInterval: 7
@@ -68,3 +78,48 @@ MonoBehaviour:
     foalInherit: 0.6
     foalRandomMax: 3
     foalStatCap: 15
+    trashBinValues: 64000000f401000064000000e8030000f4010000d007000064000000e8030000
+    trashMoneyChance: 0.05
+    trashCarryMax: 10
+    trashSearchPerDay: 12
+    searchPerPress: 0.12
+    searchDecay: 0.25
+    cleanTownGoal: 50
+    secretShelfGold: 3000
+    secretPondGold: 5000
+    startDebt: 120000
+    debtFirstDay: 10
+    debtInterval: 7
+    debtPayment: 8000
+    latePenalty: 3000
+    maxMissedPayments: 3
+    freeBetMax: 1000
+    facilityPrices: 983a00003075000060ea0000
+    gearGainPerLevel: 0.15
+    roomRecoveryPerLevel: 8
+    pastureConditionPerLevel: 4
+    rivalStatMultiplier: 1.18
+    thunderStat: 17
+    thunderFoalBonus: 2
+    thunderFoalCap: 18
+    dayStartMinute: 360
+    eveningMinute: 1080
+    closeMinute: 1200
+    bedtimeMinute: 1320
+    lateMinute: 1440
+    passOutMinute: 1560
+    oversleepMinute: 480
+    minutesPerSecond: 10
+    requestOffers: 3
+    requestMaxActive: 2
+    requestDays: 3
+    requestBaseReward: 300
+    requestRewardPerDay: 25
+    bondMax: 10
+    petCondition: 5
+    bondConditionBonus: 1.5
+    rideSpeedScale: 1.8
+    slotBets: 640000002c010000f4010000
+    slotWeights: 060000000500000004000000030000000200000001000000
+    slotTriple: 080000000c00000014000000230000004600000096000000
+    slotCherryPair: 1.5

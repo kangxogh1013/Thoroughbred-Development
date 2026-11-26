@@ -8,7 +8,7 @@ namespace HorseRanch.EditorTools
     /// 쯔꾸르풍 픽셀아트(32px 타일)를 코드로 그려 PNG 스프라이트로 저장한다.
     /// 지면은 구역 전체를 한 장의 텍스처로 굽고, 건물·소품은 개별 스프라이트(PPU 32 → 1타일 = 1유닛).
     /// </summary>
-    public static class HorseRanchWorldArt
+    public static partial class HorseRanchWorldArt
     {
         public const int T = 32;
         public const string Folder = HorseRanchPaths.Art + "/World";
@@ -616,6 +616,12 @@ namespace HorseRanch.EditorTools
 
         public static Sprite Save(string name, Px px, Vector2 pivot, Vector4 border)
         {
+            return Save(name, px, pivot, border, T, FilterMode.Point);
+        }
+
+        /// <summary>부드러운 그림(불빛 · 어둠 덮개)용: 픽셀 단위와 필터를 정할 수 있음</summary>
+        public static Sprite Save(string name, Px px, Vector2 pivot, Vector4 border, float ppu, FilterMode filter)
+        {
             if (!AssetDatabase.IsValidFolder(Folder)) AssetDatabase.CreateFolder(HorseRanchPaths.Art, "World");
             var tex = new Texture2D(px.w, px.h, TextureFormat.RGBA32, false);
             tex.SetPixels32(px.p);
@@ -630,13 +636,14 @@ namespace HorseRanch.EditorTools
             imp.spriteImportMode = SpriteImportMode.Single;
             imp.mipmapEnabled = false;
             imp.alphaIsTransparency = true;
-            imp.filterMode = FilterMode.Point;                         // 픽셀아트 선명하게
+            imp.filterMode = filter;                                   // 픽셀아트는 Point (선명하게), 불빛은 Bilinear
             imp.textureCompression = TextureImporterCompression.Uncompressed;
             imp.spriteBorder = border;
             imp.maxTextureSize = 4096;
             var settings = new TextureImporterSettings();
             imp.ReadTextureSettings(settings);
-            settings.spritePixelsPerUnit = T;                          // 32px = 1유닛 = 1타일
+            settings.filterMode = filter;
+            settings.spritePixelsPerUnit = ppu;                        // 보통 32px = 1유닛 = 1타일
             settings.spriteAlignment = (int)SpriteAlignment.Custom;
             settings.spritePivot = pivot;
             settings.spriteMeshType = SpriteMeshType.FullRect;

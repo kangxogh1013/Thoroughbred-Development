@@ -184,6 +184,12 @@ namespace HorseRanch
         [Tooltip("쓰다듬기: 컨디션 +")] public float petCondition = 5f;
         [Tooltip("교감 1당 매일 컨디션이 돌아가는 기준값 +")] public float bondConditionBonus = 1.5f;
         [Tooltip("말을 타면 이동 속도 배율")] [Range(1f, 3f)] public float rideSpeedScale = 1.8f;
+
+        [Header("슬롯머신 (도박장)")]
+        [Tooltip("고를 수 있는 판돈")] public int[] slotBets = { 100, 300, 500 };
+        [Tooltip("릴 그림이 나올 확률 비중 (체리, 말굽, 종, BAR, 말, 7)")] public int[] slotWeights = { 6, 5, 4, 3, 2, 1 };
+        [Tooltip("같은 그림 3개 배당 (배)")] public int[] slotTriple = { 8, 12, 20, 35, 70, 150 };
+        [Tooltip("체리 2개 배당 (배, 1.5 = 판돈의 1.5배)")] public float slotCherryPair = 1.5f;
     }
 
     /// <summary>시장에서 파는 음식 1종. forHorse면 고른 말에게 바로 먹인다</summary>
@@ -492,6 +498,8 @@ namespace HorseRanch
         [Tooltip("지금 타고 있는 말 id (0 = 걷는 중, 저장 후 불러오면 내림)")] public int ridingId;
         [Tooltip("역대 경주 결과 (최근 60개)")] public List<RaceRecord> records = new List<RaceRecord>();
         [Tooltip("경주별 트랙 레코드")] public List<RaceRecord> trackRecords = new List<RaceRecord>();
+        public int slotSpins;
+        public int slotBestWin;
     }
 
     /// <summary>주민 의뢰 1건 (게시판 제안 + 수락한 것)</summary>

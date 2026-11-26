@@ -45,6 +45,9 @@ namespace HorseRanch
         }
 
         public Vector2Int EditorStartCell { get { return startCell; } }
+        /// <summary>처음 서 있던 칸 (다음 날 NPC를 제자리로 돌려놓을 때)</summary>
+        public Vector2Int StartCell { get { return startCell; } }
+        public Vector2Int StartFacing { get { return startFacing; } }
         /// <summary>빌더 검증: 막힌 칸(물·건물)에 놓인 NPC를 옮길 때</summary>
         public void EditorMoveStart(Vector2Int c) { startCell = c; transform.position = CellToWorld(c); }
 #endif

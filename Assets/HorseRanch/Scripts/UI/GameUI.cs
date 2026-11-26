@@ -7,7 +7,7 @@ using UnityEngine.UI;
 
 namespace HorseRanch
 {
-    public enum WindowId { Stable = 0, Shop = 1, Breed = 2, Achievements = 3, Inventory = 4, Bet = 5, Exchange = 6, Entry = 7, Bulletin = 8, Map = 9, Market = 10, Records = 11 }
+    public enum WindowId { Stable = 0, Shop = 1, Breed = 2, Achievements = 3, Inventory = 4, Bet = 5, Exchange = 6, Entry = 7, Bulletin = 8, Map = 9, Market = 10, Records = 11, Slot = 12 }
 
     /// <summary>
     /// 마을 탐험형 UI 총괄: HUD, 상호작용 안내, 대화창, 기능 창, 경주 관람, 화면 전환(페이드), 게임 이벤트 연결.
@@ -40,7 +40,7 @@ namespace HorseRanch
         [Header("구역 분위기 (도박장 말풍선)")]
         [SerializeField] private SpeechBubble bubble;
         [Tooltip("도박장 손님이 소리치는 간격 (초, 최소~최대)")]
-        [SerializeField] private Vector2 hallShoutInterval = new Vector2(2.5f, 6f);
+        [SerializeField] private Vector2 hallShoutInterval = new Vector2(0.6f, 1.6f);
         [Tooltip("마구간 말 소리 간격 (초, 최소~최대)")]
         [SerializeField] private Vector2 barnSoundInterval = new Vector2(4f, 9f);
         [Tooltip("경주 중 관중 함성 간격 (초, 최소~최대)")]
@@ -235,6 +235,10 @@ namespace HorseRanch
             "교환소 줄이 왜 이렇게 길어?", "오늘 분수에 동전 던졌어? 난 던졌지!", "다음 경주까지 몇 분 남았지?",
             "막판에 치고 나오는 놈이 진짜야.", "아깝다! 2착이었는데!", "이거 맞으면 저녁은 내가 쏜다!",
             "초짜는 단승부터 사 보라고.", "이번 주 대상경주는 누가 이길까?", "한 장만 더 사고 집에 갈 거야, 진짜로.",
+            "흑철 목장 말은 왜 이렇게 빨라?", "오늘은 슬롯이 잘 터진대.", "어이 사장님, 커피 한 잔 더!", "내일은 꼭 본전 찾는다.",
+            "연승식 세 장 다 맞았다!", "어제 그 말, 결국 꼴찌 했지?", "배당판 보는 것만으로도 재밌어.", "이 동네에서 제일 시끄러운 곳이 여기야.",
+            "누가 내 마권 봤어? 분명 여기 뒀는데!", "4번 말 오늘 컨디션 최고래!", "초반에 뛰쳐나가는 말은 막판에 지쳐.", "삼쌍승은 꿈이야, 꿈.",
+            "기수 모자 색만 보고 골랐는데 맞았어!", "교환소 아가씨, 오늘도 잘 부탁해요!", "아직 경주 안 끝났다, 끝까지 봐!",
         };
 
         private void HallShout()
@@ -245,20 +249,55 @@ namespace HorseRanch
                 for (int i = 0; i < allInteractables.Length; i++)
                 {
                     var it = allInteractables[i];
-                    if (it.DisplayName == "손님" && it.GetComponent<NpcController>() != null)
+                    if ((it.DisplayName == "손님" || it.DisplayName == "슬롯 손님") && it.GetComponent<NpcController>() != null)
                     {
                         var ar = map.AreaAt(CellOf(it));
                         if (ar != null && ar.AreaName == "마권 도박장") hallGuests.Add(it);
                     }
                 }
             }
-            // 말풍선만 (소리 없음, 도박장은 배경음만)
-            string line = HallShouts[UnityEngine.Random.Range(0, HallShouts.Length)];
+            // 말풍선만 (소리 없음, 도박장은 배경음만). 여러 개가 동시에 떠 있을 수 있음
             if (hallGuests.Count == 0) return;
-            var who = hallGuests[UnityEngine.Random.Range(0, hallGuests.Count)];
-            if (!who.gameObject.activeInHierarchy) return;
-            bubble.Show(who.transform.position + new Vector3(0f, 1.9f, 0f), line, 2.2f);
+            var free = FreeBubble();
+            if (free == null) return;
+            Interactable who = null;
+            for (int tries = 0; tries < 6 && who == null; tries++)
+            {
+                var c = hallGuests[UnityEngine.Random.Range(0, hallGuests.Count)];
+                if (c.gameObject.activeInHierarchy && !BubbleOn(c.transform)) who = c;
+            }
+            if (who == null) return;
+            var pool = who.DisplayName == "슬롯 손님" ? SlotShouts : HallShouts;
+            string line = pool[UnityEngine.Random.Range(0, pool.Length)];
+            free.ShowOn(who.transform, new Vector3(0f, 1.9f, 0f), line, UnityEngine.Random.Range(2f, 3.2f));
         }
+
+        private SpeechBubble FreeBubble()
+        {
+            if (!bubble.IsShowing) return bubble;
+            if (extraBubbles != null) for (int i = 0; i < extraBubbles.Length; i++) if (!extraBubbles[i].IsShowing) return extraBubbles[i];
+            return null;
+        }
+
+        private bool BubbleOn(Transform t)
+        {
+            if (bubble.IsShowing && bubble.Target == t) return true;
+            if (extraBubbles != null) for (int i = 0; i < extraBubbles.Length; i++) if (extraBubbles[i].IsShowing && extraBubbles[i].Target == t) return true;
+            return false;
+        }
+
+        private void HideBubbles()
+        {
+            bubble.Hide();
+            if (extraBubbles != null) for (int i = 0; i < extraBubbles.Length; i++) extraBubbles[i].Hide();
+        }
+
+        private static readonly string[] SlotShouts =
+        {
+            "체리 두 개! 본전은 건졌다!", "7이 두 개 섰는데… 마지막이 BAR라니!", "이 기계 오늘 뜨거워!", "한 번만 더 돌리고 간다.",
+            "잭팟 터지면 말 한 마리 산다!", "왜 나만 꽝이야!", "옆 기계가 터졌대, 자리 바꿀까?", "말 말 말! 말이 세 개!",
+            "종소리 좀 울려 봐라!", "BAR 세 개면 35배라고!",
+        };
 
         /// <summary>Esc (아무 창도 없을 때): 일시정지 메뉴</summary>
         private void OpenPauseMenu()
@@ -268,7 +307,7 @@ namespace HorseRanch
             modal.Show("메뉴", Game.State.day + "일차 · " + Game.State.gold.ToString("N0") + "G\n<size=85%><color=#566458>진행 상황은 자동 저장됩니다.</color></size>",
                 new ModalAction("계속하기", null, ModalStyle.Primary),
                 new ModalAction("설정", () => settings.Open(null)),
-                new ModalAction("저장하고 타이틀로", () => { runner.Save(); player.Mover.Stand(); guide.Clear(); bubble.Hide(); audioManager.PlayAmbience(AmbienceId.None, 0f); title.Show(); }));
+                new ModalAction("저장하고 타이틀로", () => { runner.Save(); player.Mover.Stand(); guide.Clear(); HideBubbles(); audioManager.PlayAmbience(AmbienceId.None, 0f); title.Show(); }));
         }
 
         public void PlaySfx(SfxId id) { audioManager.PlaySfx(id); }
@@ -432,7 +471,7 @@ namespace HorseRanch
             locationText.text = name;
             if (name == currentArea) return;
             currentArea = name;
-            bubble.Hide();
+            HideBubbles();
             if (name == "은행") audioManager.PlaySfx(SfxId.Bell);   // 문 열면 띠링
             ambientTimer = 1.5f;
             RefreshAreaAudio();
@@ -564,7 +603,7 @@ namespace HorseRanch
                     break;
                 case InteractKind.GambleMaster:
                     dialogue.Show(it.DisplayName, (g.ForestOpen && !g.State.thunderFound
-                            ? "그랑프리 봤네, 장하구먼. 하나 알려 주지. 자네 아버지 말 천둥… 북동쪽 끝 가시덤불 너머 깊은 숲에 산다네. 이제 자네라면 길이 보일 걸세.\n"
+                            ? "그랑프리 봤네, 장하구먼. 하나 알려 주지. 자네 아버지 말 천둥… 마을 북쪽 큰길 끝, 가시덤불 너머 깊은 숲에 산다네. 이제 자네라면 길이 보일 걸세.\n"
                             : "허허, 여기까지 찾아오다니. ") + "내 예언 한번 들어볼 텐가? 하루에 한 번이네.",
                         new ModalAction("예언 듣기", () => dialogue.Show(it.DisplayName, g.AskMaster()), ModalStyle.Primary),
                         new ModalAction("됐어요", null));
@@ -875,7 +914,7 @@ namespace HorseRanch
             pendingEnding = false;
             racing = false;
             gameOverShown = true;
-            bubble.Hide();
+            HideBubbles();
             audioManager.PlaySfx(SfxId.Warning);
             audioManager.PlayBgm(BgmId.GameOver);
             audioManager.PlayAmbience(AmbienceId.None, 0f);
@@ -894,7 +933,7 @@ namespace HorseRanch
             CloseWindow();
             guide.Clear();
             SetPrompt(null);
-            bubble.Hide();
+            HideBubbles();
             audioManager.PlayBgm(BgmId.Ending);
             audioManager.PlayAmbience(AmbienceId.None, 0f);
             StartFade(() =>
